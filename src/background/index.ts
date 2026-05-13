@@ -1,23 +1,42 @@
 // ============================================================
-// Arcanea Vault — Background Service Worker
-// Orchestrates downloads, manages state, handles cross-tab ops
+// Arcanea Threads — Background Service Worker
+// Orchestrates downloads into the local Obsidian-compatible vault.
+// Local-first: every capture lands in ArcaneaThreads/ on disk.
 // ============================================================
 
 import { detectPlatform } from '@/core/detector';
 import { vault } from '@/core/storage';
-import { exportConversation, exportPrompts } from '@/core/exporter';
-import type { ExportOptions, DetectionResult } from '@/core/types';
+import {
+  exportConversationBundle,
+  exportConversation,
+  exportPrompts,
+  renderMediaPromptSidecar,
+  assetPath,
+} from '@/core/exporter';
+import { VAULT_ROOT, assetName, buildSlug } from '@/core/frontmatter';
+import type {
+  ExportOptions,
+  DetectionResult,
+  Platform,
+  MediaItem,
+} from '@/core/types';
 
-// -- Download Queue --
+// ============================================================
+// Download queue (rate-limited, sequential)
+// ============================================================
 
 interface DownloadJob {
+  /** Pre-existing remote URL (http/https) OR a blob: URL we created locally. */
   url: string;
-  filename: string;
-  subfolder?: string;
+  /** Vault-relative path. The full chrome path is `ArcaneaThreads/<path>`. */
+  vaultPath: string;
+  /** When this job was created — used to clean up blob URLs we own. */
+  isBlobUrl?: boolean;
 }
 
 const downloadQueue: DownloadJob[] = [];
 let isDownloading = false;
+const RATE_LIMIT_MS = 280;
 
 async function processDownloadQueue(): Promise<void> {
   if (isDownloading || downloadQueue.length === 0) return;
@@ -25,22 +44,24 @@ async function processDownloadQueue(): Promise<void> {
 
   while (downloadQueue.length > 0) {
     const job = downloadQueue.shift()!;
-    const path = job.subfolder
-      ? `ArcaneanVault/${job.subfolder}/${job.filename}`
-      : `ArcaneanVault/${job.filename}`;
+    const fullPath = `${VAULT_ROOT}/${job.vaultPath}`;
 
     try {
       await chrome.downloads.download({
         url: job.url,
-        filename: path,
+        filename: fullPath,
         saveAs: false,
+        conflictAction: 'overwrite',
       });
     } catch (err) {
-      console.error('[Vault] Download failed:', job.filename, err);
+      console.error('[Threads] Download failed:', fullPath, err);
+    } finally {
+      if (job.isBlobUrl) {
+        try { URL.revokeObjectURL(job.url); } catch { /* noop */ }
+      }
     }
 
-    // Rate limit: 300ms between downloads
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
   }
 
   isDownloading = false;
@@ -51,7 +72,128 @@ function queueDownload(job: DownloadJob): void {
   processDownloadQueue();
 }
 
-// -- Message Handling --
+/** Helper: create a blob URL for in-memory content and queue it. */
+function queueText(vaultPath: string, content: string, mimeType: string): void {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  queueDownload({ url, vaultPath, isBlobUrl: true });
+}
+
+// ============================================================
+// Capture orchestration
+// ============================================================
+
+/**
+ * Persist a detection result to disk per FORMAT_SPEC.md:
+ *   - conversation.md + prompts.md inside ArcaneaThreads/<platform>/<slug>/
+ *   - assets/<filename> for each media item
+ *   - assets/<filename>-prompt.md sidecar for AI-generated media
+ * Returns counts for the popup to display.
+ */
+async function persistDetection(
+  detection: DetectionResult,
+  options: ExportOptions,
+): Promise<{ conversations: number; media: number; prompts: number; folders: string[] }> {
+  const folders = new Set<string>();
+  let conversationCount = 0;
+  let mediaCount = 0;
+  let promptCount = 0;
+
+  // 1. Conversations: emit bundles
+  for (const conv of detection.conversations) {
+    await vault.saveConversation(conv);
+    const bundle = exportConversationBundle(conv, options);
+    folders.add(bundle.folder);
+    for (const f of bundle.files) {
+      queueText(f.path, f.content, f.mimeType);
+    }
+    conversationCount += 1;
+  }
+
+  // 2. Media: route each item into the right conversation folder if we can
+  // associate it; otherwise it lands in a per-platform `_loose/` folder.
+  for (const media of detection.media) {
+    await vault.saveMedia(media);
+    const parentSlug = inferParentSlug(media, detection);
+    const ext = guessExt(media);
+    const filename = sanitizeFilename(media.filename) || assetName(
+      media.type === 'video' ? 'video' : 'img',
+      mediaCount + 1,
+      ext,
+    );
+
+    const vaultRelativePath = parentSlug
+      ? `${media.platform}/${parentSlug}/assets/${filename}`
+      : `${media.platform}/_loose/${filename}`;
+
+    queueDownload({
+      url: media.hdUrl || media.url,
+      vaultPath: vaultRelativePath,
+    });
+
+    // Sidecar prompt note for AI-generated media (Imagine, DALL-E, etc.)
+    if (media.prompt && parentSlug) {
+      const sidecar = renderMediaPromptSidecar(media, parentSlug, filename);
+      queueText(sidecar.path, sidecar.content, sidecar.mimeType);
+    }
+
+    mediaCount += 1;
+  }
+
+  // 3. Standalone prompts (not yet tied to a conversation, e.g. prompt-library
+  // browsers): land in `_index/loose-prompts-YYYY-MM-DD.md`.
+  if (detection.prompts.length > 0) {
+    for (const p of detection.prompts) {
+      await vault.savePrompt(p);
+    }
+    const collection = exportPrompts(detection.prompts, 'markdown', detection.platform);
+    queueText(`_index/${collection.filename}`, collection.content, collection.mimeType);
+    promptCount = detection.prompts.length;
+  }
+
+  return {
+    conversations: conversationCount,
+    media: mediaCount,
+    prompts: promptCount,
+    folders: Array.from(folders),
+  };
+}
+
+/**
+ * Best-effort association of a media item with a captured conversation.
+ * If the media item came from inside a conversation, the scraper should set
+ * `metadata.conversationId`. Otherwise we fall back to the first conversation
+ * of the same platform (e.g. Grok Imagine gallery where there's no parent).
+ */
+function inferParentSlug(media: MediaItem, detection: DetectionResult): string | null {
+  const convId = (media.metadata as Record<string, unknown> | undefined)?.conversationId;
+  if (typeof convId === 'string') {
+    const conv = detection.conversations.find((c) => c.id === convId);
+    if (conv) return buildSlug(conv.title, conv.capturedAt);
+  }
+  if (detection.conversations.length > 0) {
+    const conv = detection.conversations[0];
+    return buildSlug(conv.title, conv.capturedAt);
+  }
+  return null;
+}
+
+function guessExt(media: MediaItem): string {
+  const fromName = media.filename.match(/\.([a-z0-9]{2,4})$/i)?.[1];
+  if (fromName) return fromName.toLowerCase();
+  return media.type === 'video' ? 'mp4' : 'png';
+}
+
+function sanitizeFilename(name: string): string {
+  return name
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+    .replace(/\s+/g, '_')
+    .slice(0, 100);
+}
+
+// ============================================================
+// Message handling
+// ============================================================
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handler = messageHandlers[message.type];
@@ -67,14 +209,12 @@ type MessageHandler = (
 ) => Promise<unknown>;
 
 const messageHandlers: Record<string, MessageHandler> = {
-  // Content script ready notification
-  VAULT_CONTENT_READY: async (message) => {
-    console.log(`[Vault] Content script ready: ${message.platform}`);
+  THREADS_CONTENT_READY: async (message) => {
+    console.log(`[Threads] Content script ready: ${message.platform}`);
     return { ok: true };
   },
 
-  // Detect content on current tab
-  VAULT_DETECT_TAB: async () => {
+  THREADS_DETECT_TAB: async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url) return { error: 'No active tab' };
 
@@ -82,82 +222,67 @@ const messageHandlers: Record<string, MessageHandler> = {
     if (!platform) return { error: 'Not on a supported AI platform' };
 
     try {
-      const result = await chrome.tabs.sendMessage(tab.id, { type: 'VAULT_DETECT' });
+      // Accept both new and legacy detect messages while content scripts migrate.
+      const result =
+        (await chrome.tabs.sendMessage(tab.id, { type: 'THREADS_DETECT' }).catch(() => null)) ??
+        (await chrome.tabs.sendMessage(tab.id, { type: 'VAULT_DETECT' }));
       return result as DetectionResult;
     } catch {
       return { error: `Content script not loaded on ${platform.name}. Refresh the page.` };
     }
   },
 
-  // Download media items
-  VAULT_DOWNLOAD_MEDIA: async (message) => {
-    const items = message.items as Array<{ url: string; filename: string }>;
-    const subfolder = (message.subfolder as string) || 'media';
+  THREADS_CAPTURE: async (message) => {
+    const options = (message.options as ExportOptions) || defaultOptions();
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url) return { error: 'No active tab' };
 
-    for (const item of items) {
-      queueDownload({ url: item.url, filename: item.filename, subfolder });
+    const platform = detectPlatform(tab.url);
+    if (!platform) return { error: 'Not on a supported AI platform' };
+
+    let detection: DetectionResult;
+    try {
+      detection =
+        (await chrome.tabs
+          .sendMessage(tab.id, { type: 'THREADS_DETECT' })
+          .catch(() => null)) ??
+        ((await chrome.tabs.sendMessage(tab.id, { type: 'VAULT_DETECT' })) as DetectionResult);
+    } catch {
+      return { error: `Content script not loaded. Refresh ${platform.name}.` };
     }
 
-    return { queued: items.length };
+    const counts = await persistDetection(detection, options);
+    return {
+      platform: platform.platform,
+      vaultRoot: VAULT_ROOT,
+      captured: counts,
+    };
   },
 
-  // Export conversation
-  VAULT_EXPORT: async (message) => {
-    const conversationId = message.conversationId as string;
-    const options = message.options as ExportOptions;
-
-    const conv = await vault.getConversation(conversationId);
-    if (!conv) return { error: 'Conversation not found in vault' };
-
-    const exported = exportConversation(conv, options);
-
-    // Create blob URL and download
-    const blob = new Blob([exported.content], { type: exported.mimeType });
-    const url = URL.createObjectURL(blob);
-
-    queueDownload({
-      url,
-      filename: exported.filename,
-      subfolder: 'exports',
-    });
-
-    return { filename: exported.filename };
+  THREADS_EXPORT_ONE: async (message) => {
+    const id = message.conversationId as string;
+    const options = (message.options as ExportOptions) || defaultOptions();
+    const conv = await vault.getConversation(id);
+    if (!conv) return { error: 'Conversation not found in local index' };
+    const out = exportConversation(conv, options);
+    queueText(`_index/${out.filename}`, out.content, out.mimeType);
+    return { filename: out.filename };
   },
 
-  // Export prompts
-  VAULT_EXPORT_PROMPTS: async (message) => {
-    const platform = message.platform as string | undefined;
-    const format = (message.format as string) || 'json';
-
-    const prompts = await vault.listPrompts(platform as any);
-    const exported = exportPrompts(prompts, format as any);
-
-    const blob = new Blob([exported.content], { type: exported.mimeType });
-    const url = URL.createObjectURL(blob);
-
-    queueDownload({
-      url,
-      filename: exported.filename,
-      subfolder: 'prompts',
-    });
-
-    return { filename: exported.filename, count: prompts.length };
+  THREADS_EXPORT_PROMPTS: async (message) => {
+    const platform = message.platform as Platform | undefined;
+    const format = (message.format as 'markdown' | 'json') || 'markdown';
+    const prompts = await vault.listPrompts(platform);
+    const out = exportPrompts(prompts, format, platform ?? 'all');
+    queueText(`_index/${out.filename}`, out.content, out.mimeType);
+    return { filename: out.filename, count: prompts.length };
   },
 
-  // Save detected content to vault
-  VAULT_SAVE: async (message) => {
+  THREADS_SAVE: async (message) => {
     const detection = message.detection as DetectionResult;
-
-    for (const conv of detection.conversations) {
-      await vault.saveConversation(conv);
-    }
-    for (const media of detection.media) {
-      await vault.saveMedia(media);
-    }
-    for (const prompt of detection.prompts) {
-      await vault.savePrompt(prompt);
-    }
-
+    for (const conv of detection.conversations) await vault.saveConversation(conv);
+    for (const m of detection.media) await vault.saveMedia(m);
+    for (const p of detection.prompts) await vault.savePrompt(p);
     return {
       saved: {
         conversations: detection.conversations.length,
@@ -167,119 +292,87 @@ const messageHandlers: Record<string, MessageHandler> = {
     };
   },
 
-  // Get vault stats
-  VAULT_STATS: async () => {
-    return vault.getStats();
-  },
+  THREADS_STATS: async () => vault.getStats(),
 
-  // Send to Prompt Books (arcanea.ai)
-  VAULT_SEND_TO_PROMPT_BOOKS: async (message) => {
+  // Opt-in cloud bridge — disabled by default per the local-first manifesto.
+  // The user must explicitly toggle "Send to Arcanea" in settings before this fires.
+  THREADS_SEND_TO_ARCANEA: async (message) => {
     const detection = message.detection as DetectionResult;
-    const endpoint = (message.endpoint as string) || 'https://arcanea.ai/api/vault/import';
+    const endpoint =
+      (message.endpoint as string) || 'https://arcanea.ai/api/threads/import';
 
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          source: 'arcanea-vault',
-          version: '0.1.0',
+          source: 'arcanea-threads',
+          version: '0.2.0',
           platform: detection.platform,
-          data: {
-            conversations: detection.conversations,
-            media: detection.media,
-            prompts: detection.prompts,
-          },
+          data: detection,
         }),
       });
-
-      if (!response.ok) {
-        return { error: `Prompt Books returned ${response.status}` };
-      }
-
+      if (!response.ok) return { error: `Arcanea returned ${response.status}` };
       return await response.json();
     } catch (err) {
-      return { error: `Failed to connect to Prompt Books: ${err}` };
+      return { error: `Failed to reach Arcanea: ${String(err)}` };
     }
   },
 
-  // Quick export: detect + save + download in one action
-  VAULT_QUICK_EXPORT: async (message) => {
-    const options = (message.options as ExportOptions) || {
-      format: 'markdown',
-      includeMedia: true,
-      includeTimestamps: true,
-      includeMetadata: false,
-      embedMedia: false,
-    };
+  // ----- Legacy message names (kept until popup + content scripts migrate) ---
+  VAULT_CONTENT_READY: async (m) => messageHandlers.THREADS_CONTENT_READY(m, {} as any),
+  VAULT_DETECT_TAB: async (m) => messageHandlers.THREADS_DETECT_TAB(m, {} as any),
+  VAULT_QUICK_EXPORT: async (m) => messageHandlers.THREADS_CAPTURE(m, {} as any),
+  VAULT_EXPORT: async (m) => messageHandlers.THREADS_EXPORT_ONE(m, {} as any),
+  VAULT_EXPORT_PROMPTS: async (m) => messageHandlers.THREADS_EXPORT_PROMPTS(m, {} as any),
+  VAULT_SAVE: async (m) => messageHandlers.THREADS_SAVE(m, {} as any),
+  VAULT_STATS: async (m) => messageHandlers.THREADS_STATS(m, {} as any),
+  VAULT_SEND_TO_PROMPT_BOOKS: async (m) => messageHandlers.THREADS_SEND_TO_ARCANEA(m, {} as any),
 
-    // Detect
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id || !tab.url) return { error: 'No active tab' };
-
-    const platform = detectPlatform(tab.url);
-    if (!platform) return { error: 'Not on a supported AI platform' };
-
-    let detection: DetectionResult;
-    try {
-      detection = await chrome.tabs.sendMessage(tab.id, { type: 'VAULT_DETECT' });
-    } catch {
-      return { error: `Content script not loaded. Refresh ${platform.name}.` };
-    }
-
-    // Save to vault
-    for (const conv of detection.conversations) {
-      await vault.saveConversation(conv);
-    }
-    for (const prompt of detection.prompts) {
-      await vault.savePrompt(prompt);
-    }
-
-    // Export conversations
-    for (const conv of detection.conversations) {
-      const exported = exportConversation(conv, options);
-      const blob = new Blob([exported.content], { type: exported.mimeType });
-      const url = URL.createObjectURL(blob);
-      queueDownload({ url, filename: exported.filename, subfolder: platform.platform });
-    }
-
-    // Queue media downloads
-    for (const media of detection.media) {
+  // Download single media item by url (used by gallery scrapers)
+  VAULT_DOWNLOAD_MEDIA: async (message) => {
+    const items = message.items as Array<{ url: string; filename: string; platform?: Platform }>;
+    const platform = (message.platform as Platform) || 'grok';
+    for (const item of items) {
       queueDownload({
-        url: media.hdUrl || media.url,
-        filename: media.filename,
-        subfolder: `${platform.platform}/media`,
+        url: item.url,
+        vaultPath: `${platform}/_loose/${sanitizeFilename(item.filename)}`,
       });
     }
-
-    return {
-      platform: platform.platform,
-      exported: {
-        conversations: detection.conversations.length,
-        media: detection.media.length,
-        prompts: detection.prompts.length,
-      },
-    };
+    return { queued: items.length };
   },
 };
 
-// -- Extension Icon Badge --
+function defaultOptions(): ExportOptions {
+  return {
+    format: 'markdown',
+    includeMedia: true,
+    includeTimestamps: true,
+    includeMetadata: true,
+    embedMedia: false,
+  };
+}
+
+// ============================================================
+// Extension icon badge (per-tab platform indicator)
+// ============================================================
+
+const BADGE_COLOR = '#00bcd4'; // Atlantean Teal per @arcanea/design-system
 
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   try {
     const tab = await chrome.tabs.get(activeInfo.tabId);
-    if (tab.url) {
-      const platform = detectPlatform(tab.url);
-      if (platform) {
-        await chrome.action.setBadgeText({ text: platform.icon, tabId: activeInfo.tabId });
-        await chrome.action.setBadgeBackgroundColor({ color: '#8b5cf6', tabId: activeInfo.tabId });
-      } else {
-        await chrome.action.setBadgeText({ text: '', tabId: activeInfo.tabId });
-      }
+    if (!tab.url) return;
+    const platform = detectPlatform(tab.url);
+    if (platform) {
+      await chrome.action.setBadgeText({ text: platform.icon, tabId: activeInfo.tabId });
+      await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR, tabId: activeInfo.tabId });
+    } else {
+      await chrome.action.setBadgeText({ text: '', tabId: activeInfo.tabId });
     }
   } catch {
-    // Tab might not exist
+    // tab may have been closed
   }
 });
 
-console.log('[Arcanea Vault] Service worker initialized');
+console.log('[Arcanea Threads] Service worker initialized · schema v0.2.0');

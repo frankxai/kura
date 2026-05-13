@@ -1,6 +1,6 @@
 // ============================================================
-// Arcanea Vault — Core Types
-// Your AI creations, captured and organized.
+// Arcanea Threads — Core Types
+// Your AI work, captured into a local Obsidian-compatible vault.
 // ============================================================
 
 /** Supported AI platforms */

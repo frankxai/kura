@@ -1,302 +1,217 @@
-# Arcanea Vault — Universal AI Export
+# Arcanea Threads
 
-> *"What you create across a thousand conversations deserves a home."*
+**Capture every AI conversation into a local, Obsidian-compatible vault on
+your machine.**
 
-[![MIT License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square&logo=opensourceinitiative)](LICENSE)
-[![Chrome Extension](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
-[![Version](https://img.shields.io/badge/version-0.1.0-8b5cf6?style=flat-square)](package.json)
-[![Arcanea Ecosystem](https://img.shields.io/badge/Arcanea-Ecosystem-7fffd4?style=flat-square)](https://arcanea.ai)
+ChatGPT, Claude, Grok, Gemini, DeepSeek, Perplexity — one click, every
+thread becomes a Markdown note with YAML frontmatter, wikilinks, and
+asset folders. Drop the folder into Obsidian and you get the knowledge
+graph for free.
 
-Export your AI conversations, generated images, videos, and prompts from any major AI platform — directly into your local library or your Arcanea Prompt Books.
+> *Your AI work belongs on your disk, not on someone else's server.*
 
----
-
-## Supported Platforms
-
-| Platform | Conversations | Images | Videos | Artifacts |
-|----------|:---:|:---:|:---:|:---:|
-| ChatGPT (incl. DALL-E) | Yes | Yes | - | - |
-| Claude.ai | Yes | - | - | Yes |
-| Google Gemini | Yes | Yes | - | - |
-| Grok (incl. Imagine) | Yes | Yes | Yes | - |
-| DeepSeek | Yes | - | - | - |
-| Perplexity | Yes | - | - | - |
-| Google AI Studio | Yes | Yes | - | - |
+[![MIT License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
+[![Version](https://img.shields.io/badge/version-0.2.0-00bcd4?style=flat-square)](package.json)
+[![Schema](https://img.shields.io/badge/schema-v0.2.0-7fffd4?style=flat-square)](FORMAT_SPEC.md)
+[![Local-first](https://img.shields.io/badge/local--first-yes-22c55e?style=flat-square)](#privacy)
 
 ---
 
-## Features
+## Why this exists
 
-### Core Export
-- **Quick Export** — one click captures everything on the current page: conversations, images, prompts
-- **Smart Detection** — automatically identifies content type (conversation, gallery, imagine page) and adjusts accordingly
-- **Download Queue** — rate-limited background queue downloads media to `ArcaneanVault/<platform>/` subfolders
-- **Organized File Naming** — files saved as `ConversationTitle_platform.md` with sanitized filenames
+You spend hours per week inside AI tools. Every conversation is real
+intellectual work — outlines, drafts, characters, lore, code, decisions.
+And almost all of it dies in someone else's sidebar.
 
-### Export Formats
+Arcanea Threads is the **capture layer**. It does one thing well:
 
-| Format | Free | Pro | Creator |
-|--------|:---:|:---:|:---:|
-| Markdown (.md) | Yes | Yes | Yes |
-| JSON | Yes | Yes | Yes |
-| HTML (styled) | - | Yes | Yes |
-| Plain Text (.txt) | - | Yes | Yes |
-| PDF | - | Yes | Yes |
-| Word (.docx) | - | Yes | Yes |
-| CSV | - | Yes | Yes |
+1. Detect the platform you're on.
+2. Scrape the thread cleanly.
+3. Write it to `ArcaneaThreads/` on disk as Obsidian-compatible Markdown.
 
-### Content Capture
-- Conversations with full message history (user + assistant turns)
-- Timestamps per message when available
-- Inline attachments (images, code blocks)
-- Prompt extraction — captures your prompts as a separate indexed collection
-- Media items with HD URLs, dimensions, and generation prompt metadata
-
-### Local Storage
-- All data stored in IndexedDB — no server, no cloud, no tracking
-- Indexed by platform, content type, and capture date
-- Queryable by platform for filtered exports
-- Settings persisted across sessions
-
-### Arcanea Bridge
-- **Send to Prompt Books** — exports content directly to `arcanea.ai/api/vault/import`
-- Preserves source platform, conversation structure, and media references
-- Enables search and organization within the Arcanea platform
-
-### Extension UI
-- Popup shows live detection stats for the current tab (conversations, images, videos, prompts found)
-- Badge indicator on the extension icon when on a supported platform
-- Side panel for browsing captured content (v0.2.0 roadmap)
+What you do with it after is *yours*. Point Obsidian at the folder and
+get the graph. Run a Claude Code skill to extract worldbuilding entities.
+Pipe it into your second brain of choice. The extension never assumes.
 
 ---
 
-## Install
+## Quick start
 
-### Chrome Web Store
-
-Coming soon. See [CHROME_WEB_STORE_GUIDE.md](CHROME_WEB_STORE_GUIDE.md) for submission status.
-
-### Manual Install (Developer Mode)
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/frankxai/arcanea-vault.git
-   cd arcanea-vault
+1. Install the extension *(Chrome Web Store link coming with v0.2.0
+   submission — see [CHROME_WEB_STORE_GUIDE.md](CHROME_WEB_STORE_GUIDE.md)
+   for manual install while it's in review)*.
+2. Open a conversation on ChatGPT, Claude, Gemini, Grok, DeepSeek or
+   Perplexity.
+3. Click the Arcanea Threads icon → **Capture to vault**.
+4. Files land at:
    ```
-
-2. Install dependencies:
-   ```bash
-   npm install
+   ~/Downloads/ArcaneaThreads/<platform>/<YYYY-MM-DD>_<slug>/
+   ├── conversation.md
+   ├── prompts.md
+   └── assets/
    ```
-
-3. Build:
-   ```bash
-   npm run build
-   ```
-
-4. Load in Chrome:
-   - Navigate to `chrome://extensions/`
-   - Enable **Developer mode** (toggle, top right)
-   - Click **Load unpacked**
-   - Select the `dist/` folder
-
-5. Test on a supported platform. Navigate to `https://chatgpt.com` or `https://grok.com`, click the Vault icon in the toolbar, and verify content is detected.
+5. Open `~/Downloads/ArcaneaThreads/` as a new Obsidian vault — the
+   wikilinks, backlinks, and graph view light up immediately.
 
 ---
 
-## How It Works
+## Supported platforms
 
-### Architecture
+| Platform     | Conversations | Inline media | Generated media |
+|--------------|:-------------:|:------------:|:---------------:|
+| ChatGPT      | ✓ | ✓ | ✓ (DALL·E) |
+| Claude       | ✓ | ✓ | — |
+| Gemini       | ✓ | ✓ | ✓ |
+| Grok         | ✓ | ✓ | ✓ (Imagine images + video) |
+| DeepSeek     | ✓ | — | — |
+| Perplexity   | ✓ | — | — |
+| Google AI Studio | ✓ | ✓ | ✓ |
 
-```
-Browser Tab (ChatGPT, Grok, Claude, etc.)
-        |
-        | Page content
-        v
-Content Script (src/content/<platform>.ts)
-        |
-        | DetectionResult
-        v
-Background Service Worker (src/background/index.ts)
-        |
-        +-- IndexedDB (src/core/storage.ts)   <- local vault
-        |
-        +-- Downloads API                      <- ArcaneanVault/ folder
-        |
-        +-- arcanea.ai/api/vault/import        <- Arcanea bridge
-        |
-        v
-Popup (src/popup/index.ts)                     <- UI + controls
+---
+
+## What gets written
+
+Every captured thread becomes a folder. Inside, a single Markdown file
+is the canonical record:
+
+```markdown
+---
+id: a8d9e1c4-...
+slug: 2026-05-13_naming-the-extension
+title: "Naming the extension"
+platform: chatgpt
+source: https://chatgpt.com/c/a8d9e1c4
+capturedAt: 2026-05-13T22:14:00+02:00
+capturedBy: arcanea-threads/0.2.0
+schemaVersion: 0.2.0
+messageCount: 24
+hasMedia: true
+hasCode: false
+durationApprox: 47m
+characters: []
+locations: []
+artifacts: []
+lore: []
+themes: []
+status: raw
+worldbuilding: false
+tags: []
+---
+
+# Naming the extension
+
+> **Platform:** chatgpt · **Source:** [chatgpt.com/c/a8d9e1c4](…) · **Captured:** 2026-05-13T22:14:00+02:00
+
+## You
+
+What if we renamed the vault to something that points at the connection-graph end state?
+
+## ChatGPT
+
+Three candidates worth considering — Threads, Capture, Scribe …
 ```
 
-### Content Scripts
+The frontmatter is the **contract** — anything you build on top of the
+vault (skills, dashboards, automations) reads from those fields.
 
-Each platform has a dedicated scraper in `src/content/`:
-
-| File | Platform | What it scrapes |
-|------|----------|----------------|
-| `chatgpt.ts` | ChatGPT / OpenAI | Conversation turns, DALL-E image URLs |
-| `claude.ts` | Claude.ai | Conversation turns, artifacts, code blocks |
-| `gemini.ts` | Google Gemini + AI Studio | Conversation turns, generated images |
-| `grok.ts` | Grok | Conversation turns, Imagine images, Imagine videos |
-| `deepseek.ts` | DeepSeek | Conversation turns |
-| `perplexity.ts` | Perplexity | Conversation turns, source citations |
-
-Each scraper returns a `DetectionResult` with the same shape, enabling the background worker and popup to handle all platforms uniformly.
-
-### Export Engine
-
-`src/core/exporter.ts` handles format conversion:
-
-- **Markdown**: Full conversation with role headings, timestamps, and inline image references. Appends an Arcanea Vault attribution footer.
-- **JSON**: Raw `Conversation` object, structured for programmatic use.
-- **HTML**: Self-contained offline viewer with Arcanea-themed styling (dark mode, purple/teal accents).
-- **Text**: Plain transcript — compatible with any tool.
-
-### Storage Model
-
-`src/core/storage.ts` uses IndexedDB with three object stores:
-
-| Store | Key | Indexes |
-|-------|-----|---------|
-| `conversations` | `id` | `platform`, `capturedAt` |
-| `media` | `id` | `platform`, `type`, `capturedAt` |
-| `prompts` | `id` | `platform`, `capturedAt` |
+Full schema: **[FORMAT_SPEC.md](FORMAT_SPEC.md)**.
 
 ---
 
-## Development
+## The workflow this enables
 
-### Prerequisites
+The extension is one piece of a three-stage system:
 
-- Node.js 18+
-- Chrome 120+ (for MV3 + Side Panel API)
+```
+┌──────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│  Capture         │ →  │  Process           │ →  │  See               │
+│  (this ext)      │    │  (Claude Code skill│    │  (Obsidian graph,  │
+│                  │    │   /threads-process)│    │   second-brain UI) │
+└──────────────────┘    └────────────────────┘    └────────────────────┘
+   browser → disk         disk → entity links        disk → visual graph
+```
 
-### Commands
+- **Capture** (this repo): the extension. Local-first. No account.
+- **Process** (Claude Code): the [`threads-process`](.claude/commands/threads-process.md)
+  skill walks `ArcaneaThreads/` and emits `_entities/` notes for
+  characters, locations, artifacts, lore — fully Obsidian-linked.
+- **See**: Obsidian's native graph view shows the connections forming in
+  real time. Later, the Arcanea second-brain visualizer rebuilds this in
+  3D, but that is deferred — Obsidian carries day one.
+
+The moat is **not the extension**. It is the format + the skill + the
+eventual visualizer. The extension is the on-ramp.
+
+---
+
+## Install (manual / developer mode)
 
 ```bash
-# Install dependencies
-npm install
-
-# Development build (watch mode)
-npm run dev
-
-# Production build
-npm run build
-
-# Type check only
-npm run typecheck
-
-# Lint
-npm run lint
-
-# Clean dist
-npm run clean
+git clone https://github.com/frankxai/arcanea-vault arcanea-threads
+cd arcanea-threads
+pnpm install
+pnpm build
 ```
 
-### Stack
+Then in Chrome:
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| TypeScript | 5.7 | Strict type safety |
-| Vite | 5.x | Build tooling |
-| @crxjs/vite-plugin | beta.28 | Chrome extension HMR |
-| Tailwind CSS | 3.x | Popup/panel styling |
-| Chrome MV3 | - | Extension platform |
+1. Open `chrome://extensions/`.
+2. Toggle **Developer mode** (top right).
+3. **Load unpacked** → select the `dist/` folder.
+4. Pin the extension to the toolbar.
 
-**Important:** Vite 6 is not compatible with `@crxjs/vite-plugin` beta.28. The project is pinned to Vite 5.
-
-### Project Structure
-
-```
-arcanea-vault/
-├── manifest.json          # Extension manifest (MV3)
-├── popup.html             # Popup entry point
-├── sidepanel.html         # Side panel entry point
-├── src/
-│   ├── background/
-│   │   └── index.ts       # Service worker — download queue, message handlers
-│   ├── content/
-│   │   ├── chatgpt.ts     # ChatGPT scraper
-│   │   ├── claude.ts      # Claude.ai scraper
-│   │   ├── gemini.ts      # Google Gemini scraper
-│   │   ├── grok.ts        # Grok scraper
-│   │   ├── deepseek.ts    # DeepSeek scraper
-│   │   └── perplexity.ts  # Perplexity scraper
-│   ├── core/
-│   │   ├── types.ts       # Shared type definitions
-│   │   ├── detector.ts    # Platform URL detection
-│   │   ├── scraper.ts     # Shared scraping utilities
-│   │   ├── storage.ts     # IndexedDB wrapper
-│   │   └── exporter.ts    # Format conversion engine
-│   ├── popup/
-│   │   └── index.ts       # Popup logic and UI
-│   └── styles/
-│       └── popup.css      # Tailwind entry
-├── icons/                 # Extension icons (16, 48, 128px)
-└── dist/                  # Built extension (load this in Chrome)
-```
-
-### Message Protocol
-
-The popup communicates with the service worker via `chrome.runtime.sendMessage`. Available message types:
-
-| Message Type | Description |
-|---|---|
-| `VAULT_DETECT_TAB` | Trigger detection on the active tab |
-| `VAULT_QUICK_EXPORT` | Detect + save + download in one action |
-| `VAULT_SAVE` | Persist a DetectionResult to IndexedDB |
-| `VAULT_EXPORT` | Export a stored conversation by ID |
-| `VAULT_EXPORT_PROMPTS` | Export all captured prompts |
-| `VAULT_DOWNLOAD_MEDIA` | Queue media file downloads |
-| `VAULT_SEND_TO_PROMPT_BOOKS` | Bridge content to arcanea.ai |
-| `VAULT_STATS` | Get vault storage stats |
+The repo URL is still `arcanea-vault` until the GitHub rename lands — the
+product name is **Arcanea Threads** v0.2.0.
 
 ---
 
 ## Privacy
 
-Arcanea Vault is local-first and privacy-first:
-
-- No data collection
-- No analytics
-- No tracking or cookies
-- All processing happens in your browser
-- All data stored in your browser's IndexedDB
-- Network requests made only to: the AI platform you are currently on, and `arcanea.ai` when you explicitly use "Send to Prompt Books"
-
-Full privacy policy: [arcanea.ai/vault/privacy](https://arcanea.ai/vault/privacy)
+- Everything captured lives on **your disk** inside `ArcaneaThreads/`.
+- IndexedDB is used only as an in-extension lookup index for fast
+  cross-conversation queries. The filesystem is the source of truth.
+- No telemetry. No analytics. No account required.
+- A single optional **"Send to Arcanea"** button exists in the popup for
+  users who want to mirror captures to their Arcanea second-brain. It is
+  off by default and never fires without an explicit click.
+- Host permissions are limited to the AI platforms the scrapers run on,
+  plus `arcanea.ai` for the optional bridge. Nothing else.
 
 ---
 
 ## Roadmap
 
-| Version | Feature |
-|---------|---------|
-| 0.1.0 | Core export — conversations, images, prompts. 6 platforms. IndexedDB storage. |
-| 0.2.0 | Side panel library — browse and search captured content |
-| 0.3.0 | Bulk session export, date range filtering |
-| 0.4.0 | Google Drive and Notion sync integrations |
-| 1.0.0 | Chrome Web Store release |
+| Version | Scope |
+|---------|-------|
+| **0.2.0** *(current)* | Local-first vault, Obsidian-compatible markdown, `threads-process` skill, redesigned popup. |
+| 0.2.1 | Side-panel browser for the local vault; in-extension search. |
+| 0.3.0 | Per-platform scraper hardening (DOM drift fixes); idempotent re-capture. |
+| 0.4.0 | Real-time graph preview inside the side panel (D3 + frontmatter links). |
+| 0.5.0 | Arcanea second-brain bridge: opt-in mirror of `_entities/` into the user's Living Worlds graph. |
 
 ---
 
-## Part of the Arcanea Ecosystem
+## Development
 
-| Project | Purpose |
-|---------|---------|
-| [arcanea.ai](https://arcanea.ai) | The Arcanea platform — Prompt Books, Guardian AI, universe building |
-| [Arcanea Monorepo](https://github.com/frankxai/Arcanea) | Core SDK, CLI, MCP server, web app |
-| [Arcanea Realm](https://github.com/frankxai/arcanea-realm) | AI CLI with Guardian intelligence (OpenCode fork) |
-| [Arcanea On-Chain](https://github.com/frankxai/arcanea-onchain) | Blockchain IP and creator economy infrastructure |
-| [Starlight Intelligence System](https://github.com/frankxai/Starlight-Intelligence-System) | Persistent context and memory layer for AI agents |
+```bash
+pnpm install          # workspace install
+pnpm typecheck        # TS check
+pnpm build            # one-shot production build to dist/
+pnpm dev              # watch mode (for active development only)
+pnpm lint             # eslint
+```
+
+Stack: TypeScript 5, Vite 5, `@crxjs/vite-plugin` for MV3, Tailwind 3
+(currently only for the unused side-panel scaffold).
 
 ---
 
 ## License
 
-[MIT](LICENSE) — Build freely. Create boldly. Own what you make.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Built by [Arcanea](https://arcanea.ai) — Imagine a Good Future. Build It Here.*
+*Built by [Frank](https://arcanea.ai) as the capture on-ramp for the
+Arcanea creative OS.*

@@ -3,51 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arcanea Vault</title>
+  <title>Arcanea Threads</title>
   <link rel="stylesheet" href="src/styles/popup.css">
 </head>
 <body>
-  <!-- Header -->
   <header class="header">
     <div class="header-brand">
-      <div class="logo">V</div>
+      <div class="logo" aria-hidden="true">A</div>
       <div>
-        <h1 class="title">Arcanea Vault</h1>
-        <p class="subtitle" id="status">Detecting platform...</p>
+        <h1 class="title">Arcanea Threads</h1>
+        <p class="subtitle" id="status">Detecting platform…</p>
       </div>
     </div>
     <div class="platform-badge" id="platform-badge">
-      <span id="platform-icon"></span>
+      <span id="platform-icon" aria-hidden="true"></span>
       <span id="platform-name"></span>
     </div>
   </header>
 
-  <!-- Unsupported state -->
   <div id="unsupported" class="section hidden">
     <div class="empty-state">
       <p class="empty-title">Not on an AI platform</p>
-      <p class="empty-desc">Navigate to ChatGPT, Claude, Gemini, Grok, DeepSeek, or Perplexity to start capturing.</p>
+      <p class="empty-desc">Open a conversation on one of these tools to capture it into your local vault.</p>
       <div class="platform-grid">
-        <span class="platform-chip">Grok</span>
         <span class="platform-chip">ChatGPT</span>
         <span class="platform-chip">Claude</span>
         <span class="platform-chip">Gemini</span>
+        <span class="platform-chip">Grok</span>
         <span class="platform-chip">DeepSeek</span>
         <span class="platform-chip">Perplexity</span>
       </div>
     </div>
   </div>
 
-  <!-- Error state -->
   <div id="error" class="section error-box hidden"></div>
 
-  <!-- Results -->
   <div id="results" class="section hidden">
-    <!-- Stats grid -->
     <div class="stats-grid">
       <div class="stat-card">
         <span class="stat-value" id="stat-conversations">0</span>
-        <span class="stat-label">Conversations</span>
+        <span class="stat-label">Threads</span>
       </div>
       <div class="stat-card">
         <span class="stat-value" id="stat-images">0</span>
@@ -63,28 +58,26 @@
       </div>
     </div>
 
-    <!-- Format selector -->
     <div class="format-row">
-      <label for="format-select">Export as</label>
+      <label for="format-select">Format</label>
       <select id="format-select">
-        <option value="markdown">Markdown</option>
+        <option value="markdown">Markdown (Obsidian)</option>
         <option value="json">JSON</option>
         <option value="html">HTML</option>
-        <option value="txt">Plain Text</option>
+        <option value="txt">Plain text</option>
       </select>
     </div>
 
-    <!-- Action buttons -->
     <div class="actions">
       <button id="btn-quick-export" class="btn btn-primary">
-        Quick Export All
+        Capture to vault
       </button>
-      <button id="btn-send-prompt-books" class="btn btn-accent">
-        Send to Prompt Books
+      <button id="btn-send-prompt-books" class="btn btn-accent" title="Off by default. Sends a copy to your Arcanea account.">
+        Send to Arcanea (opt-in)
       </button>
       <div class="actions-row">
         <button id="btn-export-conversations" class="btn btn-secondary" disabled>
-          Conversations
+          Threads
         </button>
         <button id="btn-download-media" class="btn btn-secondary" disabled>
           Media
@@ -95,16 +88,14 @@
       </div>
     </div>
 
-    <!-- Rescan -->
     <button id="btn-scan" class="btn btn-ghost">
-      Rescan Page
+      Rescan page
     </button>
   </div>
 
-  <!-- Footer -->
   <footer class="footer">
-    <span>Arcanea Vault v0.1.0</span>
-    <span class="footer-dot">&middot;</span>
+    <span>Arcanea Threads v0.2.0</span>
+    <span class="footer-dot">·</span>
     <span>Local-first. No tracking.</span>
   </footer>
 

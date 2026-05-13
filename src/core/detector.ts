@@ -1,5 +1,5 @@
 // ============================================================
-// Arcanea Vault — Platform Detector
+// Arcanea Threads — Platform Detector
 // Auto-detects which AI platform the user is on.
 // ============================================================
 
