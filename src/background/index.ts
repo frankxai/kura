@@ -294,6 +294,11 @@ const messageHandlers: Record<string, MessageHandler> = {
 
   KURA_STATS: async () => vault.getStats(),
 
+  KURA_LIST_CONVERSATIONS: async (message) => {
+    const platform = message.platform as Platform | undefined;
+    return vault.listConversations(platform);
+  },
+
   // Opt-in cloud bridge — disabled by default per the local-first manifesto.
   // The user must explicitly toggle "Send to Arcanea" in settings before this fires.
   KURA_SEND_TO_ARCANEA: async (message) => {

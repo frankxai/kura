@@ -1,0 +1,141 @@
+/* ============================================================
+   Arcanea Kura — Side-panel Library
+   Extends popup.css tokens.
+   ============================================================ */
+
+.sidepanel-body {
+  width: 100%;
+  min-width: 320px;
+  max-width: 100vw;
+}
+
+.lib-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.lib-search,
+.lib-filter {
+  appearance: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-hi);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.lib-search::placeholder { color: var(--fg-faint); }
+
+.lib-search:focus,
+.lib-filter:focus,
+.lib-search:hover,
+.lib-filter:hover {
+  border-color: var(--teal-edge);
+}
+
+.lib-filter {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.lib-empty {
+  padding: 36px 24px;
+  text-align: center;
+}
+
+.lib-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 16px;
+}
+
+.lib-item {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.lib-item:hover {
+  background: var(--surface);
+}
+
+.lib-item-glyph {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--teal);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 14px;
+}
+
+.lib-item-body {
+  min-width: 0;
+}
+
+.lib-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lib-item-meta {
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--fg-faint);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lib-item-platform {
+  color: var(--teal);
+  text-transform: uppercase;
+}
+
+.lib-item-dot { color: var(--border-hi); }
+
+.lib-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lib-item-link {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  color: var(--fg-faint);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+
+.lib-item-link:hover {
+  color: var(--teal);
+  border-color: var(--teal-edge);
+}

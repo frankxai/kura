@@ -45,9 +45,54 @@ const PLATFORM_ICONS: Record<string, string> = {
   perplexity: '⊕', // ⊕
 };
 
+// -- Bridge reachability ------------------------------------------------------
+//
+// The "Send to Arcanea (opt-in)" button is only useful if the bridge endpoint
+// is alive. Ping it on popup boot and cache the result for 10 minutes so we
+// don't pay the round trip every time the popup opens. If unreachable, hide
+// the button outright — users never click into an error.
+
+const BRIDGE_HEALTH_URL = 'https://arcanea.ai/api/kura/health';
+const BRIDGE_TTL_MS = 10 * 60 * 1000;
+
+async function ensureBridgeStatus(): Promise<boolean> {
+  try {
+    const cached = await chrome.storage.local.get(['kura_bridge_ok', 'kura_bridge_at']);
+    const at = Number(cached.kura_bridge_at ?? 0);
+    if (Date.now() - at < BRIDGE_TTL_MS && typeof cached.kura_bridge_ok === 'boolean') {
+      return cached.kura_bridge_ok;
+    }
+    const controller = new AbortController();
+    const tm = setTimeout(() => controller.abort(), 2_000);
+    const res = await fetch(BRIDGE_HEALTH_URL, { signal: controller.signal });
+    clearTimeout(tm);
+    const ok = res.ok;
+    await chrome.storage.local.set({
+      kura_bridge_ok: ok,
+      kura_bridge_at: Date.now(),
+    });
+    return ok;
+  } catch {
+    await chrome.storage.local.set({
+      kura_bridge_ok: false,
+      kura_bridge_at: Date.now(),
+    });
+    return false;
+  }
+}
+
+async function applyBridgeUI(): Promise<void> {
+  const ok = await ensureBridgeStatus();
+  if (!ok) {
+    $sendArcanea.classList.add('hidden');
+  }
+}
+
 // -- Boot --
 
 async function init(): Promise<void> {
+  void applyBridgeUI(); // fire-and-forget, won't block detection
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.url) {
     showUnsupported();

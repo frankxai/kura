@@ -3,27 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arcanea Vault — Library</title>
+  <title>Arcanea Kura — Library</title>
   <link rel="stylesheet" href="src/styles/popup.css">
+  <link rel="stylesheet" href="src/styles/sidepanel.css">
 </head>
-<body>
+<body class="sidepanel-body">
   <header class="header">
     <div class="header-brand">
-      <div class="logo">V</div>
+      <div class="logo" aria-hidden="true">K</div>
       <div>
-        <h1 class="title">Vault Library</h1>
-        <p class="subtitle">Your captured AI creations</p>
+        <h1 class="title">Library</h1>
+        <p class="subtitle" id="lib-stats">Loading…</p>
       </div>
+    </div>
+    <div class="platform-badge">
+      <span>蔵</span>
     </div>
   </header>
 
-  <div class="section">
-    <p class="empty-desc">Side panel library coming in v0.2.0</p>
-    <p class="empty-desc">Browse, search, and manage all your exported conversations, images, and prompts.</p>
+  <div class="lib-toolbar">
+    <input
+      id="lib-search"
+      type="search"
+      placeholder="Search captures…"
+      class="lib-search"
+      autocomplete="off"
+    />
+    <select id="lib-filter" class="lib-filter">
+      <option value="">All platforms</option>
+      <option value="chatgpt">ChatGPT</option>
+      <option value="claude">Claude</option>
+      <option value="gemini">Gemini</option>
+      <option value="grok">Grok</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="perplexity">Perplexity</option>
+    </select>
   </div>
 
+  <div id="lib-empty" class="lib-empty hidden">
+    <p class="empty-title">No captures yet</p>
+    <p class="empty-desc">Open a conversation on any supported AI platform, then click <strong>Export to Kura</strong> in the popup.</p>
+  </div>
+
+  <ul id="lib-list" class="lib-list"></ul>
+
   <footer class="footer">
-    <span>Arcanea Vault v0.1.0</span>
+    <span>Arcanea Kura v0.2.0</span>
+    <span class="footer-dot">·</span>
+    <a href="https://github.com/frankxai/arcanea-vault" class="footer-link" target="_blank" rel="noopener">github</a>
   </footer>
+
+  <script type="module" src="src/sidepanel/index.ts"></script>
 </body>
 </html>
