@@ -24,7 +24,9 @@ const PLATFORM_GLYPH: Record<Platform, string> = {
 };
 
 async function fetchAll(): Promise<Conversation[]> {
-  const res = await chrome.runtime.sendMessage({ type: 'KURA_STATS' });
+  // Warm the background SW with a stats ping so the next message is
+  // served from a hot service worker (KURA_STATS is a no-op on the UI).
+  await chrome.runtime.sendMessage({ type: 'KURA_STATS' });
   // The background handler returns VaultStats not full convos; use the
   // direct vault.listConversations message instead. We expose a dedicated
   // KURA_LIST message — fall back gracefully if the SW is older.
