@@ -54,8 +54,10 @@ test.describe('Arcanea Kura extension — load + detection', () => {
   });
 
   test('service worker registers', async () => {
-    // Wait up to 10s for the MV3 service worker to come online.
-    const worker = await context.waitForEvent('serviceworker', { timeout: 10_000 });
+    // Wait up to 30s for the MV3 service worker to come online. Local
+    // hits this in <500ms; CI Linux with xvfb sometimes needs >10s to
+    // bootstrap the headed Chromium + register the SW.
+    const worker = await context.waitForEvent('serviceworker', { timeout: 30_000 });
     expect(worker.url()).toContain('service-worker');
   });
 
