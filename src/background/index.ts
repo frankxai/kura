@@ -11,7 +11,6 @@ import {
   exportConversation,
   exportPrompts,
   renderMediaPromptSidecar,
-  assetPath,
 } from '@/core/exporter';
 import { VAULT_ROOT, assetName, buildSlug } from '@/core/frontmatter';
 import type {
@@ -186,6 +185,7 @@ function guessExt(media: MediaItem): string {
 
 function sanitizeFilename(name: string): string {
   return name
+    // eslint-disable-next-line no-control-regex -- intentional: strip OS-reserved + control chars from filename
     .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
     .replace(/\s+/g, '_')
     .slice(0, 100);

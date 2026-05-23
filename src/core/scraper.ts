@@ -153,6 +153,7 @@ export abstract class PlatformScraper {
   /** Utility: sanitize filename */
   protected sanitizeFilename(name: string): string {
     return name
+      // eslint-disable-next-line no-control-regex -- intentional: strip OS-reserved + control chars from filename
       .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
       .replace(/\s+/g, '_')
       .slice(0, 200);

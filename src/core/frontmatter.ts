@@ -3,7 +3,7 @@
 // YAML frontmatter conforming to FORMAT_SPEC.md v0.2.0
 // ============================================================
 
-import type { Conversation, MediaItem, PromptItem, Platform } from './types';
+import type { Conversation, MediaItem, Platform } from './types';
 
 export const SCHEMA_VERSION = '0.2.0';
 export const CAPTURED_BY = 'kura/0.2.0';
@@ -202,6 +202,7 @@ export function promptCollectionFrontmatter(
 /** Sanitize an arbitrary string for use as a filename segment. */
 export function sanitizeFilename(name: string): string {
   return name
+    // eslint-disable-next-line no-control-regex -- intentional: strip OS-reserved + control chars from filename
     .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
     .replace(/\s+/g, '_')
     .slice(0, 100);
