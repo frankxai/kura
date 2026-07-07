@@ -1,4 +1,4 @@
-# arcanea-vault — Agent Instructions
+﻿# arcanea-vault â€” Agent Instructions
 
 Read `CLAUDE.md` first when present. This file is the cross-agent entry point.
 
@@ -22,4 +22,16 @@ git status
 ```
 
 Run storage-adjacent tests before committing persistence changes.
+
+## Design Taste Kernel
+
+For any site, app, landing page, dashboard, visual identity, brand, motion, media, social, or frontend task, apply the shared Design Taste Kernel before handoff:
+
+- C:\Users\frank\starlight\repos\DESIGN_TASTE.md
+- C:\Users\frank\starlight\repos\WEB_EXPERIENCE_STANDARD.md
+- C:\Users\frank\starlight\repos\MOTION_TASTE_RUBRIC.md
+- C:\Users\frank\starlight\repos\MULTI_AGENT_DESIGN_COUNCIL.md
+- C:\Users\frank\starlight\repos\VISUAL_QA_GATE.md
+
+When motion, scroll, generated media, GIF/video, or premium polish matters, route through the Motion Design Studio plugin/skills and verify the result visually.
 
