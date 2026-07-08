@@ -70,6 +70,26 @@ into your second brain of choice. Kura never assumes.
 | Perplexity   | ✓ | — | — |
 | Google AI Studio | ✓ | ✓ | ✓ |
 
+Capture the current conversation from the popup, or hit
+**Alt+Shift+K** anywhere on a supported platform.
+
+---
+
+## Suno Harvester
+
+The side panel's **Suno** tab turns Kura into a music-catalog harvester —
+the first non-conversation surface built on the same local-first spine:
+
+1. **Index** — walks your public Suno profile (no auth, no tokens) and
+   writes `suno/catalog.jsonl`, one JSON row per track.
+2. **Flag** — star tracks in the panel, or let an agent write
+   `suno/flags.json` (`node scripts/suno-flags.mjs <intake> top 10`).
+3. **Fetch flagged** — downloads audio (or audio + video + cover) at human
+   cadence straight into your intake folder via the File System Access
+   API. A `downloads.json` ledger makes re-runs idempotent.
+
+Spec: [docs/specs/SUNO-HARVESTER.md](docs/specs/SUNO-HARVESTER.md).
+
 ---
 
 ## What gets written
@@ -220,10 +240,10 @@ Full policy: [arcanea.ai/privacy/kura](https://arcanea.ai/privacy/kura).
 | Version | Scope |
 |---------|-------|
 | **0.2.0** *(current)* | Sovereign Kura: local-first vault, Obsidian-compatible markdown, generic `kura-process` skill, optional `arcanea-kura-process` worldbuilding skill, redesigned popup, sidepanel library, Playwright extension test. |
-| 0.2.1 | Side-panel browser improvements; in-extension full-text search. |
-| 0.3.0 | Per-platform scraper hardening (DOM drift fixes); idempotent re-capture; PNG screenshot export. |
-| 0.4.0 | Real-time graph preview inside the side panel (D3 + frontmatter links). |
-| 0.5.0 | Logseq / Anytype integration recipes. |
+| **0.3.0** *(in progress)* | Suno Harvester (catalog index + flagged downloads via File System Access), sidepanel tabs, capture keyboard shortcut, WXT build migration, per-platform scraper hardening. |
+| 0.3.1 | Core vault writes via File System Access (offscreen document) — no more Downloads-folder hop. |
+| 0.4.0 | Real-time graph preview inside the side panel (D3 + frontmatter links); PNG screenshot export. |
+| 0.5.0 | Logseq / Anytype integration recipes; Firefox port. |
 
 ---
 
