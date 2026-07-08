@@ -191,6 +191,36 @@ function sanitizeFilename(name: string): string {
     .slice(0, 100);
 }
 
+/** Detect + persist the active tab's conversation. Shared by the popup's
+ *  Export button and the keyboard command. */
+async function captureActiveTab(
+  options: ExportOptions,
+): Promise<{ error: string } | { platform: Platform; vaultRoot: string; captured: unknown }> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !tab.url) return { error: 'No active tab' };
+
+  const platform = detectPlatform(tab.url);
+  if (!platform) return { error: 'Not on a supported AI platform' };
+
+  let detection: DetectionResult;
+  try {
+    detection =
+      (await chrome.tabs
+        .sendMessage(tab.id, { type: 'KURA_DETECT' })
+        .catch(() => null)) ??
+      ((await chrome.tabs.sendMessage(tab.id, { type: 'VAULT_DETECT' })) as DetectionResult);
+  } catch {
+    return { error: `Content script not loaded. Refresh ${platform.name}.` };
+  }
+
+  const counts = await persistDetection(detection, options);
+  return {
+    platform: platform.platform,
+    vaultRoot: VAULT_ROOT,
+    captured: counts,
+  };
+}
+
 // ============================================================
 // Message handling
 // ============================================================
@@ -232,32 +262,8 @@ const messageHandlers: Record<string, MessageHandler> = {
     }
   },
 
-  KURA_CAPTURE: async (message) => {
-    const options = (message.options as ExportOptions) || defaultOptions();
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id || !tab.url) return { error: 'No active tab' };
-
-    const platform = detectPlatform(tab.url);
-    if (!platform) return { error: 'Not on a supported AI platform' };
-
-    let detection: DetectionResult;
-    try {
-      detection =
-        (await chrome.tabs
-          .sendMessage(tab.id, { type: 'KURA_DETECT' })
-          .catch(() => null)) ??
-        ((await chrome.tabs.sendMessage(tab.id, { type: 'VAULT_DETECT' })) as DetectionResult);
-    } catch {
-      return { error: `Content script not loaded. Refresh ${platform.name}.` };
-    }
-
-    const counts = await persistDetection(detection, options);
-    return {
-      platform: platform.platform,
-      vaultRoot: VAULT_ROOT,
-      captured: counts,
-    };
-  },
+  KURA_CAPTURE: async (message) =>
+    captureActiveTab((message.options as ExportOptions) || defaultOptions()),
 
   KURA_EXPORT_ONE: async (message) => {
     const id = message.conversationId as string;
@@ -378,6 +384,26 @@ function defaultOptions(): ExportOptions {
 // ============================================================
 // Extension icon badge (per-tab platform indicator)
 // ============================================================
+
+// Keyboard command: capture the active conversation without opening the
+// popup. Feedback lands on the action badge since there is no UI surface.
+chrome.commands.onCommand.addListener((command) => {
+  if (command !== 'kura-capture') return;
+  void (async () => {
+    const result = await captureActiveTab(defaultOptions());
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+    const ok = !('error' in result);
+    await chrome.action.setBadgeText({ text: ok ? '✓' : '!', tabId: tab.id });
+    await chrome.action.setBadgeBackgroundColor({
+      color: ok ? '#4ade80' : '#f87171',
+      tabId: tab.id,
+    });
+    setTimeout(() => {
+      chrome.action.setBadgeText({ text: '', tabId: tab.id }).catch(() => {});
+    }, 2500);
+  })();
+});
 
 const BADGE_COLOR = '#00bcd4'; // Atlantean Teal per @arcanea/design-system
 

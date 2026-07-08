@@ -127,4 +127,26 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     // 蔵 character should render in the platform badge
     await expect(sidepanel.locator('.platform-badge')).toContainText('蔵');
   });
+
+  test('sidepanel Suno tab gates harvester actions on folder connection', async () => {
+    const workers = context.serviceWorkers();
+    const extensionId = workers[0].url().split('/')[2];
+
+    const sidepanel = await context.newPage();
+    await sidepanel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+
+    await sidepanel.locator('#tab-suno').click();
+    await expect(sidepanel.locator('#panel-title')).toHaveText('Suno Harvester');
+    await expect(sidepanel.locator('#view-library')).toBeHidden();
+    await expect(sidepanel.locator('#suno-handle')).toHaveValue('frankx');
+    // No intake folder connected yet — every harvest action must be gated off.
+    await expect(sidepanel.locator('#suno-folder-name')).toContainText('no folder connected');
+    await expect(sidepanel.locator('#suno-index')).toBeDisabled();
+    await expect(sidepanel.locator('#suno-fetch-audio')).toBeDisabled();
+    await expect(sidepanel.locator('#suno-fetch-av')).toBeDisabled();
+    // Switching back restores the library view.
+    await sidepanel.locator('#tab-library').click();
+    await expect(sidepanel.locator('#panel-title')).toHaveText('Library');
+    await expect(sidepanel.locator('#view-suno')).toBeHidden();
+  });
 });

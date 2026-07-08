@@ -31,9 +31,6 @@ export type ExportFormat =
   | 'docx'
   | 'csv';
 
-/** Subscription tier */
-export type Tier = 'free' | 'pro' | 'creator';
-
 /** A single message in a conversation */
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -146,33 +143,3 @@ export interface VaultStats {
   lastCaptureAt?: string;
 }
 
-/** Tier limits */
-export const TIER_LIMITS: Record<Tier, {
-  exportsPerDay: number;
-  formats: ExportFormat[];
-  platforms: Platform[];
-  bulkDownload: boolean;
-  syncIntegrations: boolean;
-}> = {
-  free: {
-    exportsPerDay: 10,
-    formats: ['markdown', 'json'],
-    platforms: ['grok', 'chatgpt', 'claude', 'gemini', 'deepseek', 'perplexity'],
-    bulkDownload: false,
-    syncIntegrations: false,
-  },
-  pro: {
-    exportsPerDay: Infinity,
-    formats: ['markdown', 'json', 'html', 'pdf', 'txt', 'docx', 'csv'],
-    platforms: ['grok', 'chatgpt', 'claude', 'gemini', 'deepseek', 'perplexity'],
-    bulkDownload: true,
-    syncIntegrations: false,
-  },
-  creator: {
-    exportsPerDay: Infinity,
-    formats: ['markdown', 'json', 'html', 'pdf', 'txt', 'docx', 'csv'],
-    platforms: ['grok', 'chatgpt', 'claude', 'gemini', 'deepseek', 'perplexity'],
-    bulkDownload: true,
-    syncIntegrations: true,
-  },
-};

@@ -19,6 +19,14 @@
   "side_panel": {
     "default_path": "sidepanel.html"
   },
+  "commands": {
+    "kura-capture": {
+      "suggested_key": {
+        "default": "Alt+Shift+K"
+      },
+      "description": "Export the current AI conversation to Kura"
+    }
+  },
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
