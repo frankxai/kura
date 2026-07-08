@@ -31,21 +31,23 @@ Read in this order before substantive work:
 
 ## File organization
 
-- `src/background/index.ts` — MV3 service worker. Routes messages,
-  manages the download queue, writes files via `chrome.downloads`.
-- `src/content/<platform>.ts` — per-platform scrapers. Each exports a
-  detector that returns a `DetectionResult` per `src/core/types.ts`.
+- `src/entrypoints/background.ts` — MV3 service worker (WXT `defineBackground`).
+  Routes messages, manages the download queue, writes files via `chrome.downloads`.
+- `src/entrypoints/<platform>.content.ts` — per-platform scrapers (WXT
+  `defineContentScript`). Each exports a detector that returns a
+  `DetectionResult` per `src/core/types.ts`.
 - `src/core/frontmatter.ts` — single source for YAML frontmatter
   generation. **`SCHEMA_VERSION` and `VAULT_ROOT` live here.**
 - `src/core/exporter.ts` — renders `conversation.md`, `prompts.md`, and
   HTML/JSON/text fallbacks. Emits `ConversationBundle`s.
 - `src/core/storage.ts` — IndexedDB wrapper (the in-extension query index).
 - `src/core/detector.ts` — URL → platform routing.
-- `src/popup/index.ts` + `popup.html` + `src/styles/popup.css` — the user
-  surface. Design tokens align to `@arcanea/design-system`: Atlantean
-  Teal (`#00bcd4`), Cosmic Blue (`#0d47a1`), Gold (`#ffd700`), background
-  `#09090b`. Fonts: Geist (UI), Instrument Serif (display), JetBrains
-  Mono (mono). **Never Inter, Cinzel, or Space Grotesk.**
+- `src/entrypoints/popup/main.ts` + `src/entrypoints/popup/index.html` +
+  `src/styles/popup.css` — the user surface. Design tokens align to
+  `@arcanea/design-system`: Atlantean Teal (`#00bcd4`), Cosmic Blue
+  (`#0d47a1`), Gold (`#ffd700`), background `#09090b`. Fonts: Geist (UI),
+  Instrument Serif (display), JetBrains Mono (mono). **Never Inter,
+  Cinzel, or Space Grotesk.**
 - `.claude/commands/kura-process.md` — the processing skill.
 
 ## Message namespace
@@ -61,14 +63,15 @@ new names — track in v0.3.
 ```bash
 pnpm install
 pnpm typecheck          # tsc --noEmit
-pnpm build              # tsc + vite build → dist/
+pnpm build              # tsc + wxt build → dist/
 pnpm lint               # eslint flat config
 pnpm dev                # watch mode — only during active dev
 pnpm clean              # rm -rf dist
 ```
 
-Always `pnpm build` before claiming work is shippable. Vite's CRX plugin
-is sensitive to manifest drift; the build catches it.
+Always `pnpm build` before claiming work is shippable. WXT generates
+`dist/manifest.json` from `wxt.config.ts` + the `src/entrypoints/`
+directory; the build catches manifest drift.
 
 ## Git discipline
 

@@ -61,7 +61,9 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     const worker =
       context.serviceWorkers()[0] ??
       (await context.waitForEvent('serviceworker', { timeout: 30_000 }));
-    expect(worker.url()).toContain('service-worker');
+    // WXT bundles the background entrypoint to `background.js` at the
+    // extension root (crxjs used a `service-worker-loader.js` shim).
+    expect(worker.url()).toContain('background.js');
   });
 
   test('content script detects mock ChatGPT page', async () => {
@@ -70,9 +72,10 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     // The real content script matches `chatgpt.com/*` host pattern. Local
     // file:// fixtures won't trigger the host-match, so we directly inject
     // the built scraper module to validate it parses our DOM correctly.
-    const scriptPath = path.join(DIST, 'assets');
+    // WXT bundles each `*.content.ts` entrypoint to `content-scripts/<name>.js`.
+    const scriptPath = path.join(DIST, 'content-scripts');
     const files = fs.readdirSync(scriptPath);
-    const scraper = files.find((f) => f.startsWith('chatgpt.ts-') && f.endsWith('.js'));
+    const scraper = files.find((f) => f === 'chatgpt.js');
     expect(scraper, 'compiled chatgpt scraper present').toBeTruthy();
 
     // Inject the scraper and call its detection function. We're not testing

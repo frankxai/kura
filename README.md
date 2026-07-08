@@ -258,7 +258,7 @@ pnpm lint             # eslint
 pnpm test:extension   # Playwright end-to-end against built dist/
 ```
 
-Stack: TypeScript 5, Vite 5, `@crxjs/vite-plugin` for MV3, Playwright
+Stack: TypeScript 5, [WXT](https://wxt.dev) for MV3, Playwright
 for browser integration tests.
 
 ---
