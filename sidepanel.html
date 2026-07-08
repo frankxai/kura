@@ -12,7 +12,7 @@
     <div class="header-brand">
       <div class="logo" aria-hidden="true">K</div>
       <div>
-        <h1 class="title">Library</h1>
+        <h1 class="title" id="panel-title">Library</h1>
         <p class="subtitle" id="lib-stats">Loading…</p>
       </div>
     </div>
@@ -21,31 +21,86 @@
     </div>
   </header>
 
-  <div class="lib-toolbar">
-    <input
-      id="lib-search"
-      type="search"
-      placeholder="Search captures…"
-      class="lib-search"
-      autocomplete="off"
-    />
-    <select id="lib-filter" class="lib-filter">
-      <option value="">All platforms</option>
-      <option value="chatgpt">ChatGPT</option>
-      <option value="claude">Claude</option>
-      <option value="gemini">Gemini</option>
-      <option value="grok">Grok</option>
-      <option value="deepseek">DeepSeek</option>
-      <option value="perplexity">Perplexity</option>
-    </select>
-  </div>
+  <nav class="tabs" role="tablist" aria-label="Kura panels">
+    <button class="tab is-active" id="tab-library" role="tab" aria-selected="true" aria-controls="view-library">Library</button>
+    <button class="tab" id="tab-suno" role="tab" aria-selected="false" aria-controls="view-suno">Suno</button>
+  </nav>
 
-  <div id="lib-empty" class="lib-empty hidden">
-    <p class="empty-title">No captures yet</p>
-    <p class="empty-desc">Open a conversation on any supported AI platform, then click <strong>Export to Kura</strong> in the popup.</p>
-  </div>
+  <!-- ======================= Library view ======================= -->
+  <section id="view-library" role="tabpanel" aria-labelledby="tab-library">
+    <div class="lib-toolbar">
+      <input
+        id="lib-search"
+        type="search"
+        placeholder="Search captures…"
+        aria-label="Search captures"
+        class="lib-search"
+        autocomplete="off"
+      />
+      <select id="lib-filter" class="lib-filter" aria-label="Filter by platform">
+        <option value="">All platforms</option>
+        <option value="chatgpt">ChatGPT</option>
+        <option value="claude">Claude</option>
+        <option value="gemini">Gemini</option>
+        <option value="grok">Grok</option>
+        <option value="deepseek">DeepSeek</option>
+        <option value="perplexity">Perplexity</option>
+      </select>
+    </div>
 
-  <ul id="lib-list" class="lib-list"></ul>
+    <div id="lib-empty" class="lib-empty hidden">
+      <p class="empty-title">No captures yet</p>
+      <p class="empty-desc">Open a conversation on any supported AI platform, then click <strong>Export to Kura</strong> in the popup.</p>
+    </div>
+
+    <ul id="lib-list" class="lib-list"></ul>
+  </section>
+
+  <!-- ======================= Suno view ======================= -->
+  <section id="view-suno" role="tabpanel" aria-labelledby="tab-suno" class="hidden">
+    <div class="suno-setup">
+      <div class="suno-folder-row">
+        <button id="suno-pick-folder" class="btn btn-ghost" title="Choose the local intake folder (e.g. Arcanea/intake)">
+          Choose intake folder
+        </button>
+        <span id="suno-folder-name" class="suno-folder-name">no folder connected</span>
+      </div>
+      <div class="suno-handle-row">
+        <label for="suno-handle" class="suno-label">Profile</label>
+        <input id="suno-handle" class="lib-search suno-handle" type="text" value="frankx" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="suno-actions">
+        <button id="suno-index" class="btn btn-primary" disabled>Index catalog</button>
+        <div class="suno-actions-row">
+          <button id="suno-fetch-audio" class="btn btn-secondary" disabled>Fetch flagged · audio</button>
+          <button id="suno-fetch-av" class="btn btn-secondary" disabled>Fetch flagged · audio + video</button>
+        </div>
+        <button id="suno-cancel" class="btn btn-ghost hidden">Cancel</button>
+      </div>
+    </div>
+
+    <div id="suno-progress" class="suno-progress hidden" role="status" aria-live="polite">
+      <div class="suno-progress-bar"><div id="suno-progress-fill" class="suno-progress-fill"></div></div>
+      <p id="suno-progress-text" class="suno-progress-text"></p>
+    </div>
+
+    <div class="lib-toolbar">
+      <input id="suno-search" type="search" placeholder="Search tracks…" aria-label="Search tracks" class="lib-search" autocomplete="off" />
+      <select id="suno-sort" class="lib-filter" aria-label="Sort tracks">
+        <option value="newest">Newest</option>
+        <option value="plays">Most plays</option>
+        <option value="likes">Most likes</option>
+        <option value="flagged">Flagged first</option>
+      </select>
+    </div>
+
+    <div id="suno-empty" class="lib-empty">
+      <p class="empty-title">No catalog yet</p>
+      <p class="empty-desc">Connect your intake folder, then click <strong>Index catalog</strong> to pull your public Suno tracks into <code>suno/catalog.jsonl</code>.</p>
+    </div>
+
+    <ul id="suno-list" class="lib-list"></ul>
+  </section>
 
   <footer class="footer">
     <span>Kura v0.2.0</span>

@@ -48,8 +48,9 @@
 }
 
 .lib-empty {
-  padding: 36px 24px;
+  padding: 40px 24px;
   text-align: center;
+  background: radial-gradient(260px 80px at 50% 0%, var(--teal-glow), transparent 70%);
 }
 
 .lib-list {
@@ -138,4 +139,223 @@
 .lib-item-link:hover {
   color: var(--teal);
   border-color: var(--teal-edge);
+}
+
+/* -- Tabs -- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  position: relative;
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--fg-faint);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 9px 14px 10px;
+  margin-bottom: -1px;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--teal);
+  box-shadow: 0 0 10px 1px var(--teal-glow);
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease);
+}
+
+.tab:hover {
+  color: var(--fg-mute);
+  background: var(--surface);
+}
+
+.tab.is-active {
+  color: var(--teal);
+}
+
+.tab.is-active::after {
+  opacity: 1;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+/* -- Suno harvester -- */
+
+.suno-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.suno-folder-row,
+.suno-handle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suno-folder-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--fg-mute);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suno-folder-name::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fg-ghost);
+  box-shadow: 0 0 0 3px transparent;
+  transition: background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.suno-folder-name.is-connected::before {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-glow);
+}
+
+.suno-folder-name.is-error {
+  color: var(--err);
+}
+
+.suno-folder-name.is-error::before {
+  background: var(--err);
+  box-shadow: 0 0 0 3px var(--err-glow);
+}
+
+.suno-label {
+  color: var(--fg-mute);
+  font-size: 12px;
+  min-width: 44px;
+}
+
+.suno-handle { flex: 1; }
+
+.suno-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suno-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.suno-progress {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: radial-gradient(280px 70px at 0% 0%, var(--teal-glow), transparent 70%);
+}
+
+.suno-progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+
+.suno-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+  box-shadow: 0 0 6px 0 var(--teal-glow);
+  transition: width var(--t-med) var(--ease);
+  animation: suno-pulse 1.8s var(--ease) infinite;
+}
+
+@keyframes suno-pulse {
+  0%, 100% { box-shadow: 0 0 6px 0 var(--teal-glow); }
+  50% { box-shadow: 0 0 14px 2px var(--teal-glow); }
+}
+
+.suno-progress-text {
+  margin-top: 8px;
+  color: var(--fg-mute);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suno-flag {
+  appearance: none;
+  background: none;
+  border: 1px solid transparent;
+  display: inline-grid;
+  place-items: center;
+  justify-self: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--fg-mute);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+
+.suno-flag:hover {
+  color: var(--gold);
+  background: var(--gold-soft);
+  transform: scale(1.08);
+}
+
+.suno-flag.is-flagged {
+  color: var(--gold);
+  background: var(--gold-soft);
+  border-color: var(--gold-edge);
+}
+
+.suno-fetched {
+  color: var(--ok);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suno-flag:hover { transform: none; }
+  .suno-progress-fill { transition: none; animation: none; }
 }

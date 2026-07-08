@@ -24,6 +24,8 @@ const $sendArcanea = document.getElementById('btn-send-prompt-books')!;
 
 const $error = document.getElementById('error')!;
 const $unsupported = document.getElementById('unsupported')!;
+const $sunoCta = document.getElementById('suno-cta')!;
+const $openHarvester = document.getElementById('btn-open-harvester')!;
 
 let lastDetection: DetectionResult | null = null;
 
@@ -99,6 +101,11 @@ async function init(): Promise<void> {
     return;
   }
 
+  if (isSunoUrl(tab.url)) {
+    showSunoCta(tab.id);
+    return;
+  }
+
   const result = await sendMessage({ type: 'KURA_DETECT_TAB' });
 
   if (result?.error) {
@@ -140,8 +147,41 @@ function showUnsupported(): void {
   $unsupported.classList.remove('hidden');
   $results.classList.add('hidden');
   $error.classList.add('hidden');
+  $sunoCta.classList.add('hidden');
   $status.textContent = 'Open an AI conversation';
   $status.className = 'subtitle status-muted';
+}
+
+function isSunoUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === 'suno.com' || host.endsWith('.suno.com');
+  } catch {
+    return false;
+  }
+}
+
+function showSunoCta(tabId?: number): void {
+  $sunoCta.classList.remove('hidden');
+  $results.classList.add('hidden');
+  $unsupported.classList.add('hidden');
+  $error.classList.add('hidden');
+  $status.textContent = 'Suno Harvester available';
+  $status.className = 'subtitle status-success';
+
+  $openHarvester.addEventListener(
+    'click',
+    async () => {
+      if (typeof tabId === 'number') {
+        await chrome.sidePanel.open({ tabId });
+      } else {
+        const win = await chrome.windows.getCurrent();
+        if (win.id !== undefined) await chrome.sidePanel.open({ windowId: win.id });
+      }
+      window.close();
+    },
+    { once: true },
+  );
 }
 
 function showError(message: string): void {

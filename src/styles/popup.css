@@ -15,6 +15,7 @@
   --cosmic: #0d47a1;        /* Cosmic Blue — secondary */
   --gold: #ffd700;          /* Gold — accent */
   --gold-soft: rgba(255, 215, 0, 0.14);
+  --gold-edge: rgba(255, 215, 0, 0.28);
 
   /* Surface */
   --bg: #09090b;
@@ -32,8 +33,10 @@
 
   /* Semantic */
   --ok: #4ade80;
+  --ok-glow: rgba(74, 222, 128, 0.18);
   --warn: #fbbf24;
   --err: #f87171;
+  --err-glow: rgba(248, 113, 113, 0.18);
 
   /* Motion */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -182,6 +185,54 @@ body {
   color: var(--fg-mute);
   font-weight: 500;
   letter-spacing: 0.01em;
+}
+
+.empty-desc strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.empty-desc code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.92em;
+  color: var(--teal);
+}
+
+.empty-state > .btn {
+  margin-top: 16px;
+}
+
+/* -- Empty-state CTA (positive, actionable variant) -- */
+
+.empty-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-edge);
+  color: var(--gold);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.empty-state-cta {
+  padding: 20px 16px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: radial-gradient(260px 90px at 50% 0%, var(--gold-soft), transparent 70%);
+}
+
+.empty-state-cta .btn {
+  width: 100%;
 }
 
 /* -- Error -- */
@@ -360,6 +411,17 @@ body {
 .btn-ghost:hover {
   color: var(--teal);
   background: var(--teal-glow);
+}
+
+/* -- Focus -- */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* -- Footer -- */

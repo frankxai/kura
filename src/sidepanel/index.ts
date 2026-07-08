@@ -5,14 +5,47 @@
 // ============================================================
 
 import type { Conversation, Platform } from '@/core/types';
+import { initSuno } from './suno';
 
 const $list = document.getElementById('lib-list') as HTMLUListElement;
 const $stats = document.getElementById('lib-stats')!;
 const $empty = document.getElementById('lib-empty')!;
 const $search = document.getElementById('lib-search') as HTMLInputElement;
 const $filter = document.getElementById('lib-filter') as HTMLSelectElement;
+const $title = document.getElementById('panel-title')!;
+const $tabLibrary = document.getElementById('tab-library') as HTMLButtonElement;
+const $tabSuno = document.getElementById('tab-suno') as HTMLButtonElement;
+const $viewLibrary = document.getElementById('view-library')!;
+const $viewSuno = document.getElementById('view-suno')!;
 
 let all: Conversation[] = [];
+let activeTab: 'library' | 'suno' = 'library';
+
+// ---------------------------------------------------------- tabs
+
+const suno = initSuno((text) => {
+  if (activeTab === 'suno') $stats.textContent = text;
+});
+
+function switchTab(tab: 'library' | 'suno'): void {
+  activeTab = tab;
+  const library = tab === 'library';
+  $tabLibrary.classList.toggle('is-active', library);
+  $tabSuno.classList.toggle('is-active', !library);
+  $tabLibrary.setAttribute('aria-selected', String(library));
+  $tabSuno.setAttribute('aria-selected', String(!library));
+  $viewLibrary.classList.toggle('hidden', !library);
+  $viewSuno.classList.toggle('hidden', library);
+  $title.textContent = library ? 'Library' : 'Suno Harvester';
+  if (library) {
+    applyFilters();
+  } else {
+    suno.onShow();
+  }
+}
+
+$tabLibrary.addEventListener('click', () => switchTab('library'));
+$tabSuno.addEventListener('click', () => switchTab('suno'));
 
 const PLATFORM_GLYPH: Record<Platform, string> = {
   chatgpt: '◐',
@@ -70,7 +103,7 @@ function render(items: Conversation[]): void {
         </div>
       </div>
       <div class="lib-item-actions">
-        <a class="lib-item-link" href="${escapeAttr(c.url)}" target="_blank" rel="noopener" title="Open source">↗</a>
+        <a class="lib-item-link" href="${escapeAttr(c.url)}" target="_blank" rel="noopener" title="Open source" aria-label="Open ${escape(c.title || 'conversation')} source">↗</a>
       </div>
     `;
     $list.appendChild(li);
@@ -91,6 +124,7 @@ function applyFilters(): void {
   }
   items.sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
   render(items);
+  if (activeTab !== 'library') return;
   $stats.textContent =
     items.length === all.length
       ? `${all.length} capture${all.length === 1 ? '' : 's'}`

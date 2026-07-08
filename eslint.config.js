@@ -50,6 +50,7 @@ export default [
         Node: "readonly",
         NodeList: "readonly",
         HTMLElement: "readonly",
+        HTMLButtonElement: "readonly",
         HTMLImageElement: "readonly",
         HTMLInputElement: "readonly",
         HTMLSelectElement: "readonly",
@@ -63,6 +64,13 @@ export default [
         CustomEvent: "readonly",
         // Observers
         MutationObserver: "readonly",
+        // File System Access API
+        FileSystemHandle: "readonly",
+        FileSystemFileHandle: "readonly",
+        FileSystemDirectoryHandle: "readonly",
+        FileSystemWritableFileStream: "readonly",
+        PermissionState: "readonly",
+        DOMException: "readonly",
         // Network + data
         fetch: "readonly",
         Headers: "readonly",

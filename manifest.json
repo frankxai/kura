@@ -73,6 +73,10 @@
     "https://aistudio.google.com/*",
     "https://chat.deepseek.com/*",
     "https://www.perplexity.ai/*",
+    "https://suno.com/*",
+    "https://studio-api.prod.suno.com/*",
+    "https://cdn1.suno.ai/*",
+    "https://cdn2.suno.ai/*",
     "https://arcanea.ai/*"
   ]
 }
