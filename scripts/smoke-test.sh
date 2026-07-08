@@ -89,7 +89,7 @@ required=(
   "dist/manifest.json"
   "dist/popup.html"
   "dist/sidepanel.html"
-  "dist/service-worker-loader.js"
+  "dist/background.js"
   "dist/icons/icon-16.png"
   "dist/icons/icon-48.png"
   "dist/icons/icon-128.png"
@@ -165,7 +165,7 @@ If any of A–D fail, the failure point tells you exactly what's broken:
   - Loaded but no popup → service worker bug (check chrome://extensions
     inspect "service worker")
   - Popup but "Not on a supported AI platform" → manifest host_permissions
-  - Capture clicked but no files → scraper drift on src/content/<platform>.ts
+  - Capture clicked but no files → scraper drift on src/entrypoints/<platform>.content.ts
   - Files exist but Obsidian graph is empty → frontmatter rendering issue
   - /kura-process runs but extracts nothing → tune the taxonomy rules in
     .claude/commands/kura-process.md
