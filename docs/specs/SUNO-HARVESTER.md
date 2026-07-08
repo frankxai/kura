@@ -71,6 +71,9 @@ Claude Code / any agent can write flags.json from triage logic
 The extension merges its own UI toggles into the same file (write-through).
 **This file replaces any need for an in-extension LLM.**
 
+Agent-side helper: `node scripts/suno-flags.mjs <intake-dir> list|add|remove|top`
+(`top N` flags the N most-played tracks straight from catalog.jsonl).
+
 ### downloads.json ledger
 
 ```json
