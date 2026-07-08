@@ -6,10 +6,10 @@
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "scripts": {
-    "dev": "vite build --watch --mode development",
-    "build": "tsc --noEmit && vite build",
-    "build:dev": "vite build --mode development",
-    "preview": "vite preview",
+    "postinstall": "wxt prepare",
+    "dev": "wxt",
+    "build": "tsc --noEmit && wxt build",
+    "build:dev": "wxt build --mode development",
     "lint": "pnpm exec eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
@@ -17,7 +17,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@crxjs/vite-plugin": "^2.0.0-beta.28",
     "@playwright/test": "^1.49.0",
     "@types/chrome": "^0.0.287",
     "@types/node": "^22.0.0",
@@ -28,7 +27,7 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
-    "vite": "^5.4.14"
+    "wxt": "^0.20.27"
   },
   "license": "MIT",
   "author": "FrankX <frank@arcanea.ai>",
