@@ -73,6 +73,15 @@ into your second brain of choice. Kura never assumes.
 Capture the current conversation from the popup, or hit
 **Alt+Shift+K** anywhere on a supported platform.
 
+### Direct-to-disk vault
+
+Open the side panel and **Connect vault** once to pick a folder (e.g.
+`Arcanea/intake`). From then on, every capture is written straight into it —
+conversations under `<platform>/`, Suno tracks under `suno/` — with no
+Downloads-folder shuffle, and re-capturing a conversation overwrites in place
+instead of duplicating. Until a vault is connected, captures fall back to
+`Downloads/Kura/`, so the extension works out of the box.
+
 ---
 
 ## Suno Harvester
@@ -240,8 +249,8 @@ Full policy: [arcanea.ai/privacy/kura](https://arcanea.ai/privacy/kura).
 | Version | Scope |
 |---------|-------|
 | **0.2.0** *(current)* | Sovereign Kura: local-first vault, Obsidian-compatible markdown, generic `kura-process` skill, optional `arcanea-kura-process` worldbuilding skill, redesigned popup, sidepanel library, Playwright extension test. |
-| **0.3.0** *(in progress)* | Suno Harvester (catalog index + flagged downloads via File System Access), sidepanel tabs, capture keyboard shortcut, WXT build migration, per-platform scraper hardening. |
-| 0.3.1 | Core vault writes via File System Access (offscreen document) — no more Downloads-folder hop. |
+| **0.3.0** *(in progress)* | Direct-to-disk vault via File System Access — one connected folder holds conversations (`<platform>/`) and Suno tracks (`suno/`), no Downloads-folder hop; Suno Harvester; sidepanel tabs; capture keyboard shortcut; WXT build migration; per-platform scraper hardening. |
+| 0.3.1 | PNG "conversation card" export; ID3 tags + cover art on harvested audio. |
 | 0.4.0 | Real-time graph preview inside the side panel (D3 + frontmatter links); PNG screenshot export. |
 | 0.5.0 | Logseq / Anytype integration recipes; Firefox port. |
 

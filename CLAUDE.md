@@ -32,7 +32,17 @@ Read in this order before substantive work:
 ## File organization
 
 - `src/entrypoints/background.ts` — MV3 service worker (WXT `defineBackground`).
-  Routes messages, manages the download queue, writes files via `chrome.downloads`.
+  Routes messages; builds a `WritePlan` and writes it to the connected vault
+  via the offscreen document, falling back to `chrome.downloads`.
+- `src/core/capture-plan.ts` — pure `buildWritePlan(detection, options)`; the
+  single source for vault file paths, shared by the FSA writer and the
+  Downloads fallback.
+- `src/core/vault-writer.ts` + `src/entrypoints/offscreen/` — the File System
+  Access writer. The SW can't hold a directory handle, so the offscreen doc
+  re-reads it from IndexedDB (`kura_vault`, see `src/core/vault-keys.ts`) and
+  writes. One connected folder holds conversations (`<platform>/`) and Suno
+  (`suno/`). The side panel's shared Vault bar (`sidepanel/vault.ts`) owns the
+  picker + re-grant; `sidepanel/suno.ts` consumes the shared handle.
 - `src/entrypoints/<platform>.content.ts` — per-platform scrapers (WXT
   `defineContentScript`). Each exports a detector that returns a
   `DetectionResult` per `src/core/types.ts`.
