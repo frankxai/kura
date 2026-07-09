@@ -41,7 +41,13 @@ test.describe('Arcanea Kura extension — load + detection', () => {
   });
 
   test.afterAll(async () => {
-    await context?.close();
+    // Closing a persistent context with an MV3 extension loaded can hang on
+    // teardown (service worker / offscreen lifecycle). Cap it so a slow close
+    // never fails an otherwise-green run — the process exits right after.
+    await Promise.race([
+      context?.close(),
+      new Promise((resolve) => setTimeout(resolve, 8_000)),
+    ]);
   });
 
   test('manifest has Kura name + v0.3.x + MV3', async () => {
