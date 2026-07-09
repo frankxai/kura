@@ -141,6 +141,96 @@
   border-color: var(--teal-edge);
 }
 
+/* -- Shared vault bar -- */
+
+.vault-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.vault-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vault-bar-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+.vault-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-status::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-hi);
+}
+
+.vault-status.is-connected {
+  color: var(--teal);
+}
+
+.vault-status.is-connected::before {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-glow);
+}
+
+.vault-status.is-error {
+  color: var(--err);
+}
+
+.vault-status.is-error::before {
+  background: var(--err);
+  box-shadow: 0 0 0 3px var(--err-glow);
+}
+
+.vault-connect {
+  flex: none;
+}
+
+.vault-hint {
+  margin: 0;
+  padding: 8px 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.vault-hint code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--teal);
+}
+
+.vault-hint.hidden {
+  display: none;
+}
+
 /* -- Tabs -- */
 
 .tabs {

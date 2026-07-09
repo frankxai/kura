@@ -44,12 +44,12 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await context?.close();
   });
 
-  test('manifest has Kura name + v0.2.x + MV3', async () => {
+  test('manifest has Kura name + v0.3.x + MV3', async () => {
     const raw = fs.readFileSync(path.join(DIST, 'manifest.json'), 'utf-8');
     const manifest = JSON.parse(raw);
     expect(manifest.manifest_version).toBe(3);
     expect(manifest.name).toMatch(/^Kura/);
-    expect(manifest.version).toMatch(/^0\.2\./);
+    expect(manifest.version).toMatch(/^0\.3\./);
     expect(manifest.short_name).toBe('Kura');
   });
 
@@ -114,7 +114,7 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(popup.locator('.title')).toHaveText('Kura');
     await expect(popup.locator('.logo')).toHaveText('K');
     await expect(popup.locator('#btn-quick-export')).toContainText('Export to Kura');
-    await expect(popup.locator('footer')).toContainText('Kura v0.2.0');
+    await expect(popup.locator('footer')).toContainText('Kura v0.3.0');
   });
 
   test('sidepanel HTML loads with library scaffolding', async () => {
@@ -129,6 +129,9 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(sidepanel.locator('#lib-filter')).toBeVisible();
     // 蔵 character should render in the platform badge
     await expect(sidepanel.locator('.platform-badge')).toContainText('蔵');
+    // Shared vault bar present and unconnected by default.
+    await expect(sidepanel.locator('#vault-status')).toContainText('no vault connected');
+    await expect(sidepanel.locator('#vault-connect')).toContainText('Connect vault');
   });
 
   test('sidepanel Suno tab gates harvester actions on folder connection', async () => {
@@ -142,8 +145,9 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(sidepanel.locator('#panel-title')).toHaveText('Suno Harvester');
     await expect(sidepanel.locator('#view-library')).toBeHidden();
     await expect(sidepanel.locator('#suno-handle')).toHaveValue('frankx');
-    // No intake folder connected yet — every harvest action must be gated off.
-    await expect(sidepanel.locator('#suno-folder-name')).toContainText('no folder connected');
+    // No vault connected yet — every harvest action must be gated off. The
+    // folder control now lives in the shared vault bar, not the Suno tab.
+    await expect(sidepanel.locator('#vault-status')).toContainText('no vault connected');
     await expect(sidepanel.locator('#suno-index')).toBeDisabled();
     await expect(sidepanel.locator('#suno-fetch-audio')).toBeDisabled();
     await expect(sidepanel.locator('#suno-fetch-av')).toBeDisabled();

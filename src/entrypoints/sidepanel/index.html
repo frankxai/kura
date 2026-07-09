@@ -21,6 +21,21 @@
     </div>
   </header>
 
+  <!-- Shared vault: one connected folder backs both conversation capture
+       (written under <platform>/) and the Suno harvester (under suno/). -->
+  <div class="vault-bar">
+    <div class="vault-bar-info">
+      <span class="vault-bar-label">Vault</span>
+      <span id="vault-status" class="vault-status">no vault connected</span>
+    </div>
+    <button id="vault-connect" class="btn btn-ghost vault-connect" title="Choose the local vault / intake folder (e.g. Arcanea/intake). Conversations and Suno tracks write here.">
+      Connect vault
+    </button>
+  </div>
+  <p id="vault-hint" class="vault-hint">
+    Connect a folder to write straight to disk. Until then, captures land in <code>Downloads/Kura/</code>.
+  </p>
+
   <nav class="tabs" role="tablist" aria-label="Kura panels">
     <button class="tab is-active" id="tab-library" role="tab" aria-selected="true" aria-controls="view-library">Library</button>
     <button class="tab" id="tab-suno" role="tab" aria-selected="false" aria-controls="view-suno">Suno</button>
@@ -59,12 +74,6 @@
   <!-- ======================= Suno view ======================= -->
   <section id="view-suno" role="tabpanel" aria-labelledby="tab-suno" class="hidden">
     <div class="suno-setup">
-      <div class="suno-folder-row">
-        <button id="suno-pick-folder" class="btn btn-ghost" title="Choose the local intake folder (e.g. Arcanea/intake)">
-          Choose intake folder
-        </button>
-        <span id="suno-folder-name" class="suno-folder-name">no folder connected</span>
-      </div>
       <div class="suno-handle-row">
         <label for="suno-handle" class="suno-label">Profile</label>
         <input id="suno-handle" class="lib-search suno-handle" type="text" value="frankx" autocomplete="off" spellcheck="false" />
@@ -96,14 +105,14 @@
 
     <div id="suno-empty" class="lib-empty">
       <p class="empty-title">No catalog yet</p>
-      <p class="empty-desc">Connect your intake folder, then click <strong>Index catalog</strong> to pull your public Suno tracks into <code>suno/catalog.jsonl</code>.</p>
+      <p class="empty-desc">Connect a vault above, then click <strong>Index catalog</strong> to pull your public Suno tracks into <code>suno/catalog.jsonl</code>.</p>
     </div>
 
     <ul id="suno-list" class="lib-list"></ul>
   </section>
 
   <footer class="footer">
-    <span>Kura v0.2.0</span>
+    <span>Kura v0.3.0</span>
     <span class="footer-dot">·</span>
     <a href="https://github.com/frankxai/arcanea-vault" class="footer-link" target="_blank" rel="noopener">github</a>
   </footer>

@@ -7,19 +7,14 @@
 import { defineBackground } from 'wxt/utils/define-background';
 import { detectPlatform } from '@/core/detector';
 import { vault } from '@/core/storage';
-import {
-  exportConversationBundle,
-  exportConversation,
-  exportPrompts,
-  renderMediaPromptSidecar,
-} from '@/core/exporter';
-import { VAULT_ROOT, assetName, buildSlug } from '@/core/frontmatter';
-import type {
-  ExportOptions,
-  DetectionResult,
-  Platform,
-  MediaItem,
-} from '@/core/types';
+import { exportConversation, exportPrompts } from '@/core/exporter';
+import { VAULT_ROOT } from '@/core/frontmatter';
+import { buildWritePlan, sanitizeMediaFilename } from '@/core/capture-plan';
+import type { WritePlan } from '@/core/capture-plan';
+import type { ExportOptions, DetectionResult, Platform } from '@/core/types';
+
+/** Where a capture actually landed — surfaced to the popup. */
+type CaptureSink = 'fsa' | 'downloads';
 
 export default defineBackground({
   type: 'module',
@@ -87,112 +82,111 @@ export default defineBackground({
     // ============================================================
 
     /**
-     * Persist a detection result to disk per FORMAT_SPEC.md:
-     *   - conversation.md + prompts.md inside Kura/<platform>/<slug>/
-     *   - assets/<filename> for each media item
-     *   - assets/<filename>-prompt.md sidecar for AI-generated media
-     * Returns counts for the popup to display.
+     * Persist a detection result. IndexedDB gets the structured records (the
+     * query index); the files land either straight in the connected vault
+     * folder via the File System Access API, or — when no vault is connected /
+     * its grant has lapsed — in `Kura/` under Downloads. Returns counts + the
+     * sink so the popup can tell the user where it wrote.
      */
     async function persistDetection(
       detection: DetectionResult,
       options: ExportOptions,
-    ): Promise<{ conversations: number; media: number; prompts: number; folders: string[] }> {
-      const folders = new Set<string>();
-      let conversationCount = 0;
-      let mediaCount = 0;
-      let promptCount = 0;
+    ): Promise<{
+      conversations: number;
+      media: number;
+      prompts: number;
+      folders: string[];
+      sink: CaptureSink;
+    }> {
+      for (const conv of detection.conversations) await vault.saveConversation(conv);
+      for (const m of detection.media) await vault.saveMedia(m);
+      for (const p of detection.prompts) await vault.savePrompt(p);
 
-      // 1. Conversations: emit bundles
-      for (const conv of detection.conversations) {
-        await vault.saveConversation(conv);
-        const bundle = exportConversationBundle(conv, options);
-        folders.add(bundle.folder);
-        for (const f of bundle.files) {
-          queueText(f.path, f.content, f.mimeType);
-        }
-        conversationCount += 1;
-      }
-
-      // 2. Media: route each item into the right conversation folder if we can
-      // associate it; otherwise it lands in a per-platform `_loose/` folder.
-      for (const media of detection.media) {
-        await vault.saveMedia(media);
-        const parentSlug = inferParentSlug(media, detection);
-        const ext = guessExt(media);
-        const filename = sanitizeFilename(media.filename) || assetName(
-          media.type === 'video' ? 'video' : 'img',
-          mediaCount + 1,
-          ext,
-        );
-
-        const vaultRelativePath = parentSlug
-          ? `${media.platform}/${parentSlug}/assets/${filename}`
-          : `${media.platform}/_loose/${filename}`;
-
-        queueDownload({
-          url: media.hdUrl || media.url,
-          vaultPath: vaultRelativePath,
-        });
-
-        // Sidecar prompt note for AI-generated media (Imagine, DALL-E, etc.)
-        if (media.prompt && parentSlug) {
-          const sidecar = renderMediaPromptSidecar(media, parentSlug, filename);
-          queueText(sidecar.path, sidecar.content, sidecar.mimeType);
-        }
-
-        mediaCount += 1;
-      }
-
-      // 3. Standalone prompts (not yet tied to a conversation, e.g. prompt-library
-      // browsers): land in `_index/loose-prompts-YYYY-MM-DD.md`.
-      if (detection.prompts.length > 0) {
-        for (const p of detection.prompts) {
-          await vault.savePrompt(p);
-        }
-        const collection = exportPrompts(detection.prompts, 'markdown', detection.platform);
-        queueText(`_index/${collection.filename}`, collection.content, collection.mimeType);
-        promptCount = detection.prompts.length;
-      }
+      const plan = buildWritePlan(detection, options);
+      const sink = await writePlanToVaultOrDownloads(plan);
 
       return {
-        conversations: conversationCount,
-        media: mediaCount,
-        prompts: promptCount,
-        folders: Array.from(folders),
+        conversations: plan.counts.conversations,
+        media: plan.counts.media,
+        prompts: plan.counts.prompts,
+        folders: plan.folders,
+        sink,
       };
     }
 
-    /**
-     * Best-effort association of a media item with a captured conversation.
-     * If the media item came from inside a conversation, the scraper should set
-     * `metadata.conversationId`. Otherwise we fall back to the first conversation
-     * of the same platform (e.g. Grok Imagine gallery where there's no parent).
-     */
-    function inferParentSlug(media: MediaItem, detection: DetectionResult): string | null {
-      const convId = (media.metadata as Record<string, unknown> | undefined)?.conversationId;
-      if (typeof convId === 'string') {
-        const conv = detection.conversations.find((c) => c.id === convId);
-        if (conv) return buildSlug(conv.title, conv.capturedAt);
+    // ============================================================
+    // Direct-to-disk vault write (File System Access via offscreen doc)
+    // ============================================================
+
+    let offscreenReady: Promise<void> | null = null;
+
+    /** Ensure the single offscreen writer document exists. */
+    async function ensureOffscreen(): Promise<void> {
+      if (await chrome.offscreen.hasDocument()) return;
+      if (!offscreenReady) {
+        offscreenReady = (async () => {
+          try {
+            await chrome.offscreen.createDocument({
+              url: 'offscreen.html',
+              reasons: [chrome.offscreen.Reason.BLOBS],
+              justification:
+                'Write captured conversations into the local vault folder via the File System Access API.',
+            });
+          } catch (err) {
+            // A concurrent caller may have created it first — tolerate that.
+            if (!(await chrome.offscreen.hasDocument())) throw err;
+          }
+        })().finally(() => {
+          offscreenReady = null;
+        });
       }
-      if (detection.conversations.length > 0) {
-        const conv = detection.conversations[0];
-        return buildSlug(conv.title, conv.capturedAt);
-      }
-      return null;
+      await offscreenReady;
     }
 
-    function guessExt(media: MediaItem): string {
-      const fromName = media.filename.match(/\.([a-z0-9]{2,4})$/i)?.[1];
-      if (fromName) return fromName.toLowerCase();
-      return media.type === 'video' ? 'mp4' : 'png';
+    interface OffscreenWriteResult {
+      ok: boolean;
+      failedMedia?: { path: string; url: string }[];
     }
 
-    function sanitizeFilename(name: string): string {
-      return name
-        // eslint-disable-next-line no-control-regex -- intentional: strip OS-reserved + control chars from filename
-        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
-        .replace(/\s+/g, '_')
-        .slice(0, 100);
+    /** Ask the offscreen document to write the plan to the connected vault.
+     *  Returns null when FSA is unavailable (no offscreen API, no vault, or a
+     *  lapsed permission grant) so the caller can fall back to Downloads. */
+    async function tryWriteViaOffscreen(plan: WritePlan): Promise<OffscreenWriteResult | null> {
+      try {
+        if (!chrome.offscreen) return null;
+        await ensureOffscreen();
+        const res = (await chrome.runtime.sendMessage({
+          type: 'KURA_OFFSCREEN_WRITE',
+          plan,
+        })) as OffscreenWriteResult | undefined;
+        return res && res.ok ? res : null;
+      } catch {
+        return null;
+      }
+    }
+
+    async function writePlanToVaultOrDownloads(plan: WritePlan): Promise<CaptureSink> {
+      const res = await tryWriteViaOffscreen(plan);
+      if (res) {
+        // Media the offscreen doc couldn't fetch (a CDN host outside our
+        // host_permissions) still goes through Downloads, which bypasses CORS,
+        // so nothing is silently dropped.
+        for (const m of res.failedMedia ?? []) {
+          queueDownload({ url: m.url, vaultPath: m.path });
+        }
+        return 'fsa';
+      }
+      enqueuePlanToDownloads(plan);
+      return 'downloads';
+    }
+
+    function enqueuePlanToDownloads(plan: WritePlan): void {
+      for (const f of plan.textFiles) {
+        queueText(f.path, f.content, f.path.endsWith('.json') ? 'application/json' : 'text/markdown');
+      }
+      for (const m of plan.mediaFiles) {
+        queueDownload({ url: m.url, vaultPath: m.path });
+      }
     }
 
     /** Detect + persist the active tab's conversation. Shared by the popup's
@@ -368,7 +362,7 @@ export default defineBackground({
         for (const item of items) {
           queueDownload({
             url: item.url,
-            vaultPath: `${platform}/_loose/${sanitizeFilename(item.filename)}`,
+            vaultPath: `${platform}/_loose/${sanitizeMediaFilename(item.filename)}`,
           });
         }
         return { queued: items.length };

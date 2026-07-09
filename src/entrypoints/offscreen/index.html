@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Kura offscreen writer</title>
+  </head>
+  <body>
+    <!-- Headless document. Its only job is to hold a File System Access
+         directory handle (re-read from IndexedDB) and write captures to
+         disk on behalf of the service worker, which cannot. -->
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

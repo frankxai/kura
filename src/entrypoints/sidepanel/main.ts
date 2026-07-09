@@ -6,6 +6,7 @@
 
 import type { Conversation, Platform } from '@/core/types';
 import { initSuno } from './suno';
+import { initVault } from './vault';
 
 const $list = document.getElementById('lib-list') as HTMLUListElement;
 const $stats = document.getElementById('lib-stats')!;
@@ -22,6 +23,8 @@ let all: Conversation[] = [];
 let activeTab: 'library' | 'suno' = 'library';
 
 // ---------------------------------------------------------- tabs
+
+initVault();
 
 const suno = initSuno((text) => {
   if (activeTab === 'suno') $stats.textContent = text;

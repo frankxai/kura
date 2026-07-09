@@ -239,8 +239,11 @@ $quickExportBtn.addEventListener('click', async () => {
     return;
   }
 
-  const captured = result?.captured as Record<string, number>;
-  $status.textContent = `Saved ${captured?.conversations || 0} · ${captured?.media || 0} media · ${captured?.prompts || 0} prompts → Kura/`;
+  const captured = result?.captured as
+    | { conversations?: number; media?: number; prompts?: number; sink?: 'fsa' | 'downloads' }
+    | undefined;
+  const dest = captured?.sink === 'fsa' ? 'vault' : 'Downloads/Kura';
+  $status.textContent = `Saved ${captured?.conversations || 0} · ${captured?.media || 0} media · ${captured?.prompts || 0} prompts → ${dest}/`;
   $status.className = 'subtitle status-success';
 });
 
