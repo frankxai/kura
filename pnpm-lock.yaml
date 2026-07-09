@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  vite: ^8.1.3
-
 importers:
 
   .:
@@ -2377,7 +2374,7 @@ packages:
       rolldown: '*'
       rollup: '*'
       unloader: '*'
-      vite: ^8.1.3
+      vite: '*'
       webpack: '*'
     peerDependenciesMeta:
       '@farmfe/core':
