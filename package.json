@@ -1,6 +1,6 @@
 {
   "name": "kura",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Kura — export your most precious writing. Local-first Chrome extension that captures conversations, prompts and AI-generated media from every major AI platform into an Obsidian-compatible vault on disk. No cloud. No tracking. Built by Arcanea, free for everyone.",
   "type": "module",
