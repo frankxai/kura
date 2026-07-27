@@ -49,12 +49,13 @@ Do not use unattended GUI/computer-use automation to crawl chat history. Kura is
 
 All entries require dated evidence in the release PR or a release receipt.
 
-- [ ] **Scraper compatibility:** one live, non-sensitive capture each from ChatGPT, Claude, Gemini, Grok, DeepSeek, and Perplexity. Record platform, date, extension version, and output path; never commit chat contents.
+- [ ] **Scraper compatibility:** one live, non-sensitive capture each from ChatGPT, Claude, Gemini, Google AI Studio, Grok, DeepSeek, and Perplexity. Record platform, date, extension version, and output path; never commit chat contents.
+- [ ] **Suno behavior:** one dated, non-sensitive receipt for catalog indexing and one user-flagged media fetch. Record the selected local-folder path and confirm no unselected media was fetched.
 - [ ] **Re-capture behavior:** prove that re-capturing the same platform conversation does not create a duplicate conversation folder or destroy user-controlled frontmatter.
 - [ ] **Real icons:** replace the current tiny placeholder assets with final 16, 48, and 128 px PNGs. Inspect the packaged assets, not just source files.
 - [ ] **Store media:** create at least one accurate 1280×800 or 640×400 screenshot and a 440×280 promo tile. Screenshots must show actual current UI, never mocked future functionality.
 - [ ] **Listing copy:** use the truthful description below and ensure it matches current permissions and UI.
-- [ ] **Privacy disclosure:** publish the current [`PRIVACY.md`](./PRIVACY.md) at a stable public URL before submission. The intended canonical URL after merge is `https://github.com/frankxai/kura/blob/main/PRIVACY.md`. It must disclose local file writes, every host-permission class, the automatic metadata-only Arcanea bridge health check, and the explicit optional Arcanea content route.
+- [ ] **Privacy disclosure:** publish the current [`PRIVACY.md`](./PRIVACY.md) at a stable public URL before submission. The intended canonical URL after merge is `https://github.com/frankxai/kura/blob/main/PRIVACY.md`. It must disclose local file writes, every host-permission class, that standard use makes **no automatic Arcanea request**, and the explicit optional Arcanea content route.
 - [ ] **Permissions audit:** validate that `wxt.config.ts` host permissions match active scrapers and the optional Arcanea integration. Do not add broad host permissions for marketing convenience.
 - [ ] **Chrome developer account:** registration/payment and final public submission are an operator action; do not automate a payment or publish a package without explicit approval.
 
@@ -101,7 +102,7 @@ Kura captures the currently open conversation. It does not automatically export 
 | --- | --- |
 | Single purpose | Export user-selected AI conversations and associated local media into Markdown files. |
 | Data collection | Standard export processing is local to the browser/device; Kura does not collect or sell conversation content. |
-| Host permissions | Required only to detect and extract a user-selected conversation on explicitly supported AI and Suno domains, plus the explicit optional Arcanea integration. |
+| Host permissions | **AI capture:** `chatgpt.com`, `chat.openai.com`, `claude.ai`, `gemini.google.com`, `aistudio.google.com`, `grok.com`, `chat.deepseek.com`, and `www.perplexity.ai`, only to detect/export the currently selected conversation. **Grok media:** `assets.grok.com` and `imagine-public.x.ai` for selected adjacent media. **Suno:** `suno.com` plus `studio-api.prod.suno.com`, `cdn1.suno.ai`, and `cdn2.suno.ai` only when the user opens the Suno harvester to index a handle or fetches flagged media to a chosen local folder. **Arcanea:** `arcanea.ai` only for the explicit Send to Arcanea action; standard export does not contact it. |
 | Remote code | No remote executable code. |
 | Optional network route | The separate Send to Arcanea action is user-triggered and must be disclosed as optional. |
 
@@ -114,7 +115,8 @@ Kura release candidate <version>
 Commit: <sha>
 Package: dist/kura-<version>-chrome.zip
 Automated: typecheck / lint / bridge tests / extension tests
-Manual platform captures: <six dated receipts>
+Manual platform captures: <seven dated receipts, including Google AI Studio>
+Suno index + flagged-media check: <two dated receipts>
 Re-capture check: <receipt>
 Store assets: <paths>
 Privacy policy URL: <url>

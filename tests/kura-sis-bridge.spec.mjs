@@ -150,3 +150,24 @@ test('rejects a capture whose slug would escape the intake directory', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('refuses to run while another bridge process owns the state lock', () => {
+  const root = mkdtempSync(join(tmpdir(), 'kura-sis-bridge-'));
+  try {
+    const source = join(root, 'Kura');
+    const intake = join(root, 'sis-intake');
+    const state = join(root, 'private', 'kura-bridge-state.json');
+    const folder = join(source, 'chatgpt', '2026-07-26_bridge-test-idea');
+    mkdirSync(folder, { recursive: true });
+    mkdirSync(join(root, 'private'), { recursive: true });
+    writeFileSync(join(folder, 'conversation.md'), fixtureConversation());
+    writeFileSync(`${state}.lock`, 'another-process\n');
+
+    const result = runBridge(['--source', source, '--intake', intake, '--state', state]);
+    assert.equal(result.status, 1);
+    assert.equal(result.json, null);
+    assert.match(result.stderr, /already running/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -6,13 +6,16 @@
  * and an external-to-git state file. Conversation bodies remain canonical in the
  * Kura vault and are never copied into the SIS intake queue by this tool.
  */
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
+  closeSync,
   existsSync,
   mkdirSync,
+  openSync,
   readFileSync,
   readdirSync,
   renameSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -112,9 +115,33 @@ function readState(statePath) {
   throw new Error(`Invalid bridge state: ${statePath}`);
 }
 
+function acquireBridgeLock(statePath) {
+  const lockPath = `${statePath}.lock`;
+  mkdirSync(dirname(lockPath), { recursive: true });
+  let descriptor;
+  try {
+    descriptor = openSync(lockPath, 'wx');
+    writeFileSync(descriptor, `${process.pid}\n`, 'utf8');
+  } catch (error) {
+    if (descriptor !== undefined) closeSync(descriptor);
+    if (error && typeof error === 'object' && error.code === 'EEXIST') {
+      throw new Error(`Bridge is already running or requires lock recovery: ${lockPath}`);
+    }
+    throw error;
+  }
+
+  return () => {
+    try {
+      closeSync(descriptor);
+    } finally {
+      unlinkSync(lockPath);
+    }
+  };
+}
+
 function writeJsonAtomic(path, value) {
   mkdirSync(dirname(path), { recursive: true });
-  const temporary = `${path}.tmp`;
+  const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
   writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
   renameSync(temporary, path);
 }
@@ -161,17 +188,7 @@ function renderTextReport(report) {
   return `${lines.join('\n')}\n`;
 }
 
-function main() {
-  const options = parseArgs(process.argv.slice(2));
-  if (options.help) {
-    process.stdout.write(usage());
-    return;
-  }
-  for (const key of ['source', 'intake', 'state']) {
-    if (!options[key]) throw new Error(`Required --${key} was not provided`);
-  }
-  if (!existsSync(options.source)) throw new Error(`Kura source root does not exist: ${options.source}`);
-
+function runBridge(options) {
   const state = readState(options.state);
   const nextState = structuredClone(state);
   const report = { discovered: 0, queued: 0, unchanged: 0, invalid: 0, errors: [], records: [] };
@@ -221,6 +238,25 @@ function main() {
   if (!options.dryRun && report.queued > 0) writeJsonAtomic(options.state, nextState);
   if (options.quietIfIdle && report.queued === 0 && report.invalid === 0) return;
   process.stdout.write(options.json ? `${JSON.stringify(report)}\n` : renderTextReport(report));
+}
+
+function main() {
+  const options = parseArgs(process.argv.slice(2));
+  if (options.help) {
+    process.stdout.write(usage());
+    return;
+  }
+  for (const key of ['source', 'intake', 'state']) {
+    if (!options[key]) throw new Error(`Required --${key} was not provided`);
+  }
+  if (!existsSync(options.source)) throw new Error(`Kura source root does not exist: ${options.source}`);
+
+  const releaseLock = acquireBridgeLock(options.state);
+  try {
+    runBridge(options);
+  } finally {
+    releaseLock();
+  }
 }
 
 try {
