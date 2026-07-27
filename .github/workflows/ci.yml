@@ -2,8 +2,8 @@ name: CI
 
 # Validates every PR before merge.
 #
-# Gates run in order: typecheck, lint, bridge CLI, build, then Playwright.
-# The first four are blocking; Playwright is a best-effort smoke layer while
+# Blocking gates run in parallel: typecheck, lint, bridge CLI, and build.
+# Playwright follows build as a best-effort smoke layer while
 # MV3 service-worker registration remains unreliable in xvfb-wrapped CI.
 #
 # Why this exists: Kura is a Chrome MV3 extension that exports user data.
@@ -22,6 +22,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '22'
   # pnpm version comes from packageManager field in package.json
@@ -33,6 +36,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -49,6 +54,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -65,6 +72,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -81,6 +90,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -110,6 +121,8 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
