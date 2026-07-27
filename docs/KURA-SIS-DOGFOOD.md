@@ -1,6 +1,6 @@
 # Kura → SIS dogfood bridge
 
-Kura is the **capture layer**, not the second brain or task dispatcher. This bridge keeps that boundary intact:
+Kura is the **capture layer**, not the second brain or task dispatcher. This bridge keeps that boundary intact. The capture and metadata bridge are implemented; the sanitization, candidate-routing, and agentic-ops portions below are activation-gated design contracts. See [the operating model](./KURA-SIS-OPERATING-MODEL.md) for current implementation status and the explicit non-goals.
 
 ```text
 Signed-in AI chat → Kura extension → local Kura/ Markdown vault
@@ -38,7 +38,7 @@ An emitted intake note contains:
 
 - Kura platform, stable conversation ID, title, capture time, and source URL
 - a source path **relative to the selected Kura root**
-- SHA-256 of the canonical `conversation.md`
+- SHA-256 of the canonical conversation body (frontmatter is excluded so a timestamp-only re-capture stays idempotent)
 - a pending-triage privacy gate
 
 It intentionally does **not** contain the conversation body.

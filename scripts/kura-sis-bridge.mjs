@@ -77,14 +77,14 @@ function parseFrontmatter(markdown) {
   const closing = lines.indexOf('---', 1);
   if (closing === -1) throw new Error('missing closing frontmatter delimiter');
 
-  const data = {};
+  const frontmatter = {};
   for (const line of lines.slice(1, closing)) {
     const match = /^([A-Za-z][A-Za-z0-9_]*):\s*(.*)$/.exec(line);
     if (!match) continue;
     const [, key, raw] = match;
-    data[key] = raw.trim().replace(/^(['"])(.*)\1$/, '$2');
+    frontmatter[key] = raw.trim().replace(/^(['"])(.*)\1$/, '$2');
   }
-  return data;
+  return { frontmatter, body: lines.slice(closing + 1).join('\n') };
 }
 
 function validateCapture(frontmatter) {
@@ -92,7 +92,12 @@ function validateCapture(frontmatter) {
   if (missing.length > 0) return `missing required frontmatter: ${missing.join(', ')}`;
   if (!SUPPORTED_PLATFORMS.has(frontmatter.platform)) return `unsupported platform: ${frontmatter.platform}`;
   if (!/^https:\/\//.test(frontmatter.source)) return 'source must be an https URL';
-  if (!/^\d{4}-\d{2}-\d{2}_.+/.test(frontmatter.slug)) return 'slug must begin YYYY-MM-DD_';
+  if (!/^\d{4}-\d{2}-\d{2}_[a-z0-9-]{1,60}$/.test(frontmatter.slug)) {
+    return 'slug must be YYYY-MM-DD_ followed by a kebab-case title';
+  }
+  if (!/^\d{4}-\d{2}-\d{2}(?:T|\s)/.test(frontmatter.capturedAt)) {
+    return 'capturedAt must start YYYY-MM-DD followed by a time';
+  }
   return null;
 }
 
@@ -178,10 +183,13 @@ function main() {
     let capture;
     try {
       const raw = readFileSync(file, 'utf8');
-      capture = parseFrontmatter(raw);
+      const { frontmatter: parsedCapture, body } = parseFrontmatter(raw);
+      capture = parsedCapture;
       const validationError = validateCapture(capture);
       if (validationError) throw new Error(validationError);
-      const sha256 = createHash('sha256').update(raw).digest('hex');
+      // Kura refreshes capturedAt on every export. Hash only the conversation body so
+      // an unchanged re-capture stays idempotent while meaningful content changes queue.
+      const sha256 = createHash('sha256').update(body).digest('hex');
       const captureKey = `${capture.platform}:${capture.id}`;
       const prior = state.captures[captureKey];
       if (prior?.sha256 === sha256 && prior?.sourcePath === sourcePath) {
@@ -191,7 +199,11 @@ function main() {
 
       const date = String(capture.capturedAt).slice(0, 10);
       const hashPrefix = sha256.slice(0, 12);
-      const intakePath = join(options.intake, `intake-${date}-kura-${capture.platform}-${capture.slug}-${hashPrefix}.md`);
+      const intakeRoot = resolve(options.intake);
+      const intakePath = resolve(intakeRoot, `intake-${date}-kura-${capture.platform}-${capture.slug}-${hashPrefix}.md`);
+      if (dirname(intakePath) !== intakeRoot) {
+        throw new Error('intake filename must not contain path separators');
+      }
       const record = { sourcePath, intakePath, platform: capture.platform, sourceId: capture.id, sha256 };
       report.records.push(record);
       report.queued += 1;

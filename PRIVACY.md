@@ -23,7 +23,6 @@ Depending on the feature you choose, Kura processes:
 | AI conversation capture | Rendered conversation text, message metadata, prompts, and adjacent media URLs/content available in the supported page | In the browser, then in files downloaded to your device |
 | Local library/index | Metadata for Kura captures, prompts, and media | Chrome extension local storage on your device |
 | Suno harvester | A public Suno profile handle, public track metadata, and—only for tracks you flag—audio/video/cover URLs | Suno services and a local folder you explicitly select |
-| Bridge availability check | A short request to Arcanea's Kura health endpoint, used only to decide whether to show the optional Send to Arcanea control | Arcanea receives ordinary network request metadata such as IP address and user-agent under its server logging practices; no conversation body is included in this check |
 | Send to Arcanea (optional) | The platform, selected capture/detection data, and related metadata needed for the requested import | Sent to Arcanea only after you explicitly invoke this action |
 
 ## Local export
@@ -34,7 +33,7 @@ When you export a conversation with Kura, it writes an Obsidian-compatible Markd
 
 Kura contains an optional integration labelled **Send to Arcanea**. It is not required for local export.
 
-- Kura checks whether the Arcanea bridge is reachable so it can hide an unavailable optional control.
+- Kura never contacts Arcanea during standard local use.
 - If you choose **Send to Arcanea**, Kura sends the selected capture to the Arcanea import endpoint over HTTPS.
 - Do not use this action for data you are not willing to provide to Arcanea.
 - The Arcanea integration may be unavailable; local export remains available without it.

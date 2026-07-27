@@ -2,8 +2,9 @@ name: CI
 
 # Validates every PR before merge.
 #
-# Gates run in order: typecheck → lint → build → playwright.
-# All four are BLOCKING — a PR must pass all of them.
+# Gates run in order: typecheck, lint, bridge CLI, build, then Playwright.
+# The first four are blocking; Playwright is a best-effort smoke layer while
+# MV3 service-worker registration remains unreliable in xvfb-wrapped CI.
 #
 # Why this exists: Kura is a Chrome MV3 extension that exports user data.
 # A bad merge can break content scrapers (silent), corrupt vault output
@@ -57,6 +58,22 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
+
+  bridge:
+    name: Bridge CLI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Test deterministic Kura-to-SIS bridge
+        run: pnpm run test:bridge
 
   build:
     name: Build
@@ -119,7 +136,7 @@ jobs:
   status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, build, playwright]
+    needs: [typecheck, lint, bridge, build, playwright]
     if: always()
     steps:
       - name: Aggregate
@@ -129,14 +146,17 @@ jobs:
           echo "|------|--------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| Typecheck | ${{ needs.typecheck.result }} | yes |" >> $GITHUB_STEP_SUMMARY
           echo "| Lint | ${{ needs.lint.result }} | yes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bridge CLI | ${{ needs.bridge.result }} | yes |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} | yes |" >> $GITHUB_STEP_SUMMARY
           echo "| Playwright | ${{ needs.playwright.result }} | no (informational) |" >> $GITHUB_STEP_SUMMARY
 
-          # Only the 3 hard gates block. Playwright is informational
-          # until the MV3+xvfb CI infrastructure issue is resolved.
+          # The deterministic bridge is a hard privacy/provenance gate alongside
+          # typecheck, lint, and build. Playwright remains informational until
+          # the MV3+xvfb CI infrastructure issue is resolved.
           ALL_OK=true
           [ "${{ needs.typecheck.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.lint.result }}" != "success" ] && ALL_OK=false
+          [ "${{ needs.bridge.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.build.result }}" != "success" ] && ALL_OK=false
 
           if [ "$ALL_OK" = "false" ]; then

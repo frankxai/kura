@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-const repoRoot = new URL('..', import.meta.url).pathname.replace(/^\//, '');
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const bridge = join(repoRoot, 'scripts', 'kura-sis-bridge.mjs');
 
 function fixtureConversation({ id = 'chat-123', title = 'Bridge test idea' } = {}) {
@@ -93,6 +94,58 @@ test('rejects malformed captures without advancing bridge state', () => {
     assert.equal(result.json.queued, 0);
     assert.equal(result.json.invalid, 1);
     assert.match(result.json.errors[0].reason, /missing required frontmatter/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('treats a re-capture with only a new capturedAt value as unchanged', () => {
+  const root = mkdtempSync(join(tmpdir(), 'kura-sis-bridge-'));
+  try {
+    const source = join(root, 'Kura');
+    const intake = join(root, 'sis-intake');
+    const state = join(root, 'private', 'kura-bridge-state.json');
+    const folder = join(source, 'chatgpt', '2026-07-26_bridge-test-idea');
+    const conversation = join(folder, 'conversation.md');
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(conversation, fixtureConversation());
+
+    const first = runBridge(['--source', source, '--intake', intake, '--state', state]);
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(first.json.queued, 1);
+
+    writeFileSync(
+      conversation,
+      fixtureConversation().replace('capturedAt: 2026-07-26T12:00:00+02:00', 'capturedAt: 2026-07-27T12:00:00+02:00'),
+    );
+    const second = runBridge(['--source', source, '--intake', intake, '--state', state]);
+    assert.equal(second.status, 0, second.stderr);
+    assert.equal(second.json.queued, 0);
+    assert.equal(second.json.unchanged, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('rejects a capture whose slug would escape the intake directory', () => {
+  const root = mkdtempSync(join(tmpdir(), 'kura-sis-bridge-'));
+  try {
+    const source = join(root, 'Kura');
+    const intake = join(root, 'sis-intake');
+    const state = join(root, 'private', 'kura-bridge-state.json');
+    const folder = join(source, 'chatgpt', 'malicious-capture');
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(
+      join(folder, 'conversation.md'),
+      fixtureConversation().replace('slug: 2026-07-26_bridge-test-idea', 'slug: 2026-07-26_x/../../pwned'),
+    );
+
+    const result = runBridge(['--source', source, '--intake', intake, '--state', state]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.json.queued, 0);
+    assert.equal(result.json.invalid, 1);
+    assert.match(result.json.errors[0].reason, /slug/i);
+    assert.ok(!readdirSync(root).some((name) => /^pwned-.*\.md$/.test(name)));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
