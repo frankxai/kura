@@ -22,6 +22,7 @@ import type {
 } from '@/core/types';
 
 const ARCANEA_IMPORT_URL = 'https://arcanea.ai/api/kura/import';
+const ARCANEA_IMPORT_TIMEOUT_MS = 15_000;
 
 export default defineBackground({
   type: 'module',
@@ -316,6 +317,11 @@ export default defineBackground({
       // target is deliberately pinned rather than supplied by a message sender.
       KURA_SEND_TO_ARCANEA: async (message) => {
         const detection = message.detection as DetectionResult;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          ARCANEA_IMPORT_TIMEOUT_MS,
+        );
 
         try {
           const response = await fetch(ARCANEA_IMPORT_URL, {
@@ -332,11 +338,19 @@ export default defineBackground({
               platform: detection.platform,
               data: detection,
             }),
+            signal: controller.signal,
           });
           if (!response.ok) return { error: `Arcanea returned ${response.status}` };
           return await response.json();
         } catch (err) {
+          if (controller.signal.aborted) {
+            return {
+              error: `Arcanea request timed out after ${ARCANEA_IMPORT_TIMEOUT_MS / 1000}s`,
+            };
+          }
           return { error: `Failed to reach Arcanea: ${String(err)}` };
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
