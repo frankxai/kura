@@ -23,6 +23,10 @@ const FIXTURE = `file://${path.join(__dirname, 'fixtures', 'mock-chatgpt.html').
 test.describe('Arcanea Kura extension — load + detection', () => {
   let context: BrowserContext;
 
+  async function serviceWorker() {
+    return context.serviceWorkers()[0] ?? context.waitForEvent('serviceworker', { timeout: 30_000 });
+  }
+
   test.beforeAll(async () => {
     if (!fs.existsSync(path.join(DIST, 'manifest.json'))) {
       throw new Error('dist/ missing. Run `pnpm build` before this test.');
@@ -54,13 +58,7 @@ test.describe('Arcanea Kura extension — load + detection', () => {
   });
 
   test('service worker registers', async () => {
-    // The SW can register before this test subscribes to the event, so
-    // check the already-registered list first and only then wait (up to
-    // 30s — CI Linux with xvfb sometimes needs >10s to bootstrap the
-    // headed Chromium).
-    const worker =
-      context.serviceWorkers()[0] ??
-      (await context.waitForEvent('serviceworker', { timeout: 30_000 }));
+    const worker = await serviceWorker();
     // WXT bundles the background entrypoint to `background.js` at the
     // extension root (crxjs used a `service-worker-loader.js` shim).
     expect(worker.url()).toContain('background.js');
@@ -103,23 +101,42 @@ test.describe('Arcanea Kura extension — load + detection', () => {
   });
 
   test('popup HTML loads and shows the Kura logo', async () => {
-    // Find the extension id from the loaded service worker.
-    const workers = context.serviceWorkers();
-    expect(workers.length, 'at least one service worker').toBeGreaterThan(0);
-    const extensionId = workers[0].url().split('/')[2];
+    const worker = await serviceWorker();
+    const extensionId = worker.url().split('/')[2];
 
     const popup = await context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup.html`);
-
     await expect(popup.locator('.title')).toHaveText('Kura');
     await expect(popup.locator('.logo')).toHaveText('K');
     await expect(popup.locator('#btn-quick-export')).toContainText('Export to Kura');
     await expect(popup.locator('footer')).toContainText('Kura v0.2.0');
   });
 
+  test('opening the popup does not make an Arcanea network request', async () => {
+    const worker = await serviceWorker();
+    await worker.evaluate(() => chrome.storage.local.clear());
+    let arcaneaRequests = 0;
+    await context.route('https://arcanea.ai/**', async (route) => {
+      arcaneaRequests += 1;
+      await route.abort();
+    });
+
+    try {
+      const extensionId = worker.url().split('/')[2];
+      const popup = await context.newPage();
+      await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+      await expect(popup.locator('.title')).toHaveText('Kura');
+      await popup.waitForTimeout(250);
+      expect(arcaneaRequests).toBe(0);
+      await popup.close();
+    } finally {
+      await context.unroute('https://arcanea.ai/**');
+    }
+  });
+
   test('sidepanel HTML loads with library scaffolding', async () => {
-    const workers = context.serviceWorkers();
-    const extensionId = workers[0].url().split('/')[2];
+    const worker = await serviceWorker();
+    const extensionId = worker.url().split('/')[2];
 
     const sidepanel = await context.newPage();
     await sidepanel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
@@ -132,8 +149,8 @@ test.describe('Arcanea Kura extension — load + detection', () => {
   });
 
   test('sidepanel Suno tab gates harvester actions on folder connection', async () => {
-    const workers = context.serviceWorkers();
-    const extensionId = workers[0].url().split('/')[2];
+    const worker = await serviceWorker();
+    const extensionId = worker.url().split('/')[2];
 
     const sidepanel = await context.newPage();
     await sidepanel.goto(`chrome-extension://${extensionId}/sidepanel.html`);

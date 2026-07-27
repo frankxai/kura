@@ -1,184 +1,127 @@
-# Arcanea Vault - Chrome Web Store Submission Guide
+# Kura Chrome Web Store release guide
 
-> Everything you need to publish Arcanea Vault to the Chrome Web Store.
-> The extension is built and ready in `dist/`.
+> **Release state:** packaging and automated extension tests are available. This is **not yet ready to submit** until every blocker below has an evidence receipt.
+>
+> Product: **Kura** · package/schema: **0.2.0** · Chrome MV3 · local-first.
 
----
+## What Kura truthfully does today
 
-## Step 1: Create a Chrome Web Store Developer Account
+Kura captures the currently open conversation from ChatGPT, Claude, Gemini, Grok, DeepSeek, or Perplexity into local, Obsidian-compatible Markdown. It also includes a local side-panel library and a Suno harvester that writes only into a user-selected local folder.
 
-1. Go to: https://chrome.google.com/webstore/devconsole/register
-2. Sign in with your Google account
-3. Pay the **one-time $5 registration fee**
-4. Accept the Developer Agreement
+- Capture is explicit: popup **Export to Kura** or `Alt+Shift+K` on a supported conversation.
+- Raw output remains on the user's disk. Kura does not require an account or send conversation content to a Kura server.
+- The optional `Send to Arcanea` integration is a separate, explicit user action. It must remain visibly opt-in and must never be described as part of the standard export path.
+- Current output contract is `FORMAT_SPEC.md` v0.2.0. Do not advertise PDF, DOCX, CSV, automatic cloud sync, or a batch export of an entire provider history.
 
----
+## Reproducible release commands
 
-## Step 2: Test the Extension Locally First
-
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable **Developer mode** (toggle in the top-right corner)
-3. Click **"Load unpacked"**
-4. Select the folder: `C:\Users\frank\arcanea-vault\dist`
-5. The extension should appear with the Vault icon
-6. Navigate to https://grok.com, https://chatgpt.com, or https://claude.ai
-7. Click the extension icon in the toolbar
-8. Verify it detects the platform and shows content stats
-9. Try "Quick Export All" to test the export functionality
-
----
-
-## Step 3: Prepare Store Assets
-
-You need these assets before submitting:
-
-### Required Images
-| Asset | Size | Notes |
-|-------|------|-------|
-| Extension icon | 128x128 px | Already in `icons/icon-128.png` (replace with final design) |
-| Small promo tile | 440x280 px | Store listing tile |
-| Screenshots | 1280x800 or 640x400 | At least 1, recommend 5 |
-
-### Recommended: Create Screenshots
-Take screenshots on these platforms for maximum SEO value:
-1. **Grok** - Show the popup detecting Grok Imagine images
-2. **ChatGPT** - Show conversation export in Markdown
-3. **Claude** - Show artifact detection
-4. **Gemini** - Show image capture
-5. **Multi-platform** - Show the "unsupported" state with all platform chips
-
-### Store Listing Text
-
-**Extension Name** (already set in manifest):
-```
-Arcanea Vault - ChatGPT, Claude, Grok, Gemini Export
+```bash
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm lint
+pnpm test:bridge
+pnpm test:extension
+pnpm package:store
 ```
 
-**Short Description** (132 chars max):
-```
-Export conversations, images & prompts from ChatGPT, Claude, Grok, Gemini, DeepSeek & Perplexity to Markdown, JSON, PDF.
+`pnpm package:store` calls WXT and produces:
+
+```text
+dist/kura-0.2.0-chrome.zip
 ```
 
-**Detailed Description** (for store listing):
-```
-Arcanea Vault captures and exports your AI conversations, generated images, videos, and prompts from all major AI platforms.
+Upload that ZIP only after the manual acceptance gates are complete. Never zip source folders, `node_modules`, test results, or a stale build directory manually.
 
-SUPPORTED PLATFORMS:
-- ChatGPT (including DALL-E images)
-- Claude (including artifacts)
-- Grok (including Imagine images & videos)
-- Google Gemini (including generated images)
+## Developer-mode dogfood
+
+1. Build the extension with `pnpm build`.
+2. Open `chrome://extensions/` in the intended Chrome profile.
+3. Enable **Developer mode**.
+4. Select **Load unpacked** and choose this checkout's `dist/` directory.
+5. Pin **Kura** to the toolbar.
+6. On a non-sensitive, disposable conversation for each supported platform, use **Export to Kura**.
+7. Confirm the export appears under the Chrome download location as `Kura/<platform>/<slug>/conversation.md` with the expected frontmatter and no duplicate suffix on re-capture.
+8. Run the local bridge only after the two-platform dogfood capture passes. See `docs/KURA-SIS-DOGFOOD.md`.
+
+Do not use unattended GUI/computer-use automation to crawl chat history. Kura is deliberately a user-triggered capture tool; signed-in browser state is needed only while a person chooses to export a rendered conversation.
+
+## Manual Store blockers
+
+All entries require dated evidence in the release PR or a release receipt.
+
+- [ ] **Scraper compatibility:** one live, non-sensitive capture each from ChatGPT, Claude, Gemini, Google AI Studio, Grok, DeepSeek, and Perplexity. Record platform, date, extension version, and output path; never commit chat contents.
+- [ ] **Suno behavior:** one dated, non-sensitive receipt for catalog indexing and one user-flagged media fetch. Record the selected local-folder path and confirm no unselected media was fetched.
+- [ ] **Re-capture behavior:** prove that re-capturing the same platform conversation does not create a duplicate conversation folder or destroy user-controlled frontmatter.
+- [ ] **Real icons:** replace the current tiny placeholder assets with final 16, 48, and 128 px PNGs. Inspect the packaged assets, not just source files.
+- [ ] **Store media:** create at least one accurate 1280×800 or 640×400 screenshot and a 440×280 promo tile. Screenshots must show actual current UI, never mocked future functionality.
+- [ ] **Listing copy:** use the truthful description below and ensure it matches current permissions and UI.
+- [ ] **Privacy disclosure:** publish the current [`PRIVACY.md`](./PRIVACY.md) at a stable public URL before submission. The intended canonical URL after merge is `https://github.com/frankxai/kura/blob/main/PRIVACY.md`. It must disclose local file writes, every host-permission class, that standard use makes **no automatic Arcanea request**, and the explicit optional Arcanea content route.
+- [ ] **Permissions audit:** validate that `wxt.config.ts` host permissions match active scrapers and the optional Arcanea integration. Do not add broad host permissions for marketing convenience.
+- [ ] **Chrome developer account:** registration/payment and final public submission are an operator action; do not automate a payment or publish a package without explicit approval.
+
+## Chrome Web Store listing draft
+
+### Name
+
+```text
+Kura — Export AI conversations to Markdown
+```
+
+### Short description (132 characters maximum)
+
+```text
+Export the current AI conversation to local, Obsidian-ready Markdown. ChatGPT, Claude, Gemini, Grok, DeepSeek and Perplexity.
+```
+
+### Detailed description
+
+```text
+Kura exports the AI conversations you choose to keep.
+
+On a supported ChatGPT, Claude, Gemini, Grok, DeepSeek or Perplexity conversation, click Export to Kura or use the Kura shortcut. Kura saves an Obsidian-compatible Markdown folder in your local Downloads/Kura directory, including the conversation, extracted prompts and adjacent media where available.
+
+LOCAL-FIRST
+- No Kura account required
+- No analytics or tracking in the standard export flow
+- Your exported conversations stay on your disk
+
+SUPPORTED SURFACES
+- ChatGPT
+- Claude
+- Google Gemini and Google AI Studio
+- Grok
 - DeepSeek
 - Perplexity
 
-EXPORT FORMATS:
-- Markdown (.md) - Perfect for Obsidian, Notion, GitHub
-- JSON - Structured data for developers
-- HTML - Beautifully styled offline viewing
-- Plain Text - Universal compatibility
-
-KEY FEATURES:
-- One-click Quick Export: Captures everything on the page instantly
-- Smart Detection: Automatically identifies conversations, images, videos, and prompts
-- Local-first: All data stays on your device. No cloud. No tracking.
-- Organized Downloads: Files saved to ArcaneanVault/ folder with platform subfolders
-- Side Panel Library: Browse your captured content (v0.2.0)
-
-PERFECT FOR:
-- Researchers archiving AI conversations
-- Creators saving generated images and prompts
-- Developers documenting AI interactions
-- Writers collecting AI-assisted content
-- Anyone who wants to keep their AI creations organized
-
-FREE & PRIVACY-FIRST:
-No account required. No data collection. No analytics. Your conversations stay yours.
-
-Built by Arcanea (arcanea.ai) - Imagine a Good Future. Build It Here.
+Kura captures the currently open conversation. It does not automatically export an entire account history or upload conversations to a Kura service.
 ```
 
-**Category**: Productivity
+### Privacy answers (draft; verify against the submitted build)
 
-**Language**: English
+| Store question | Accurate answer |
+| --- | --- |
+| Single purpose | Export user-selected AI conversations and associated local media into Markdown files. |
+| Data collection | Standard export processing is local to the browser/device; Kura does not collect or sell conversation content. |
+| Host permissions | **AI capture:** `chatgpt.com`, `chat.openai.com`, `claude.ai`, `gemini.google.com`, `aistudio.google.com`, `grok.com`, `chat.deepseek.com`, and `www.perplexity.ai`, only to detect/export the currently selected conversation. **Grok media:** `assets.grok.com` and `imagine-public.x.ai` for selected adjacent media. **Suno:** `suno.com` plus `studio-api.prod.suno.com`, `cdn1.suno.ai`, and `cdn2.suno.ai` only when the user opens the Suno harvester to index a handle or fetches flagged media to a chosen local folder. **Arcanea:** `arcanea.ai` only for the explicit Send to Arcanea action; standard export does not contact it. |
+| Remote code | No remote executable code. |
+| Optional network route | The separate Send to Arcanea action is user-triggered and must be disclosed as optional. |
 
----
+## Release receipt
 
-## Step 4: Create the ZIP Package
+A release candidate is eligible for review only when it includes:
 
-Open PowerShell and run:
-```powershell
-cd C:\Users\frank\arcanea-vault
-Compress-Archive -Path dist\* -DestinationPath arcanea-vault-v0.1.0.zip -Force
+```text
+Kura release candidate <version>
+Commit: <sha>
+Package: dist/kura-<version>-chrome.zip
+Automated: typecheck / lint / bridge tests / extension tests
+Manual platform captures: <seven dated receipts, including Google AI Studio>
+Suno index + flagged-media check: <two dated receipts>
+Re-capture check: <receipt>
+Store assets: <paths>
+Privacy policy URL: <url>
+Permissions reviewed by: <name/date>
+Submission: NOT SUBMITTED | SUBMITTED <date> | APPROVED <date>
 ```
 
-This creates `arcanea-vault-v0.1.0.zip` ready for upload.
-
----
-
-## Step 5: Submit to Chrome Web Store
-
-1. Go to: https://chrome.google.com/webstore/devconsole
-2. Click **"New Item"** (+ button)
-3. Upload `arcanea-vault-v0.1.0.zip`
-4. Fill in the store listing:
-   - **Name**: Arcanea Vault - ChatGPT, Claude, Grok, Gemini Export
-   - **Description**: (use the detailed description above)
-   - **Category**: Productivity
-   - **Language**: English
-5. Upload screenshots and promo images
-6. Set **Visibility**: Public
-7. Set **Distribution**: All regions
-
-### Privacy Practices (required):
-- **Single purpose description**: "Export and download conversations, images, and prompts from AI platforms"
-- **Host permissions justification**: "Required to detect and extract content from supported AI platforms (ChatGPT, Claude, Grok, Gemini, DeepSeek, Perplexity)"
-- **Data usage**: "No data collected. All processing happens locally in the browser."
-- **Remote code**: No
-- **Personal data**: No
-
-8. Click **"Submit for Review"**
-
----
-
-## Step 6: Review Process
-
-- **Typical review time**: 1-3 business days
-- **Common rejection reasons**:
-  - Missing privacy policy (add a simple one at arcanea.ai/privacy)
-  - Screenshots don't match functionality
-  - Description mentions features not yet implemented
-
-### If Privacy Policy Required
-Create a simple page at `arcanea.ai/vault/privacy` with:
-- We don't collect any data
-- All processing is local
-- No analytics, tracking, or cookies
-- Contact: frank@arcanea.ai
-
----
-
-## Quick Checklist
-
-- [ ] Developer account created ($5 fee paid)
-- [ ] Extension tested locally via `chrome://extensions/`
-- [ ] Tested on at least 2 platforms (Grok + ChatGPT recommended)
-- [ ] ZIP file created from `dist/`
-- [ ] 5 screenshots captured (1280x800)
-- [ ] 440x280 promo tile created
-- [ ] Final 128px icon designed (replace placeholder)
-- [ ] Privacy policy page published
-- [ ] Store listing submitted
-- [ ] Review approved
-
----
-
-## Post-Launch SEO Tips
-
-1. **Keywords in description**: ChatGPT export, Grok download, Claude export, AI conversation saver, prompt exporter
-2. **Reply to reviews**: Increases trust and ranking
-3. **Regular updates**: New version every 2-4 weeks keeps ranking fresh
-4. **Blog post**: Write "How to Export ChatGPT Conversations" linking to the extension
-
----
-
-*Generated by Arcanea Intelligence OS*
+The ZIP, a green CI run, or a developer-mode install alone is not a Store release.

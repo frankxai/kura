@@ -13,7 +13,10 @@
     "lint": "pnpm exec eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "test:extension": "pnpm build && pnpm exec playwright test"
+    "test:extension": "pnpm build && pnpm exec playwright test",
+    "test:bridge": "node --test tests/kura-sis-bridge.spec.mjs",
+    "bridge:sis": "node scripts/kura-sis-bridge.mjs",
+    "package:store": "wxt zip"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

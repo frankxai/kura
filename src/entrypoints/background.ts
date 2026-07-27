@@ -21,6 +21,9 @@ import type {
   MediaItem,
 } from '@/core/types';
 
+const ARCANEA_IMPORT_URL = 'https://arcanea.ai/api/kura/import';
+const ARCANEA_IMPORT_TIMEOUT_MS = 15_000;
+
 export default defineBackground({
   type: 'module',
   main() {
@@ -309,17 +312,19 @@ export default defineBackground({
         return vault.listConversations(platform);
       },
 
-      // Opt-in Arcanea integration — disabled by default per the local-first
-      // manifesto. The user must explicitly click "Send to Arcanea" to fire.
-      // This is the only Arcanea-aware code in the sovereign Kura extension;
-      // everything else is brand-neutral.
+      // Opt-in Arcanea integration. The user must explicitly click "Send to
+      // Arcanea"; no standard capture path makes a network request. The import
+      // target is deliberately pinned rather than supplied by a message sender.
       KURA_SEND_TO_ARCANEA: async (message) => {
         const detection = message.detection as DetectionResult;
-        const endpoint =
-          (message.endpoint as string) || 'https://arcanea.ai/api/kura/import';
+        const controller = new AbortController();
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          ARCANEA_IMPORT_TIMEOUT_MS,
+        );
 
         try {
-          const response = await fetch(endpoint, {
+          const response = await fetch(ARCANEA_IMPORT_URL, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -333,11 +338,19 @@ export default defineBackground({
               platform: detection.platform,
               data: detection,
             }),
+            signal: controller.signal,
           });
           if (!response.ok) return { error: `Arcanea returned ${response.status}` };
           return await response.json();
         } catch (err) {
+          if (controller.signal.aborted) {
+            return {
+              error: `Arcanea request timed out after ${ARCANEA_IMPORT_TIMEOUT_MS / 1000}s`,
+            };
+          }
           return { error: `Failed to reach Arcanea: ${String(err)}` };
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
 
