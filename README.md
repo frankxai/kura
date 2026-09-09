@@ -90,6 +90,12 @@ the first non-conversation surface built on the same local-first spine:
 
 Spec: [docs/specs/SUNO-HARVESTER.md](docs/specs/SUNO-HARVESTER.md).
 
+Already exported WAV/MP3 files through Suno's download menu? The
+[official-export importer](docs/SUNO-OFFICIAL-INTAKE.md) produces a read-only plan,
+then copies selected files into an external intake with SHA-256 receipts and
+optional human contribution references. It uses no network or credentials;
+rights review and publishing remain separate downstream decisions.
+
 ---
 
 ## What gets written
