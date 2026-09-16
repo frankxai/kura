@@ -7,7 +7,7 @@ Status: **draft; not released; real-account acceptance still open**.
 - Inspected main and all four remote feature branches, draft PRs #3/#4, current
   storage adapters, FORMAT_SPEC, README, CLAUDE and AGENTS instructions.
 - Connected Vercel account inspection returned no Kura project among its projects.
-  This change stays a local extension; no cloud image upload/deployment was made.
+  The initial implementation was extension-only. A subsequent production web companion uses the same local importer; image bytes are never uploaded.
 - Official download routes checked: Midjourney Organize bulk selection/download;
   Grok Settings → Data Controls download. The APIs do not establish full accessible
   image-history enumeration for this feature.
@@ -44,7 +44,7 @@ Status: **draft; not released; real-account acceptance still open**.
 9. More than 10 selected images rejected before any destination write.
 10. Same bytes under different filenames produce one original, with both paths in the run ledger.
 
-## Required before release / bulk work
+## Required before full-library release / bulk work
 
 - [ ] Independent review, including persistence failure paths and existing-branch integration.
 - [x] Run headed Chromium extension and gallery tests successfully (23 tests).
@@ -58,7 +58,7 @@ Status: **draft; not released; real-account acceptance still open**.
 - [ ] Record selected-export totals versus provider-visible counts with limitations.
 - [ ] Verify the intended local machine/destination and available disk space.
 
-No bulk download, worker, full-history crawl, database migration or release was started.
+No bulk download, worker, full-history crawl or database migration was started. The bounded web pilot can be hosted separately from the extension release.
 #5 stays open until these acceptance gates are met.
 
 CI evidence: https://github.com/frankxai/kura/actions/runs/35157822184

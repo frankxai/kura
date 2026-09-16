@@ -3,8 +3,16 @@ import path from 'node:path';
 
 let context: BrowserContext;
 let extensionUrl: string;
+let webBrowser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+const WEB_URL = process.env.KURA_WEB_URL;
+const galleryUrl = () => WEB_URL || `${extensionUrl}/images.html`;
 const DIST = path.resolve('dist');
 test.beforeAll(async () => {
+  if (WEB_URL) {
+    webBrowser = await chromium.launch({ headless: true });
+    context = await webBrowser.newContext();
+    return;
+  }
   context = await chromium.launchPersistentContext('', {
     headless: false,
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`, '--no-sandbox'],
@@ -12,10 +20,10 @@ test.beforeAll(async () => {
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
   extensionUrl = `chrome-extension://${worker.url().split('/')[2]}`;
 });
-test.afterAll(async () => { await context?.close(); });
+test.afterAll(async () => { await context?.close(); await webBrowser?.close(); });
 
 async function setup(page: Page) {
-  await page.goto(`${extensionUrl}/images.html`);
+  await page.goto(galleryUrl());
   // Test-only directory picker: use actual browser filesystem handles in OPFS.
   // The production entrypoint still requires an explicit user-selected disk folder.
   await page.evaluate(async () => {
@@ -84,7 +92,7 @@ test('pilot UI imports both providers, searches, opens details, and skips repeat
 test('mobile-sized layout stays within viewport and import remains keyboard accessible', async () => {
   const page = await context.newPage();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${extensionUrl}/images.html`);
+  await page.goto(galleryUrl());
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect.poll(() => page.locator('.image-card img').evaluateAll(images => images.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
   await page.screenshot({ path: 'test-results/gallery-narrow.png', fullPage: true });

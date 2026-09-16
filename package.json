@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "test:extension": "pnpm build && pnpm exec playwright test",
-    "test:images": "playwright test tests/image-import.spec.ts"
+    "test:images": "playwright test tests/image-import.spec.ts",
+    "build:web": "npm run build && node scripts/build-web.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

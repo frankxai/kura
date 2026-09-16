@@ -198,6 +198,7 @@ async function renderSelection() {
 function setBusyControls() {
   $<HTMLFieldSetElement>('source-controls').disabled = busy || scanning;
   for (const id of ['connect','destination','select-next','select-previous']) $<HTMLButtonElement>(id).disabled = busy || scanning;
+  if (!window.showDirectoryPicker) for (const id of ['connect', 'destination', 'choose-source']) $<HTMLButtonElement>(id).disabled = true;
   for (const input of $('selection').querySelectorAll('input')) input.disabled = busy || scanning;
   $('pause').hidden = !busy;
 }
@@ -260,5 +261,12 @@ void (async () => {
     root = await loadDirectory('kura_vault');
     if (root) { disk = directoryDisk(root); $('connect').textContent = `${root.name} · Connected`; $('destination').textContent = `${root.name} · Change folder`; await refreshLibrary(); }
   } catch (e) { notice(`Reconnect your Kura folder. ${errorText(e)}`); }
-  if (!window.showDirectoryPicker) { notice('Import requires desktop Chrome or Edge with folder access. Mobile and cloud viewing are not available yet.'); run.disabled = true; }
+  if (!window.showDirectoryPicker) {
+    notice('To import or browse your local archive, open this page in desktop Chrome or Edge. Mobile can preview selected files; saved-library access requires desktop folder support.');
+    run.disabled = true;
+    for (const id of ['connect', 'destination', 'choose-source']) {
+      $<HTMLButtonElement>(id).disabled = true;
+      $(id).title = 'Requires desktop Chrome or Edge folder access';
+    }
+  }
 })();
