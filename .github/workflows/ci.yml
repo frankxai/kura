@@ -125,7 +125,7 @@ jobs:
       - name: Run Playwright extension tests (xvfb for headed MV3)
         run: xvfb-run --auto-servernum --server-args='-screen 0 1280x720x24' pnpm exec playwright test
       - name: Upload test results
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results

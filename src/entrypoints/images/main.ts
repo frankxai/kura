@@ -152,6 +152,7 @@ async function showDetails(receipt: Receipt) {
 function showImport() { if (!dialog.open) dialog.showModal(); }
 function clearSource() {
   discovery = null; selected.clear(); latestJob = null; selectionPage = 0;
+  $<HTMLInputElement>('admission').checked = false;
   revoke(selectionUrls); selectionUrls = [];
   $('selection').replaceChildren(); $('discovery-errors').replaceChildren();
   $('scan-summary').textContent = 'Choose files to see what will be imported. Nothing is copied yet.';

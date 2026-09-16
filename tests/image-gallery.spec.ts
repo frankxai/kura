@@ -41,12 +41,15 @@ test('pilot UI imports both providers, searches, opens details, and skips repeat
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await setup(page);
+  await page.setViewportSize({ width: 1440, height: 1050 });
   await expect(page.getByRole('heading', { name: /Your images/ })).toBeVisible();
+  await page.screenshot({ path: 'test-results/gallery-empty.png', fullPage: true });
   await page.getByRole('button', { name: '＋ Import images', exact: true }).click();
   for (const provider of ['Midjourney', 'Grok']) {
     await page.getByRole('radio', { name: new RegExp(provider) }).check();
     await page.getByRole('button', { name: 'Choose export folder', exact: true }).click();
     await expect(page.locator('#scan-summary')).toContainText('1 images found');
+    await page.screenshot({ path: `test-results/import-${provider.toLowerCase()}.png`, fullPage: true });
     await expect(page.getByRole('button', { name: 'Import selected images' })).toBeDisabled();
     if (provider === 'Midjourney') await page.locator('#destination').click();
     await page.locator('#admission').check();
@@ -58,6 +61,7 @@ test('pilot UI imports both providers, searches, opens details, and skips repeat
   await expect(page.locator('#progress-counts')).toContainText('0 imported · 1 already saved · 0 failed');
   await page.getByRole('button', { name: 'Close import', exact: true }).click();
   await expect(page.locator('.image-card')).toHaveCount(2);
+  await page.screenshot({ path: 'test-results/gallery-populated.png', fullPage: true });
   await page.getByRole('searchbox').fill('Synthetic archive');
   await expect(page.locator('.image-card')).toHaveCount(2);
   await page.getByLabel('Filter by provider').selectOption('grok');
@@ -82,6 +86,7 @@ test('mobile-sized layout stays within viewport and import remains keyboard acce
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${extensionUrl}/images.html`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/gallery-narrow.png', fullPage: true });
   await page.getByRole('button', { name: '＋ Import images', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Bring your images home.' })).toBeVisible();
   await page.keyboard.press('Escape');
