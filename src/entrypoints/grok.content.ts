@@ -116,8 +116,8 @@ class GrokScraper extends PlatformScraper {
   async extractMedia(): Promise<MediaItem[]> {
     const media: MediaItem[] = [];
 
-    // Auto-scroll to load all content
-    await this.scrollToLoadAll(undefined, 500);
+    // Best-effort current-page capture only. Library imports use the explicit
+    // local export flow; a virtualized viewport cannot prove full history.
 
     // Find all image containers
     const imageViewers = document.querySelectorAll(
@@ -127,12 +127,6 @@ class GrokScraper extends PlatformScraper {
     for (const img of imageViewers) {
       const src = (img as HTMLImageElement).src;
       if (!src || src.startsWith('data:')) continue;
-
-      // Try to get HD URL by replacing preview path
-      const hdUrl = src
-        .replace('/preview/', '/full/')
-        .replace('_preview', '_full')
-        .replace(/w=\d+/, 'w=2048');
 
       // Find the nearest prompt text
       const promptEl = img.closest('[class*="card"], [class*="item"]')
@@ -147,7 +141,7 @@ class GrokScraper extends PlatformScraper {
         platform: 'grok',
         type: 'image',
         url: src,
-        hdUrl: hdUrl !== src ? hdUrl : undefined,
+        // Preserve the observed URL; never fabricate a full-resolution URL.
         prompt,
         filename: this.sanitizeFilename(`grok_${prompt.slice(0, 50) || 'image'}_${Date.now()}.jpg`),
         capturedAt: new Date().toISOString(),

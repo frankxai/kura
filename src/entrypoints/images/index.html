@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kura — Image library</title>
+  <link rel="stylesheet" href="../../styles/images.css">
+</head>
+<body>
+  <aside class="rail">
+    <a href="sidepanel.html" class="brand" aria-label="Kura conversation library"><span class="seal">蔵</span><span>Kura<small>Your creative archive</small></span></a>
+    <nav aria-label="Library navigation"><a href="sidepanel.html">Conversations <span>↗</span></a><a href="images.html" aria-current="page">Image library <span>◫</span></a></nav>
+    <div class="rail-note"><span class="status-dot"></span> Yours. On your disk.<p>Original files, preserved.<br>No uploads. No cloud sync.</p></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>LIBRARY <span class="slash">/</span> IMAGES</span><button id="connect" class="quiet">Connect Kura folder <span>↗</span></button></header>
+    <div class="page-heading"><div><p class="eyebrow">A place for what you create</p><h1>Your images,<br><em>beautifully kept.</em></h1><p class="lede">Bring your Midjourney and Grok images together.<br>Keep the originals. Find the idea again.</p></div><button id="open-import" class="primary">＋ Import images</button></div>
+    <div id="notice" class="notice" role="status" aria-live="polite">Connect your local Kura folder to browse saved images, or start a small import.</div>
+    <section class="library" aria-label="Saved images">
+      <div class="toolbar"><div class="filters"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Search prompts or filenames" aria-label="Search prompts or filenames"></label><select id="provider-filter" aria-label="Filter by provider"><option value="">All providers</option><option value="midjourney">Midjourney</option><option value="grok">Grok</option></select><label class="date-filter">Imported since <input id="date-filter" type="date"></label></div><span id="count">0 images</span></div>
+      <div id="gallery" class="gallery"></div>
+      <div id="empty" class="empty"><div class="empty-art" aria-hidden="true"><span>◫</span></div><h2>A home for your imagination.</h2><p>Start with a few images from each provider.<br>We’ll check every original before adding it to your library.</p><button id="empty-import" class="primary">Start your first import <span>→</span></button><small>Private by default · Up to 10 images per test import</small></div>
+      <div class="pagination"><button id="previous" class="quiet" hidden>← Previous</button><span id="page-label"></span><button id="next" class="quiet" hidden>Next →</button></div>
+    </section>
+    <footer><span>KURA <span class="slash">/</span> IMAGE LIBRARY</span><span>Local archive · Desktop Chrome & Edge</span></footer>
+  </main>
+  <dialog id="import-dialog" aria-labelledby="import-title">
+    <div class="dialog-heading"><div><p class="eyebrow">A small import, done right</p><h2 id="import-title">Bring your images home.</h2></div><button id="close-import" class="icon-button" aria-label="Close import">×</button></div>
+    <div class="import-body">
+      <fieldset id="source-controls"><legend><span class="step">1</span> Choose your source</legend><div class="provider-options"><label><input type="radio" name="provider" value="midjourney" checked><span>Midjourney<small>Organize downloads</small></span></label><label><input type="radio" name="provider" value="grok"><span>Grok<small>Images or data export</small></span></label></div><p id="provider-help" class="help"></p><a id="provider-docs" target="_blank" rel="noopener noreferrer">Provider’s download guide ↗</a><div class="source-actions"><button id="choose-source">Choose export folder</button><label class="file-button">Or select image files<input id="choose-files" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif,.json" multiple></label></div><p class="help">Use your own downloaded images. Extract ZIP files first. Source files stay untouched. Prompts and generation dates are unknown unless supplied in a companion metadata file.</p></fieldset>
+      <section><h3><span class="step">2</span> Preview a small batch</h3><p id="scan-summary" class="help">Choose files to see what will be imported. Nothing is copied yet.</p><div id="selection" class="selection"></div><div id="discovery-errors" class="errors"></div><div class="pagination"><button id="select-previous" hidden>← Previous</button><span id="selection-page"></span><button id="select-next" hidden>Next →</button></div></section>
+      <section><h3><span class="step">3</span> Choose where to keep them</h3><button id="destination">Connect Kura folder</button><p id="estimate" class="help">Exact source sizes plus an allowance for thumbnails and receipts.</p><label class="admission"><input id="admission" type="checkbox">I checked that this folder is on the intended drive with enough free space.</label><p class="help">The browser cannot measure free space on your chosen drive. Full-library import stays unavailable until both provider samples have been verified.</p></section>
+      <section id="progress-section" hidden><h3 id="progress-title">Import progress</h3><progress id="progress" max="1" value="0"></progress><p id="progress-counts" role="status" aria-live="polite"></p><ul id="failures" class="errors"></ul></section>
+    </div>
+    <div class="dialog-footer"><span id="import-status" role="status" aria-live="polite">Local files only · No account credentials</span><button id="pause" hidden>Pause</button><button id="run-import" class="primary" disabled>Import selected images</button></div>
+  </dialog>
+  <dialog id="detail-dialog" aria-labelledby="detail-title"><div class="dialog-heading"><h2 id="detail-title">Image details</h2><button id="close-detail" class="icon-button" aria-label="Close image details">×</button></div><img id="detail-image" alt=""><div class="detail-body"><p id="detail-prompt"></p><dl id="detail-metadata"></dl><button id="open-original" class="primary">Open original ↗</button><p id="detail-status" role="status"></p></div></dialog>
+  <script type="module" src="./main.ts"></script>
+</body></html>

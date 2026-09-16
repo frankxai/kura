@@ -80,6 +80,22 @@ jobs:
           path: dist/
           retention-days: 7
 
+  image-import:
+    name: Image import contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Test image persistence and provider intake
+        run: pnpm test:images
+
   playwright:
     name: Playwright (real Chromium)
     runs-on: ubuntu-latest
@@ -119,7 +135,7 @@ jobs:
   status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, build, playwright]
+    needs: [typecheck, lint, build, image-import, playwright]
     if: always()
     steps:
       - name: Aggregate
@@ -132,9 +148,12 @@ jobs:
           echo "| Build | ${{ needs.build.result }} | yes |" >> $GITHUB_STEP_SUMMARY
           echo "| Playwright | ${{ needs.playwright.result }} | no (informational) |" >> $GITHUB_STEP_SUMMARY
 
-          # Only the 3 hard gates block. Playwright is informational
+          echo "| Image imports | ${{ needs.image-import.result }} | yes |" >> $GITHUB_STEP_SUMMARY
+
+          # Image persistence and the 3 existing hard gates block. Playwright is informational
           # until the MV3+xvfb CI infrastructure issue is resolved.
           ALL_OK=true
+          [ "${{ needs.image-import.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.typecheck.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.lint.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.build.result }}" != "success" ] && ALL_OK=false
