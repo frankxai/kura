@@ -60,11 +60,13 @@ async function refreshLibrary() {
   const loaded = await loadGallery(disk);
   library = loaded.images;
   notice(loaded.errors.length ? `${loaded.errors.length} receipt(s) could not be read. Files are untouched. ${loaded.errors.join('; ')}` : `Connected to ${root?.name}. ${library.length} saved images. Originals stay on this drive; your library is not synced to the cloud.`);
-  const previous = await loadLatestImport(disk);
-  if (previous && !busy && (previous.status !== 'finished' || totals(previous).failed > 0)) {
-    showProgress(previous);
-    notice(`Your last ${PROVIDERS[previous.provider].name} import has ${totals(previous).pending} pending and ${totals(previous).failed} failed files. Open Import images and reselect the same export to resume. Saved originals are verified and skipped.`);
-  }
+  try {
+    const previous = await loadLatestImport(disk);
+    if (previous && !busy && (previous.status !== 'finished' || totals(previous).failed > 0)) {
+      showProgress(previous);
+      notice(`Your last ${PROVIDERS[previous.provider].name} import has ${totals(previous).pending} pending and ${totals(previous).failed} failed files. Open Import images and reselect the same export to resume. Saved originals are verified and skipped.`);
+    }
+  } catch { notice('An import history file could not be read. Your saved images remain available; the history file is untouched.'); }
   await renderGallery();
 }
 function filteredLibrary() {

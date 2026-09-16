@@ -86,6 +86,7 @@ test('mobile-sized layout stays within viewport and import remains keyboard acce
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${extensionUrl}/images.html`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect.poll(() => page.locator('.image-card img').evaluateAll(images => images.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
   await page.screenshot({ path: 'test-results/gallery-narrow.png', fullPage: true });
   await page.getByRole('button', { name: '＋ Import images', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Bring your images home.' })).toBeVisible();

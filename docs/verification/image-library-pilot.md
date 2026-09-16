@@ -16,15 +16,20 @@ Status: **draft; not released; real-account acceptance still open**.
 - TypeScript: PASS. ESLint: PASS. WXT production build: PASS.
 - 10 image-import contract tests: PASS. Five existing Suno logic tests: PASS.
   Test originals are synthetic bytes; metadata is explicitly fixture metadata.
-- Existing extension tests: locally BLOCKED before execution (Chromium absent).
+- Existing extension tests: initially locally BLOCKED before execution (Chromium absent).
   Downloading the official test browser timed out. xvfb package setup was unavailable
-  in this environment. This is not a passing browser test result.
+  in this environment. Verification was completed on the GitHub Chromium runner instead.
 - Added end-to-end gallery tests for both providers, metadata/detail view, original
   opening, duplicate skip, provider/prompt filters, empty search, mobile width and
   keyboard dialog dismissal. They use synthetic images and test-only browser OPFS
-  handles. They still require a browser runner; no private-account equivalence claim.
-- Shared browser could not complete navigation to the local preview. Visual QA is
-  pending; a successful build does not prove the final rendered design.
+  handles. GitHub run 35157822184 passed **all 23 tests in real Chromium**, including
+  the six existing extension checks, two gallery browser tests, ten image contracts
+  and five Suno tests. No private-account equivalence claim.
+- Shared browser could not complete navigation to the local preview. GitHub CI
+  captured empty, populated, import-preview and narrow-layout screenshots. These
+  were downloaded and visually inspected: hierarchy, spacing, preview cards, provider
+  choice and responsive layout are readable. Images shown are synthetic test fixtures.
+  Corrected narrow navigation spacing and retained date filtering at narrow widths.
 
 ## Contract tests covered
 
@@ -42,8 +47,9 @@ Status: **draft; not released; real-account acceptance still open**.
 ## Required before release / bulk work
 
 - [ ] Independent review, including persistence failure paths and existing-branch integration.
-- [ ] Run headed Chromium extension and gallery tests successfully.
-- [ ] Visually inspect empty, preview, progress, failure, detail and populated-gallery states.
+- [x] Run headed Chromium extension and gallery tests successfully (23 tests).
+- [x] Inspect CI screenshots of empty, preview and populated-gallery states.
+- [ ] Visually inspect progress, failure and detail states with actual provider images.
 - [ ] Import a small actual authorized Midjourney sample (up to 10 images).
 - [ ] Import a small actual authorized Grok sample (up to 10 images).
 - [ ] Compare original dimensions and available metadata against sampled provider items.
@@ -54,3 +60,5 @@ Status: **draft; not released; real-account acceptance still open**.
 
 No bulk download, worker, full-history crawl, database migration or release was started.
 #5 stays open until these acceptance gates are met.
+
+CI evidence: https://github.com/frankxai/kura/actions/runs/35157822184
