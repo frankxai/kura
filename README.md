@@ -201,7 +201,7 @@ PRs welcome.
 ## Install (manual / developer mode)
 
 ```bash
-git clone https://github.com/frankxai/arcanea-vault kura
+git clone https://github.com/frankxai/kura kura
 cd kura
 pnpm install
 pnpm build
@@ -214,8 +214,7 @@ Then in Chrome:
 3. **Load unpacked** → select the `dist/` folder.
 4. Pin the extension to the toolbar.
 
-The repo URL is still `arcanea-vault` until the GitHub rename to `kura`
-lands — the product name is **Kura** v0.2.0.
+The repository is `frankxai/kura`; the product name is **Kura** v0.2.0.
 
 ---
 
@@ -232,6 +231,38 @@ lands — the product name is **Kura** v0.2.0.
   plus `arcanea.ai` for the optional bridge. Nothing else.
 
 Full policy: [arcanea.ai/privacy/kura](https://arcanea.ai/privacy/kura).
+
+---
+
+## Image library pilot — Midjourney + Grok
+
+Open **Library → Open image library** for a full-window local gallery and guided import.
+Choose a provider, select an extracted official export folder (or individual images),
+preview up to 10 images, connect the Kura folder, check disk space, then import.
+A checksum verifies each original after writing. Pause between files, reselect the
+same export after restarting, and retry failures without duplicating saved originals.
+
+The pilot supports PNG, JPEG, WebP, GIF and AVIF, including extensionless Grok
+image files identified by their headers. Originals keep their exact bytes; thumbnails
+are separate. Prompt, generation date, model, settings and source URLs remain
+unknown unless explicitly supplied in a companion metadata file. Search covers
+available prompts and source filenames; filters cover provider and import date.
+
+**Scope:** imports from local downloads, not an account crawler. Midjourney's Organize
+page provides native downloads; Grok provides data download under Settings → Data
+Controls. Extract ZIPs before choosing their image folder. Folder totals are measured;
+provider-wide history totals remain unknown. Unsupported/non-image files and failures
+are counted. There is no claim to have imported your entire provider history.
+
+**Viewing:** desktop Chrome/Edge extension; files remain portable on disk. Mobile,
+Vercel hosting and cloud sync are not implemented. No new provider permissions,
+credentials, remote fetches, background workers or AI calls are introduced.
+
+**Release gate:** fixture tests prove the intake engine, not access to your accounts.
+Real samples from both providers, source metadata comparison, original-file viewing,
+restart/resume, available-drive-space checks and independent review must pass before
+bulk import is added. See [image intake contract](docs/specs/IMAGE-LIBRARY-PILOT.md)
+and [verification record](docs/verification/image-library-pilot.md).
 
 ---
 
