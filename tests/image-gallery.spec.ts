@@ -22,14 +22,14 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => { await context?.close(); await webBrowser?.close(); });
 
-async function setup(page: Page) {
+async function setup(page: Page, namespace = 'fixture') {
   await page.goto(galleryUrl());
   // Test-only directory picker: use actual browser filesystem handles in OPFS.
   // The production entrypoint still requires an explicit user-selected disk folder.
-  await page.evaluate(async () => {
+  await page.evaluate(async namespace => {
     const root = await navigator.storage.getDirectory();
-    const source = await root.getDirectoryHandle('fixture-source', { create: true });
-    const destination = await root.getDirectoryHandle('fixture-vault', { create: true });
+    const source = await root.getDirectoryHandle(`${namespace}-source`, { create: true });
+    const destination = await root.getDirectoryHandle(`${namespace}-vault`, { create: true });
     const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 12;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#93d6c5'; ctx.fillRect(0, 0, 16, 12);
     const image = await new Promise<Blob>(resolve => canvas.toBlob(b => resolve(b!), 'image/png'));
@@ -41,7 +41,7 @@ async function setup(page: Page) {
       await stream.write(value); await stream.close();
     }
     Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async (options: { mode: string }) => options.mode === 'read' ? source : destination });
-  });
+  }, namespace);
 }
 
 test('pilot UI imports both providers, searches, opens details, and skips repeated files', async () => {
@@ -100,5 +100,67 @@ test('mobile-sized layout stays within viewport and import remains keyboard acce
   await expect(page.getByRole('dialog', { name: 'Bring your images home.' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.locator('#import-dialog')).not.toBeVisible();
+  await page.close();
+});
+
+test('a delayed preview cannot replace a newer selection or its original action', async () => {
+  const page = await context.newPage();
+  await setup(page, 'selection-race');
+  await page.evaluate(async () => {
+    const source = await (await navigator.storage.getDirectory()).getDirectoryHandle('selection-race-source');
+    const canvas = document.createElement('canvas'); canvas.width = 20; canvas.height = 10;
+    const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#c94255'; ctx.fillRect(0, 0, 20, 10);
+    const image = await new Promise<Blob>(resolve => canvas.toBlob(b => resolve(b!), 'image/png'));
+    for (const [name, value] of [['second.png', image], ['second.png.json', JSON.stringify({ prompt: 'Second selection' })]] as const) {
+      const stream = await (await source.getFileHandle(name, { create: true })).createWritable();
+      await stream.write(value); await stream.close();
+    }
+  });
+  await page.getByRole('button', { name: '＋ Import images', exact: true }).click();
+  await page.getByRole('radio', { name: /Grok/ }).check();
+  await page.getByRole('button', { name: 'Choose export folder', exact: true }).click();
+  await expect(page.locator('#scan-summary')).toContainText('2 images found');
+  await page.locator('#destination').click();
+  await page.locator('#admission').check();
+  await page.getByRole('button', { name: 'Import selected images' }).click();
+  await expect(page.locator('#progress-counts')).toContainText('2 imported · 0 already saved · 0 failed');
+  await expect(page.locator('#run-import')).toBeEnabled();
+  await page.getByRole('button', { name: 'Close import', exact: true }).click();
+  await expect(page.locator('.image-card')).toHaveCount(2);
+  await expect.poll(() => page.locator('.image-card img').evaluateAll(images => images.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
+  await page.evaluate(() => {
+    const state = window as unknown as { releasePreview: () => void; previewWaiting: boolean; previewReleased: boolean; originalReads: string[] };
+    state.originalReads = [];
+    const original = FileSystemFileHandle.prototype.getFile;
+    let delayNextPreview = true;
+    FileSystemFileHandle.prototype.getFile = async function () {
+      if (this.name.endsWith('.webp') && delayNextPreview) {
+        delayNextPreview = false;
+        state.previewWaiting = true;
+        await new Promise<void>(resolve => { state.releasePreview = resolve; });
+        const file = await original.call(this);
+        state.previewReleased = true;
+        return file;
+      }
+      if (this.name.endsWith('.png')) state.originalReads.push(this.name);
+      return original.call(this);
+    };
+  });
+  await page.locator('.image-card').filter({ hasText: 'Synthetic archive fixture' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { previewWaiting: boolean }).previewWaiting)).toBe(true);
+  await page.getByRole('button', { name: 'Close image details', exact: true }).click();
+  await page.locator('.image-card').filter({ hasText: 'Second selection' }).click();
+  await expect(page.locator('#detail-prompt')).toHaveText('Second selection');
+  await expect(page.locator('#detail-image')).toHaveAttribute('src', /^blob:/);
+  const currentPreview = await page.locator('#detail-image').getAttribute('src');
+  const expectedOriginal = (await page.locator('#detail-metadata dt').filter({ hasText: /^Original$/ }).locator('+ dd').innerText()).split('/').at(-1);
+  await page.evaluate(() => (window as unknown as { releasePreview: () => void }).releasePreview());
+  await expect.poll(() => page.evaluate(() => (window as unknown as { previewReleased: boolean }).previewReleased)).toBe(true);
+  await expect(page.locator('#detail-image')).toHaveAttribute('src', currentPreview!);
+  const opened = context.waitForEvent('page');
+  await page.getByRole('button', { name: 'Open original ↗' }).click();
+  const original = await opened;
+  expect(await page.evaluate(() => (window as unknown as { originalReads: string[] }).originalReads.at(-1))).toBe(expectedOriginal);
+  await original.close();
   await page.close();
 });

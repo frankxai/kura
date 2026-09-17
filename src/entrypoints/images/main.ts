@@ -21,6 +21,7 @@ let latestJob: Checkpoint | null = null;
 let page = 0, selectionPage = 0, renderVersion = 0;
 let galleryUrls: string[] = [], selectionUrls: string[] = [];
 let detailUrl: string | null = null;
+let detailVersion = 0;
 const PAGE_SIZE = 24;
 const SELECTION_PAGE_SIZE = 12;
 const bytes = (n: number) => n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KiB` : `${(n / 1024 / 1024).toFixed(1)} MiB`;
@@ -113,6 +114,9 @@ async function renderGallery() {
   }
 }
 async function showDetails(receipt: Receipt) {
+  const version = ++detailVersion;
+  const sourceDisk = disk;
+  const isCurrent = () => version === detailVersion && details.open;
   if (detailUrl) URL.revokeObjectURL(detailUrl);
   detailUrl = null;
   $<HTMLImageElement>('detail-image').removeAttribute('src');
@@ -134,22 +138,27 @@ async function showDetails(receipt: Receipt) {
   }
   $('detail-status').textContent = receipt.warnings.join(' · ');
   details.showModal();
-  try {
-    const thumbnail = await disk!.read(receipt.thumbnailPath);
-    if (thumbnail && details.open) { detailUrl = URL.createObjectURL(thumbnail); $<HTMLImageElement>('detail-image').src = detailUrl; }
-  } catch { $('detail-status').textContent = 'Preview unavailable. Reconnect your folder to check the original.'; }
-  $<HTMLButtonElement>('open-original').onclick = async () => {
-    const button = $<HTMLButtonElement>('open-original'); button.disabled = true;
+  const button = $<HTMLButtonElement>('open-original');
+  button.disabled = false;
+  // Bind the selected original immediately; slow preview reads must not replace this handler.
+  button.onclick = async () => {
+    if (!isCurrent() || !sourceDisk) return;
+    button.disabled = true;
     try {
-      const file = await disk!.read(receipt.originalPath);
+      const file = await sourceDisk.read(receipt.originalPath);
       if (!file || await sha256(file) !== receipt.sha256) throw new Error('Original is missing or changed. Restore the archived file before opening.');
+      if (!isCurrent()) return;
       const url = URL.createObjectURL(file.slice(0, file.size, receipt.format === 'jpg' ? 'image/jpeg' : `image/${receipt.format}`));
       const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener'; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       $('detail-status').textContent = 'Original verified against its saved SHA-256 checksum.';
-    } catch (e) { $('detail-status').textContent = errorText(e); }
-    finally { button.disabled = false; }
+    } catch (e) { if (isCurrent()) $('detail-status').textContent = errorText(e); }
+    finally { if (isCurrent()) button.disabled = false; }
   };
+  try {
+    const thumbnail = await sourceDisk!.read(receipt.thumbnailPath);
+    if (thumbnail && isCurrent()) { detailUrl = URL.createObjectURL(thumbnail); $<HTMLImageElement>('detail-image').src = detailUrl; }
+  } catch { if (isCurrent()) $('detail-status').textContent = 'Preview unavailable. Reconnect your folder to check the original.'; }
 }
 function showImport() { if (!dialog.open) dialog.showModal(); }
 function clearSource() {
@@ -248,6 +257,13 @@ for (const id of ['open-import', 'empty-import']) $(id).onclick = showImport;
 for (const id of ['connect', 'destination']) $(id).onclick = () => void connect();
 $('close-import').onclick = () => dialog.close();
 $('close-detail').onclick = () => details.close();
+details.addEventListener('close', () => {
+  if (details.open) return; // Ignore an older queued close event after a new selection opened.
+  detailVersion++;
+  if (detailUrl) URL.revokeObjectURL(detailUrl);
+  detailUrl = null;
+  $<HTMLImageElement>('detail-image').removeAttribute('src');
+});
 $('admission').onchange = updateAdmission;
 for (const id of ['search','provider-filter','date-filter']) $(id).addEventListener('input', () => { page = 0; void renderGallery(); });
 $('previous').onclick = () => { page--; void renderGallery(); };
