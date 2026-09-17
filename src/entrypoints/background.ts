@@ -10,6 +10,12 @@ import { vault } from '@/core/storage';
 import { exportConversation, exportPrompts } from '@/core/exporter';
 import { VAULT_ROOT } from '@/core/frontmatter';
 import { buildWritePlan, sanitizeMediaFilename } from '@/core/capture-plan';
+import {
+  getActivePlatformTabs,
+  broadcastPrompt,
+  ensurePlatformTab,
+  dispatchPromptToTab,
+} from '@/core/dispatcher';
 import type { WritePlan } from '@/core/capture-plan';
 import type { ExportOptions, DetectionResult, Platform } from '@/core/types';
 
@@ -303,6 +309,35 @@ export default defineBackground({
         return vault.listConversations(platform);
       },
 
+      // ============================================================
+      // Starlight Multi-Model Mesh & Dispatcher Handlers
+      // ============================================================
+
+      STARLIGHT_GET_ACTIVE_TABS: async () => getActivePlatformTabs(),
+
+      STARLIGHT_DISPATCH_PROMPT: async (message) => {
+        const prompt = (message.prompt as string) || '';
+        const targets = (message.targets as Platform[]) || ['claude', 'chatgpt', 'grok', 'gemini'];
+        const openMissing = Boolean(message.openMissing);
+        const autoSubmit = message.autoSubmit !== false;
+        return broadcastPrompt(prompt, targets, openMissing, autoSubmit);
+      },
+
+      STARLIGHT_RELAY_PROMPT: async (message) => {
+        const to = message.to as Platform;
+        const prompt = (message.prompt as string) || '';
+        const autoSubmit = message.autoSubmit !== false;
+        const tabId = await ensurePlatformTab(to);
+        return dispatchPromptToTab(tabId, to, prompt, autoSubmit);
+      },
+
+      STARLIGHT_AUTO_SAVE: async (message) => {
+        const detection = message.detection as DetectionResult;
+        if (!detection || !detection.conversations) return { ok: false };
+        const counts = await persistDetection(detection, defaultOptions());
+        return { ok: true, counts };
+      },
+
       // Opt-in Arcanea integration — disabled by default per the local-first
       // manifesto. The user must explicitly click "Send to Arcanea" to fire.
       // This is the only Arcanea-aware code in the sovereign Kura extension;
@@ -386,6 +421,16 @@ export default defineBackground({
     // Keyboard command: capture the active conversation without opening the
     // popup. Feedback lands on the action badge since there is no UI surface.
     chrome.commands.onCommand.addListener((command) => {
+      if (command === 'starlight-dispatch') {
+        void (async () => {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tab?.windowId && chrome.sidePanel) {
+            await chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+          }
+        })();
+        return;
+      }
+
       if (command !== 'kura-capture') return;
       void (async () => {
         const result = await captureActiveTab(defaultOptions());

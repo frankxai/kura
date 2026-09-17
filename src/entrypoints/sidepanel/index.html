@@ -36,13 +36,84 @@
     Connect a folder to write straight to disk. Until then, captures land in <code>Downloads/Kura/</code>.
   </p>
 
-  <nav class="tabs" role="tablist" aria-label="Kura panels">
-    <button class="tab is-active" id="tab-library" role="tab" aria-selected="true" aria-controls="view-library">Library</button>
+  <nav class="tabs" role="tablist" aria-label="Starlight panels">
+    <button class="tab is-active" id="tab-cockpit" role="tab" aria-selected="true" aria-controls="view-cockpit">Cockpit</button>
+    <button class="tab" id="tab-library" role="tab" aria-selected="false" aria-controls="view-library">Library</button>
     <button class="tab" id="tab-suno" role="tab" aria-selected="false" aria-controls="view-suno">Suno</button>
   </nav>
 
+  <!-- ======================= Cockpit view ======================= -->
+  <section id="view-cockpit" role="tabpanel" aria-labelledby="tab-cockpit">
+    <div class="cockpit-container">
+      <div class="cockpit-header-banner">
+        <div class="cockpit-headline">Multi-Model Subscription Mesh</div>
+        <div class="cockpit-subline">Broadcast to your paid web tabs with zero API fees</div>
+      </div>
+
+      <div class="cockpit-targets-row">
+        <label class="target-chip is-selected" data-platform="claude">
+          <input type="checkbox" checked value="claude" class="target-checkbox">
+          <span class="target-glyph">◈</span>
+          <span class="target-name">Claude</span>
+          <span class="target-status-dot" id="status-claude" title="Tab status"></span>
+        </label>
+        <label class="target-chip is-selected" data-platform="chatgpt">
+          <input type="checkbox" checked value="chatgpt" class="target-checkbox">
+          <span class="target-glyph">◐</span>
+          <span class="target-name">ChatGPT</span>
+          <span class="target-status-dot" id="status-chatgpt" title="Tab status"></span>
+        </label>
+        <label class="target-chip is-selected" data-platform="grok">
+          <input type="checkbox" checked value="grok" class="target-checkbox">
+          <span class="target-glyph">𝕏</span>
+          <span class="target-name">Grok</span>
+          <span class="target-status-dot" id="status-grok" title="Tab status"></span>
+        </label>
+        <label class="target-chip is-selected" data-platform="gemini">
+          <input type="checkbox" checked value="gemini" class="target-checkbox">
+          <span class="target-glyph">✦</span>
+          <span class="target-name">Gemini</span>
+          <span class="target-status-dot" id="status-gemini" title="Tab status"></span>
+        </label>
+      </div>
+
+      <div class="cockpit-input-box">
+        <textarea
+          id="cockpit-prompt"
+          class="cockpit-textarea"
+          placeholder="Type your prompt here to broadcast across all selected models… (Ctrl+Enter to send)"
+          rows="4"
+        ></textarea>
+        <div class="cockpit-actions-bar">
+          <label class="auto-open-label" title="Open new tab if a selected platform is not open">
+            <input type="checkbox" id="cockpit-auto-open" checked>
+            <span>Auto-open missing tabs</span>
+          </label>
+          <button id="cockpit-broadcast-btn" class="btn btn-primary broadcast-btn">
+            ✦ Broadcast Prompt
+          </button>
+        </div>
+      </div>
+
+      <div id="cockpit-receipts" class="cockpit-receipts hidden">
+        <div class="receipts-header">
+          <span>Broadcast Receipts</span>
+          <button id="cockpit-clear-log" class="btn btn-ghost" style="padding: 2px 6px; font-size: 11px;">Clear</button>
+        </div>
+        <ul id="cockpit-receipts-list" class="receipts-list"></ul>
+      </div>
+
+      <div class="cockpit-mesh-info">
+        <div class="info-card">
+          <span class="info-title">✦ Sovereign Vault Active</span>
+          <span class="info-desc">All conversations auto-save to your local Obsidian vault in real-time as models stream.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ======================= Library view ======================= -->
-  <section id="view-library" role="tabpanel" aria-labelledby="tab-library">
+  <section id="view-library" role="tabpanel" aria-labelledby="tab-library" class="hidden">
     <div class="lib-toolbar">
       <input
         id="lib-search"

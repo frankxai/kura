@@ -163,6 +163,8 @@ class ClaudeScraper extends PlatformScraper {
   }
 }
 
+import { injectPrompt } from '@/core/injector';
+
 export default defineContentScript({
   matches: ['https://claude.ai/*'],
   runAt: 'document_idle',
@@ -170,7 +172,12 @@ export default defineContentScript({
     const scraper = new ClaudeScraper();
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (message.type === 'VAULT_DETECT') {
+      if (message.type === 'STARLIGHT_INJECT_PROMPT') {
+        const result = injectPrompt('claude', (message.prompt as string) || '', message.autoSubmit !== false);
+        sendResponse(result);
+        return true;
+      }
+      if (message.type === 'KURA_DETECT' || message.type === 'VAULT_DETECT') {
         scraper.detect().then(sendResponse);
         return true;
       }
@@ -188,6 +195,34 @@ export default defineContentScript({
       }
     });
 
+    // Auto-sync stream observer: captures silently when generation finishes
+    let autoSaveTimer: number | null = null;
+    let lastMsgCount = 0;
+
+    const observer = new MutationObserver(() => {
+      const isStreaming = document.querySelector('[data-is-streaming="true"], button[aria-label*="Stop" i]');
+      if (!isStreaming) {
+        if (autoSaveTimer) clearTimeout(autoSaveTimer);
+        autoSaveTimer = window.setTimeout(async () => {
+          const turns = document.querySelectorAll('[class*="font-claude-message"], [class*="human-turn"]');
+          if (turns.length > lastMsgCount && turns.length > 0) {
+            lastMsgCount = turns.length;
+            const detection = await scraper.detect();
+            if (detection.conversations.length > 0) {
+              chrome.runtime.sendMessage({
+                type: 'STARLIGHT_AUTO_SAVE',
+                detection,
+              });
+            }
+          }
+        }, 2500);
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    chrome.runtime.sendMessage({ type: 'KURA_CONTENT_READY', platform: 'claude' });
     chrome.runtime.sendMessage({ type: 'VAULT_CONTENT_READY', platform: 'claude' });
   },
 });
+

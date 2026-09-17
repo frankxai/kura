@@ -31,8 +31,14 @@ export default defineConfig({
         },
         description: 'Export the current AI conversation to Kura',
       },
+      'starlight-dispatch': {
+        suggested_key: {
+          default: 'Alt+Shift+D',
+        },
+        description: 'Open Starlight Multi-Model Cockpit',
+      },
     },
-    permissions: ['activeTab', 'downloads', 'storage', 'scripting', 'sidePanel', 'offscreen'],
+    permissions: ['activeTab', 'tabs', 'downloads', 'storage', 'scripting', 'sidePanel', 'offscreen'],
     host_permissions: [
       'https://grok.com/*',
       'https://assets.grok.com/*',

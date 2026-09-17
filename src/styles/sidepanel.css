@@ -449,3 +449,216 @@
   .suno-flag:hover { transform: none; }
   .suno-progress-fill { transition: none; animation: none; }
 }
+
+/* ============================================================
+   Starlight Cockpit Styles
+   ============================================================ */
+
+.cockpit-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cockpit-header-banner {
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(0, 188, 212, 0.08), rgba(13, 71, 161, 0.12));
+  border: 1px solid var(--teal-edge);
+  border-radius: 10px;
+}
+
+.cockpit-headline {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.cockpit-subline {
+  font-size: 11px;
+  color: var(--fg-mute);
+  margin-top: 2px;
+}
+
+.cockpit-targets-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.target-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--t-fast) var(--ease);
+}
+
+.target-chip:hover {
+  border-color: var(--teal-edge);
+  background: var(--surface-strong);
+}
+
+.target-chip.is-selected {
+  border-color: var(--teal-edge);
+  background: rgba(0, 188, 212, 0.08);
+}
+
+.target-checkbox {
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.target-glyph {
+  font-size: 14px;
+  color: var(--teal);
+}
+
+.target-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg);
+  flex: 1;
+}
+
+.target-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg-ghost);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.target-status-dot.is-active {
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok-glow);
+}
+
+.cockpit-input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-hi);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.cockpit-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  min-height: 80px;
+}
+
+.cockpit-textarea::placeholder {
+  color: var(--fg-faint);
+}
+
+.cockpit-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.auto-open-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-mute);
+  cursor: pointer;
+}
+
+.auto-open-label input {
+  accent-color: var(--teal);
+}
+
+.broadcast-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+}
+
+.cockpit-receipts {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.receipts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-mute);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.receipts-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.receipt-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.receipt-item.is-ok {
+  border-left: 2px solid var(--ok);
+}
+
+.receipt-item.is-error {
+  border-left: 2px solid var(--err);
+}
+
+.cockpit-mesh-info .info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.info-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal);
+  letter-spacing: 0.02em;
+}
+
+.info-desc {
+  font-size: 11px;
+  color: var(--fg-faint);
+  line-height: 1.4;
+}
+
