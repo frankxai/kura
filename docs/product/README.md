@@ -17,6 +17,8 @@ Read in order:
    source evidence and provider-by-provider release constraints.
 5. [Intelligence and updates](INTELLIGENCE-AND-UPDATES.md): screenshot diagnosis,
    optional AI/vision costs, installed-build identification and update channels.
+6. [Music producer integration](MUSIC-PRODUCER.md): existing producer tooling,
+   album and multilingual workflows, music-library UX and bounded away mode.
 
 This contract extends the capture purpose in the repository; it does not change
 `FORMAT_SPEC.md` v0.2.0, existing vault paths, the MIT license or account permissions.
