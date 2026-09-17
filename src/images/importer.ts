@@ -87,6 +87,12 @@ export async function importPilot(options: {
         const receipt = validateReceipt(JSON.parse(await existing.text()), discovery.provider, hash);
         const original = await disk.read(receipt.originalPath);
         if (!original || original.size !== receipt.bytes || await sha256(original) !== hash) throw new Error('Archived original missing or changed; restore it before retrying');
+        if (source.metadataFile) {
+          const savedMetadata = receipt.metadataPath ? await disk.read(receipt.metadataPath) : null;
+          if (!savedMetadata || await sha256(savedMetadata) !== await sha256(source.metadataFile)) {
+            throw new Error('Original already saved; this export has new or changed metadata that needs review. Existing files were not modified. Keep the source sidecar.');
+          }
+        }
         item.state = 'skipped'; item.receiptPath = path;
       } else {
         const rendered = await preview(source.file);

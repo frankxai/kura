@@ -128,3 +128,25 @@ test('duplicate bytes with different filenames produce one original and trace bo
   expect(new Set(job.items.map(i => i.receiptPath)).size).toBe(1);
   expect(job.items.map(i => i.path).sort()).toEqual(['copy.png', 'one.png']);
 });
+
+for (const initialMetadata of [null, JSON.stringify({ prompt: 'Original prompt' })]) {
+  test(`repeat import surfaces ${initialMetadata === null ? 'new' : 'changed'} metadata without overwriting the archive`, async () => {
+    const file = sample('image.png');
+    const initialFiles = initialMetadata === null ? [file] : [file, new File([initialMetadata], 'image.png.json')];
+    const first = await discoverExport('grok', entries(initialFiles));
+    await importPilot({ disk, discovery: first, images: first.images, preview });
+    const before = (await loadGallery(disk)).images;
+    const originalBefore = await sha256((await disk.read(before[0].originalPath))!);
+    const next = await discoverExport('grok', entries([file, new File([JSON.stringify({ prompt: 'New prompt' })], 'image.png.json')]));
+    const result = await importPilot({ disk, discovery: next, images: next.images, preview });
+    expect(totals(result)).toMatchObject({ imported: 0, skipped: 0, failed: 1 });
+    expect(result.items[0].error).toContain('new or changed metadata that needs review');
+    expect((await loadGallery(disk)).images).toEqual(before);
+    expect(await sha256((await disk.read(before[0].originalPath))!)).toBe(originalBefore);
+    if (before[0].metadataPath) {
+      expect(await (await disk.read(before[0].metadataPath))!.text()).toBe(initialMetadata);
+    } else {
+      expect(await disk.list(`${IMAGE_ROOT}/grok/metadata`)).toEqual([]);
+    }
+  });
+}
