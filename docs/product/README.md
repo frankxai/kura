@@ -15,6 +15,8 @@ Read in order:
    failure testing and implementation sequence.
 4. [Open source and provider policy](OPEN-SOURCE-AND-PROVIDERS.md): reuse decisions,
    source evidence and provider-by-provider release constraints.
+5. [Intelligence and updates](INTELLIGENCE-AND-UPDATES.md): screenshot diagnosis,
+   optional AI/vision costs, installed-build identification and update channels.
 
 This contract extends the capture purpose in the repository; it does not change
 `FORMAT_SPEC.md` v0.2.0, existing vault paths, the MIT license or account permissions.
