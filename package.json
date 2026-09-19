@@ -50,5 +50,10 @@
     "knowledge-graph",
     "worldbuilding",
     "arcanea"
-  ]
+  ],
+  "pnpm": {
+    "overrides": {
+      "shell-quote": "^1.8.4"
+    }
+  }
 }
