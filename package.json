@@ -2,7 +2,7 @@
   "name": "kura",
   "version": "0.2.0",
   "private": true,
-  "description": "Kura — export your most precious writing. Local-first Chrome extension that captures conversations, prompts and AI-generated media from every major AI platform into an Obsidian-compatible vault on disk. No cloud. No tracking. Built by Arcanea, free for everyone.",
+  "description": "Kura \u2014 export your most precious writing. Local-first Chrome extension that captures conversations, prompts and AI-generated media from every major AI platform into an Obsidian-compatible vault on disk. No cloud. No tracking. Built by Arcanea, free for everyone.",
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "scripts": {
@@ -13,7 +13,9 @@
     "lint": "pnpm exec eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "test:extension": "pnpm build && pnpm exec playwright test"
+    "test:extension": "pnpm build && pnpm exec playwright test",
+    "test:images": "playwright test tests/image-import.spec.ts",
+    "build:web": "npm run build && node scripts/build-web.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -33,7 +35,7 @@
   "author": "FrankX <frank@arcanea.ai>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/frankxai/arcanea-vault"
+    "url": "https://github.com/frankxai/kura"
   },
   "keywords": [
     "chrome-extension",

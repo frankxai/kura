@@ -1,8 +1,8 @@
 # Kura — Claude Code Configuration
 
 Local-first Chrome MV3 extension that captures AI conversations into an
-Obsidian-compatible vault on disk. The repo URL is still
-`arcanea-vault`; the product is **Kura** v0.2.0.
+Obsidian-compatible vault on disk. The repository is
+`frankxai/kura`; the product is **Kura** v0.2.0.
 
 ## Source of truth
 
@@ -81,7 +81,7 @@ directory; the build catches manifest drift.
 - Stage files by name. **Never `git add .`** — this repo has WIP that
   must not slip into commits.
 - Push: `origin` only. No GitHub repo rename without explicit user
-  confirmation; the URL remains `arcanea-vault` for now.
+  confirmation; the current repository is `frankxai/kura`.
 - The 0.2.0 work lives on a feature branch until the user lands it.
 
 ## Privacy / security
