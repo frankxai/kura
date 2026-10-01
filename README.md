@@ -1,5 +1,8 @@
 # Kura
 
+**Next extension release:** [product requirements, UI/UX, engineering and provider-policy proposal](docs/product/README.md).
+This proposal distinguishes implemented behavior from verified provider support and does not announce new integrations.
+
 > **Kura — export your most precious writing.**
 
 A 蔵 (*kura*) is the fireproof storehouse a family used to keep their
