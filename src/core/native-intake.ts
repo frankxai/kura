@@ -8,10 +8,12 @@ export interface IntakeState {
   status: 'off' | 'ready' | 'processing' | 'retry' | 'queue-full';
   vault?: string;
   processed: number;
+  missed?: number;
 }
 export interface IntakeStorage {
   read(): Promise<IntakeState | undefined>;
   write(state: IntakeState): Promise<void>;
+  quarantine?(state: unknown): Promise<void>;
 }
 export type NativeTransport = (request: Record<string, unknown>) => Promise<Record<string, unknown>>;
 
@@ -44,7 +46,10 @@ export class NativeIntake {
     if (!value) return empty();
     if (typeof value.enabled !== 'boolean' || !Array.isArray(value.pending)
       || value.pending.length > 256 || value.pending.some((ref) => !validCaptureRef(ref))
-      || !Number.isSafeInteger(value.processed) || value.processed < 0) {
+      || !Number.isSafeInteger(value.processed) || value.processed < 0
+      || !['off', 'ready', 'processing', 'retry', 'queue-full'].includes(value.status)
+      || value.vault !== undefined && (typeof value.vault !== 'string' || value.vault.length > 255)
+      || value.missed !== undefined && (!Number.isSafeInteger(value.missed) || value.missed < 0)) {
       throw new Error('Intake queue needs recovery; saved captures are preserved.');
     }
     return value.status === 'processing' && !this.busy ? { ...value, status: 'retry' } : value;
@@ -68,27 +73,49 @@ export class NativeIntake {
 
   public disable(): Promise<IntakeState> {
     return this.locked(async () => {
-      const state = { ...await this.state(), enabled: false, status: 'off' as const };
+      let previous: IntakeState;
+      try { previous = await this.state(); }
+      catch { await this.storage.quarantine?.(await this.storage.read()); previous = empty(); }
+      const state = { ...previous, enabled: false, status: 'off' as const };
       await this.storage.write(state);
       return state;
     });
   }
 
-  public enqueue(refs: CaptureRef[]): Promise<void> {
+  public reset(): Promise<IntakeState> {
+    return this.locked(async () => {
+      await this.storage.quarantine?.(await this.storage.read());
+      const state = empty();
+      await this.storage.write(state);
+      return state;
+    });
+  }
+
+  public noteMissed(count: number): Promise<void> {
     return this.locked(async () => {
       const state = await this.state();
-      if (!state.enabled) return;
-      if (refs.some((ref) => !validCaptureRef(ref))) throw new Error('Invalid intake pointer.');
+      if (state.enabled && count > 0) await this.storage.write({ ...state,
+        missed: (state.missed ?? 0) + count, status: 'retry' });
+    });
+  }
+
+  public enqueue(refs: CaptureRef[]): Promise<number> {
+    return this.locked(async () => {
+      const state = await this.state();
+      if (!state.enabled) return 0;
       const pending = [...state.pending];
+      let missed = 0;
+      let queued = 0;
       for (const ref of refs) {
+        if (!validCaptureRef(ref)) { missed++; continue; }
         const index = pending.findIndex((item) => item.path === ref.path);
+        if (index < 0 && pending.length >= 256) { missed++; continue; }
         if (index < 0) pending.push(ref); else pending[index] = ref;
+        queued++;
       }
-      if (pending.length > 256) {
-        await this.storage.write({ ...state, status: 'queue-full' });
-        throw new Error('Intake queue is full. Process the existing queue or use the local importer.');
-      }
-      await this.storage.write({ ...state, pending });
+      await this.storage.write({ ...state, pending, missed: (state.missed ?? 0) + missed,
+        status: missed ? 'queue-full' : state.status });
+      return queued;
     });
   }
 

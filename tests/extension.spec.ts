@@ -233,11 +233,21 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     const blocked = await panel.evaluate(async (chatUrl) => {
       const [tab] = await chrome.tabs.query({ url: chatUrl });
       const [result] = await chrome.scripting.executeScript({ target: { tabId: tab.id! },
-        func: async () => chrome.runtime.sendMessage({ type: 'KURA_INTAKE_DISABLE' }),
+        func: async () => {
+          const responses = [];
+          for (const type of ['KURA_INTAKE_STATUS', 'KURA_INTAKE_ENABLE', 'KURA_INTAKE_DISABLE', 'KURA_INTAKE_RETRY', 'KURA_INTAKE_RESET']) {
+            responses.push(await chrome.runtime.sendMessage({ type }));
+          }
+          let writeBlocked = false;
+          try { await chrome.storage.local.set({ kura_native_intake_v1: { enabled: false } }); }
+          catch { writeBlocked = true; }
+          return { responses, writeBlocked };
+        },
       });
       return result.result;
     }, url);
-    expect(blocked).toEqual({ ok: false, error: 'Open Kura to perform this action.' });
+    expect(blocked.responses).toEqual(Array.from({ length: 5 }, () => ({ ok: false, error: 'Open Kura to perform this action.' })));
+    expect(blocked.writeBlocked).toBe(true);
     expect((await read())!.intake.enabled).toBe(true);
     await chat.evaluate(() => {
       document.title = 'Renamed thread | ChatGPT';

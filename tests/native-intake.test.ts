@@ -107,3 +107,23 @@ test('a rejected capture remains queued while healthy captures can progress', as
   assert.equal(state.status, 'retry');
   assert.equal(h.requests.filter((request) => request.op === 'process').length, 2);
 });
+
+test('overflow and invalid pointers preserve valid work and report missed intake', async () => {
+  const h = harness(); await h.intake.enable();
+  const refs = Array.from({ length: 257 }, (_, index) => ({ ...ref, path: `chatgpt/2026-10-04_item-${index}/conversation.md` }));
+  assert.equal(await h.intake.enqueue([...refs, { ...ref, path: '../invalid' }]), 256);
+  const state = await h.intake.snapshot();
+  assert.equal(state.pending.length, 256);
+  assert.equal(state.missed, 2);
+  assert.equal(state.status, 'queue-full');
+});
+
+test('corrupt state can be paused and reset without touching saved captures', async () => {
+  const h = harness();
+  await h.storage.write({ ...await h.intake.snapshot(), pending: 'invalid' } as unknown as IntakeState);
+  await assert.rejects(h.intake.snapshot());
+  assert.equal((await h.intake.disable()).enabled, false);
+  await h.intake.enable(); await h.intake.enqueue([ref]);
+  assert.equal((await h.intake.reset()).pending.length, 0);
+  assert.equal((await h.intake.snapshot()).enabled, false);
+});

@@ -28,7 +28,8 @@ preserves its queue. A worker restart also preserves pending work, and the
 importer's existing receipts make repeated processing safe.
 
 The queue holds at most 256 distinct capture paths and retains the latest packet
-for each path. A full queue is reported; use the local importer for a larger
+for each path. Valid captures queue even when another pointer is invalid. A full
+queue or failed pointer is counted as missed intake; use the local importer for a larger
 backfill. A processing pass handles at most three queued captures, with a
 120-second bound per native request. Another capture or **Retry intake** resumes
 remaining work. No new scheduler, network server or always-on MCP is installed.
@@ -37,6 +38,10 @@ Native setup and real-provider tests must be verified separately from CI's
 transport tests. Chrome folder permission and a host registration cannot be
 established by mocked browser checks. An installed older extension stays usable
 without granting the optional native permission.
+
+Content scripts cannot access the local intake state. A corrupt queue can be
+paused or reset from Kura. Reset preserves its prior metadata as a recovery copy
+and clears intake pointers; all captured files remain available for local import.
 
 ## Production test plan
 

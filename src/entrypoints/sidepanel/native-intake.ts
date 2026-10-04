@@ -5,15 +5,18 @@ export function initNativeIntake(): void {
   const status = document.getElementById('intake-status')!;
   const connect = document.getElementById('intake-connect') as HTMLButtonElement;
   const retry = document.getElementById('intake-retry') as HTMLButtonElement;
+  const reset = document.getElementById('intake-reset') as HTMLButtonElement;
   let enabled = false;
 
   function paint(state: IntakeState & { error?: string }): void {
-    if (state.error) { status.textContent = state.error; return; }
+    if (state.error) { status.textContent = state.error; reset.hidden = false; return; }
+    reset.hidden = !state.missed;
     enabled = state.enabled;
     connect.textContent = enabled ? 'Pause intake' : 'Connect second brain';
     retry.hidden = !enabled || !state.pending?.length;
     const queued = state.pending?.length ?? 0;
     status.textContent = !enabled ? 'Local intake is off'
+      : state.missed ? `${state.missed} saved captures need the local importer or recapture; ${queued} queued.`
       : state.status === 'retry' ? `Capture saved; ${queued} awaiting intake. Check setup and retry.`
       : state.status === 'queue-full' ? 'Intake queue is full. Retry intake before adding more.'
       : state.status === 'processing' ? `Processing ${queued} saved capture${queued === 1 ? '' : 's'}`
@@ -40,6 +43,12 @@ export function initNativeIntake(): void {
     try { await chrome.runtime.sendMessage({ type: 'KURA_INTAKE_RETRY' }); await refresh(); }
     catch { status.textContent = 'Intake is unavailable. Captures remain saved; check setup and retry.'; }
     finally { retry.disabled = false; }
+  });
+  reset.addEventListener('click', async () => {
+    reset.disabled = true;
+    try { paint(await chrome.runtime.sendMessage({ type: 'KURA_INTAKE_RESET' })); }
+    catch { status.textContent = 'Reopen Kura to reset intake. Captures remain saved.'; }
+    finally { reset.disabled = false; }
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes[INTAKE_KEY]?.newValue) paint(changes[INTAKE_KEY].newValue);

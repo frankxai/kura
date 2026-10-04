@@ -28,6 +28,7 @@ export interface VaultWriteResult {
   failedMedia: { path: string; url: string; retryable?: boolean }[];
   folderMap: Record<string, string>;
   captureRefs: CaptureRef[];
+  intakeWarnings?: number;
 }
 
 const MEDIA_CADENCE_MS = 280;
@@ -199,13 +200,16 @@ export async function writePlan(
   }
 
   const captureRefs: CaptureRef[] = [];
+  let intakeWarnings = 0;
   for (const file of plan.textFiles.filter((item) => item.path.endsWith('/capture.json'))) {
     // Hash the actual saved packet, including when a clock-only recapture skipped writes.
-    const saved = await readText(root, file.path.split('/'));
-    if (saved === null) throw new Error('Saved capture packet is missing. Repeat capture.');
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(saved));
-    captureRefs.push({ path: file.path.replace(/capture\.json$/, 'conversation.md'),
-      sha256: Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('') });
+    try {
+      const saved = await readText(root, file.path.split('/'));
+      if (saved === null) throw new Error('Capture pointer is unavailable.');
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(saved));
+      captureRefs.push({ path: file.path.replace(/capture\.json$/, 'conversation.md'),
+        sha256: Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('') });
+    } catch { intakeWarnings++; }
   }
-  return { written, failed, failedMedia, folderMap, captureRefs };
+  return { written, failed, failedMedia, folderMap, captureRefs, ...(intakeWarnings ? { intakeWarnings } : {}) };
 }

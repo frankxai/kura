@@ -27,9 +27,12 @@ type CaptureSink = 'fsa' | 'downloads';
 export default defineBackground({
   type: 'module',
   main() {
+    const storageReady = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+    void storageReady.catch(() => {});
     const intake = new NativeIntake({
-      read: async () => (await chrome.storage.local.get(INTAKE_KEY))[INTAKE_KEY],
-      write: async (state) => chrome.storage.local.set({ [INTAKE_KEY]: state }),
+      read: async () => { await storageReady; return (await chrome.storage.local.get(INTAKE_KEY))[INTAKE_KEY]; },
+      write: async (state) => { await storageReady; await chrome.storage.local.set({ [INTAKE_KEY]: state }); },
+      quarantine: async (state) => { await storageReady; if (state !== undefined) await chrome.storage.local.set({ [`kura_intake_recovery_${crypto.randomUUID()}`]: state }); },
     }, requestNative);
     const resumeIntake = () => { void intake.drain().catch(() => {}); };
     // ============================================================
@@ -140,6 +143,7 @@ export default defineBackground({
       let sink: CaptureSink;
       let mediaSkipped = 0;
       let captureRefs: CaptureRef[] = [];
+      let intakeWarnings = 0;
       if (requireVault) {
         const result = await tryWriteViaOffscreen(plan);
         if (!result) throw new Error('Connect or re-grant your capture folder in Kura.');
@@ -147,6 +151,7 @@ export default defineBackground({
         mediaSkipped = result.failedMedia?.length ?? 0;
         reconcileIndexFolders(detection, result);
         captureRefs = result.captureRefs ?? [];
+        intakeWarnings = result.intakeWarnings ?? 0;
         sink = 'fsa';
       } else {
         const result = await tryWriteViaOffscreen(plan);
@@ -155,6 +160,7 @@ export default defineBackground({
           mediaSkipped = result.failedMedia?.length ?? 0;
           reconcileIndexFolders(detection, result);
           captureRefs = result.captureRefs ?? [];
+          intakeWarnings = result.intakeWarnings ?? 0;
           sink = 'fsa';
         } else {
           sink = await writePlanToVaultOrDownloads(plan);
@@ -166,8 +172,8 @@ export default defineBackground({
 
       let intakeQueued = false;
       try {
-        await intake.enqueue(captureRefs);
-        intakeQueued = (await intake.snapshot()).enabled && captureRefs.length > 0;
+        await intake.noteMissed(intakeWarnings);
+        intakeQueued = (await intake.enqueue(captureRefs)) > 0;
         resumeIntake();
       } catch { /* Intake recovery never changes a durable capture acknowledgement. */ }
 
@@ -218,6 +224,7 @@ export default defineBackground({
       folderMap?: Record<string, string>;
       failedMedia?: { path: string; url: string; retryable?: boolean }[];
       captureRefs?: CaptureRef[];
+      intakeWarnings?: number;
     }
 
     function reconcileIndexFolders(detection: DetectionResult, result: OffscreenWriteResult) {
@@ -333,6 +340,7 @@ export default defineBackground({
         return state;
       },
       KURA_INTAKE_DISABLE: async () => intake.disable(),
+      KURA_INTAKE_RESET: async () => intake.reset(),
       KURA_INTAKE_RETRY: async () => { resumeIntake(); return intake.snapshot(); },
       KURA_CONTENT_READY: async (message) => {
         console.log(`[Kura] Content script ready: ${message.platform}`);
