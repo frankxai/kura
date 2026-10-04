@@ -63,7 +63,7 @@ test.describe('Chat library in real Chromium', () => {
     await panel.getByRole('combobox', { name: 'Filter by capture date' }).selectOption('');
     await panel.getByRole('combobox', { name: 'Filter by source' }).selectOption('all');
   });
-  test('keyboard tabs, visible focus, 320px width, reduced motion and touch targets', async () => {
+  test('keyboard tabs, visible focus, 320px width, reduced motion and touch targets', async ({}, testInfo) => {
     await panel.setViewportSize({ width: 320, height: 820 });
     await panel.emulateMedia({ reducedMotion: 'reduce' });
     await panel.getByRole('tab', { name: 'Chats', exact: true }).focus();
@@ -72,16 +72,26 @@ test.describe('Chat library in real Chromium', () => {
     await panel.getByRole('tab', { name: 'Cockpit', exact: true }).press('Home');
     await expect(panel.getByRole('tab', { name: 'Chats', exact: true })).toBeFocused();
     await expect(panel.locator('.chat-row')).toHaveCount(2);
+    await expect(panel.locator('#lib-list')).toHaveAttribute('aria-busy', 'false');
     const measurements = await panel.evaluate(() => ({
       overflow: document.documentElement.scrollWidth > innerWidth,
+      viewport: innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      overflowing: [...document.querySelectorAll('body *')].filter(e => {
+        const rect = e.getBoundingClientRect();
+        return rect.width && (rect.right > innerWidth || rect.left < 0);
+      }).map(e => ({ tag: e.tagName, id: e.id, className: e.className, right: e.getBoundingClientRect().right })),
       outline: getComputedStyle(document.activeElement!).outlineStyle,
       rows: [...document.querySelectorAll('.chat-row')].map(e => getComputedStyle(e).transitionDuration),
       targets: [...document.querySelectorAll('.chat-resume')].map(e => e.getBoundingClientRect().height),
     }));
-    expect(measurements.overflow).toBe(false);
+    await testInfo.attach('chat-library-narrow.png', { body: await panel.screenshot({ fullPage: true }), contentType: 'image/png' });
+    expect(measurements.overflow, JSON.stringify(measurements)).toBe(false);
     expect(measurements.outline).toBe('solid');
     expect(measurements.rows.every(d => d === '0s')).toBe(true);
     expect(measurements.targets.every(height => height >= 44)).toBe(true);
+    await panel.setViewportSize({ width: 480, height: 820 });
+    await testInfo.attach('chat-library-wide.png', { body: await panel.screenshot({ fullPage: true }), contentType: 'image/png' });
   });
   test('rapid query changes and panel switches leave the latest query in place', async () => {
     await panel.getByRole('searchbox', { name: 'Search chats' }).fill('claude');

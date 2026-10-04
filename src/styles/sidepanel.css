@@ -5,13 +5,13 @@
 
 .sidepanel-body {
   width: 100%;
-  min-width: 320px;
+  min-width: 0;
   max-width: 100vw;
 }
 
 .lib-toolbar {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   padding: 12px 18px;
   border-bottom: 1px solid var(--border);
