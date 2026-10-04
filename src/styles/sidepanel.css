@@ -239,6 +239,30 @@
   flex: none;
 }
 
+/* Search is a frequent keyboard action: results and tabs change without motion. */
+.lib-item.chat-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; transition: none; }
+.chat-row .lib-item-title { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
+.chat-row .lib-item-meta { display: block; letter-spacing: normal; line-height: 1.5; }
+.chat-excerpt { margin-top: 8px; color: var(--fg); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.chat-tags { margin-top: 4px; color: var(--fg-faint); font-size: 12px; overflow-wrap: anywhere; }
+.chat-status { padding: 12px 18px 0; color: var(--fg-faint); font-size: 12px; line-height: 1.6; }
+.sidepanel-body .chat-resume { min-height: 44px; min-width: 44px; padding: 8px; white-space: normal; transition: none; }
+.chat-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.chat-filters .lib-filter { width: 100%; min-width: 0; min-height: 44px; padding: 8px; }
+.chat-filters .btn { grid-column: 1 / -1; justify-self: end; min-height: 44px; }
+.chat-more { margin: 0 18px 18px; min-height: 44px; }
+.lib-search { min-width: 0; min-height: 44px; }
+.sidepanel-body .tab { min-height: 44px; transition: none; }
+.chat-resume:active { background: var(--surface-strong); }
+@media (hover: hover) and (pointer: fine) {
+  .sidepanel-body .chat-resume:hover { background: var(--surface-strong); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidepanel-body *, .sidepanel-body *::before, .sidepanel-body *::after {
+    animation: none !important; transition: none !important;
+  }
+}
+
 .intake-bar { flex-wrap: wrap; justify-content: flex-start; }
 .intake-bar .vault-bar-info { flex-basis: 100%; align-items: flex-start; flex-direction: column; }
 .intake-bar .vault-status { white-space: normal; overflow-wrap: anywhere; }
