@@ -176,7 +176,7 @@ test.describe('writePlan', () => {
     };
 
     const r1 = await writePlan(root, plan);
-    expect(r1).toEqual({ written: 2, failed: 0, failedMedia: [], folderMap: {} });
+    expect(r1).toEqual({ written: 2, failed: 0, failedMedia: [], folderMap: {}, captureRefs: [] });
     expect(files.has('chatgpt/slug/conversation.md')).toBe(true);
     expect(files.has('chatgpt/slug/assets/a.png')).toBe(true);
 
