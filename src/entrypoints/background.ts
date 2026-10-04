@@ -77,11 +77,11 @@ export default defineBackground({
     }
 
     /** Helper: create a blob URL for in-memory content and queue it. */
-    function queueText(vaultPath: string, content: string, mimeType: string): void {
+    async function queueText(vaultPath: string, content: string, mimeType: string): Promise<number> {
       // Object URLs are unavailable in MV3 service workers. Explicit downloads
       // use data URLs; their source stays in the local index for manual retry.
       const url = `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
-      queueDownload({ url, vaultPath });
+      return chrome.downloads.download({ url, filename: `${VAULT_ROOT}/${vaultPath}`, saveAs: false, conflictAction: 'uniquify' });
     }
 
     // ============================================================
@@ -111,6 +111,7 @@ export default defineBackground({
       prompts: number;
       folders: string[];
       sink: CaptureSink;
+      mediaSkipped: number;
     }> {
       // Reuse the first folder even after a title change or a later capture day.
       const known = await vault.listConversations();
@@ -129,16 +130,19 @@ export default defineBackground({
       }
       const plan = buildWritePlan(detection, options);
       let sink: CaptureSink;
+      let mediaSkipped = 0;
       if (requireVault) {
         const result = await tryWriteViaOffscreen(plan);
         if (!result) throw new Error('Connect or re-grant your capture folder in Kura.');
-        if (result.failedMedia?.length) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+        if (result.failedMedia?.some((media) => media.retryable !== false)) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+        mediaSkipped = result.failedMedia?.length ?? 0;
         reconcileIndexFolders(detection, result);
         sink = 'fsa';
       } else {
         const result = await tryWriteViaOffscreen(plan);
         if (result) {
-          if (result.failedMedia?.length) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+          if (result.failedMedia?.some((media) => media.retryable !== false)) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+          mediaSkipped = result.failedMedia?.length ?? 0;
           reconcileIndexFolders(detection, result);
           sink = 'fsa';
         } else {
@@ -151,7 +155,8 @@ export default defineBackground({
 
       return {
         conversations: plan.counts.conversations,
-        media: plan.counts.media,
+        media: Math.max(0, plan.counts.media - mediaSkipped),
+        mediaSkipped,
         prompts: plan.counts.prompts,
         folders: detection.conversations.map((conv) => `${conv.platform}/${conv.metadata?.kuraSlug}`),
         sink,
@@ -192,7 +197,7 @@ export default defineBackground({
       reason?: string;
       error?: string;
       folderMap?: Record<string, string>;
-      failedMedia?: { path: string; url: string }[];
+      failedMedia?: { path: string; url: string; retryable?: boolean }[];
     }
 
     function reconcileIndexFolders(detection: DetectionResult, result: OffscreenWriteResult) {
@@ -233,13 +238,13 @@ export default defineBackground({
         return 'fsa';
       }
       if (plan.counts.conversations > 0) throw new Error('Connect or re-grant your capture folder in Kura before capturing a thread.');
-      enqueuePlanToDownloads(plan);
+      await enqueuePlanToDownloads(plan);
       return 'downloads';
     }
 
-    function enqueuePlanToDownloads(plan: WritePlan): void {
+    async function enqueuePlanToDownloads(plan: WritePlan): Promise<void> {
       for (const f of plan.textFiles) {
-        queueText(f.path, f.content, f.path.endsWith('.json') ? 'application/json' : 'text/markdown');
+        await queueText(f.path, f.content, f.path.endsWith('.json') ? 'application/json' : 'text/markdown');
       }
       for (const m of plan.mediaFiles) {
         queueDownload({ url: m.url, vaultPath: m.path });
@@ -290,7 +295,7 @@ export default defineBackground({
       }
       const handler = messageHandlers[message.type];
       if (handler) {
-        handler(message, sender).then(sendResponse).catch(() => sendResponse({ ok: false, error: 'Capture failed. Check the connected folder and try again.' }));
+        handler(message, sender).then(sendResponse).catch((error) => sendResponse({ ok: false, error: error instanceof Error ? error.message : 'Capture failed. Check the connected folder and try again.' }));
         return true;
       }
     });
@@ -333,8 +338,8 @@ export default defineBackground({
         const conv = await vault.getConversation(id);
         if (!conv) return { error: 'Conversation not found in local index' };
         const out = exportConversation(conv, options);
-        queueText(`_index/${out.filename}`, out.content, out.mimeType);
-        return { filename: out.filename };
+        const downloadId = await queueText(`_index/${out.filename}`, out.content, out.mimeType);
+        return { filename: out.filename, downloadId };
       },
 
       KURA_EXPORT_PROMPTS: async (message) => {
@@ -342,8 +347,8 @@ export default defineBackground({
         const format = (message.format as 'markdown' | 'json') || 'markdown';
         const prompts = await vault.listPrompts(platform);
         const out = exportPrompts(prompts, format, platform ?? 'all');
-        queueText(`_index/${out.filename}`, out.content, out.mimeType);
-        return { filename: out.filename, count: prompts.length };
+        const downloadId = await queueText(`_index/${out.filename}`, out.content, out.mimeType);
+        return { filename: out.filename, count: prompts.length, downloadId };
       },
 
       KURA_SAVE: async (message) => {
@@ -397,8 +402,8 @@ export default defineBackground({
         try {
           const counts = await persistDetection(detection, defaultOptions(), true);
           if (sender.tab?.id) {
-            await chrome.action.setBadgeText({ text: '', tabId: sender.tab.id });
-            await chrome.action.setTitle({ title: 'Kura', tabId: sender.tab.id });
+            await chrome.action.setBadgeText({ text: counts.mediaSkipped ? 'i' : '', tabId: sender.tab.id });
+            await chrome.action.setTitle({ title: counts.mediaSkipped ? `Kura: text saved; ${counts.mediaSkipped} media assets need manual export.` : 'Kura', tabId: sender.tab.id });
           }
           return { ok: true, counts };
         } catch (error) {
@@ -506,16 +511,22 @@ export default defineBackground({
 
       if (command !== 'kura-capture') return;
       void (async () => {
-        const result = await captureActiveTab(defaultOptions());
+        let result;
+        try {
+          result = await captureActiveTab(defaultOptions());
+        } catch (error) {
+          result = { error: error instanceof Error ? error.message : 'Capture failed. Open Kura to check your folder.' };
+        }
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) return;
         const ok = !('error' in result);
         await chrome.action.setBadgeText({ text: ok ? '✓' : '!', tabId: tab.id });
+        await chrome.action.setTitle({ title: ok ? 'Kura' : `Kura: ${'error' in result ? result.error : ''}`, tabId: tab.id });
         await chrome.action.setBadgeBackgroundColor({
           color: ok ? '#4ade80' : '#f87171',
           tabId: tab.id,
         });
-        setTimeout(() => {
+        if (ok) setTimeout(() => {
           chrome.action.setBadgeText({ text: '', tabId: tab.id }).catch(() => {});
         }, 2500);
       })();

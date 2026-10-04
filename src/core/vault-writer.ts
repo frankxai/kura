@@ -24,7 +24,7 @@ export interface VaultWriteResult {
   failed: number;
   /** Media that could not be fetched (e.g. a CDN host outside host_permissions).
    *  The caller can retry these through chrome.downloads, which bypasses CORS. */
-  failedMedia: { path: string; url: string }[];
+  failedMedia: { path: string; url: string; retryable?: boolean }[];
   folderMap: Record<string, string>;
 }
 
@@ -129,7 +129,7 @@ export async function writePlan(
   const total = plan.textFiles.length + plan.mediaFiles.length;
   let written = 0;
   let failed = 0;
-  const failedMedia: { path: string; url: string }[] = [];
+  const failedMedia: { path: string; url: string; retryable?: boolean }[] = [];
 
   const report = (current?: string) => onProgress?.({ total, written, failed, current });
 
@@ -173,9 +173,13 @@ export async function writePlan(
 
   for (const media of plan.mediaFiles) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    let retryable = true;
     try {
       const url = new URL(media.url);
-      if (url.protocol !== 'https:' || !MEDIA_HOSTS.has(url.hostname) || url.username || url.password || (url.port && url.port !== '443')) throw new Error('Unsupported media source.');
+      if (url.protocol !== 'https:' || !MEDIA_HOSTS.has(url.hostname) || url.username || url.password || (url.port && url.port !== '443')) {
+        retryable = false;
+        throw new Error('Unsupported media source.');
+      }
       const res = await fetch(media.url, { signal, redirect: 'error' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
@@ -184,7 +188,7 @@ export async function writePlan(
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') throw err;
       failed += 1;
-      failedMedia.push(media);
+      failedMedia.push({ ...media, retryable });
     }
     report(media.path);
     if (plan.mediaFiles.length > 1) {

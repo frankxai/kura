@@ -202,7 +202,7 @@ test.describe('writePlan', () => {
     const res = await writePlan(root, plan);
     expect(res.written).toBe(1);
     expect(res.failed).toBe(1);
-    expect(res.failedMedia).toEqual([{ path: 'chatgpt/slug/assets/a.png', url: 'https://assets.grok.com/locked.png' }]);
+    expect(res.failedMedia).toEqual([{ path: 'chatgpt/slug/assets/a.png', url: 'https://assets.grok.com/locked.png', retryable: true }]);
     // The irreplaceable conversation markdown was still written.
     expect(files.has('chatgpt/slug/conversation.md')).toBe(true);
   });
@@ -220,5 +220,6 @@ test.describe('writePlan', () => {
     const result = await writePlan(root, plan);
     expect(requests).toBe(0);
     expect(result.failed).toBe(1);
+    expect(result.failedMedia[0].retryable).toBe(false);
   });
 });

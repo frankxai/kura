@@ -25,8 +25,10 @@ title changes and later capture days. The writer preserves curated frontmatter
 and refuses to overwrite a different conversation identity. Keep the folder as
 your source of truth. If the index is cleared, the writer searches the selected
 platform's bounded capture folders by source ID and restores the existing folder.
-Duplicate on-disk identities require deliberate reconciliation. Media fetch
-failures preserve the text and flag the capture for retry. Supported media URLs
+Duplicate on-disk identities require deliberate reconciliation. Temporary media
+fetch failures preserve the text and flag the capture for retry. An `i` badge
+means text is saved but unsupported media needs an explicit manual export; it
+does not trigger repeated retries for an unreachable host. Supported media URLs
 use HTTPS on the extension's existing AI host scope without redirects.
 
 New bundles also carry `capture.json` packet v1.0.0. It records exact message
