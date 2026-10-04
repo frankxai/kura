@@ -8,16 +8,16 @@ This proposal distinguishes implemented behavior from verified provider support 
 A 蔵 (*kura*) is the fireproof storehouse a family used to keep their
 most precious scrolls, swords and records. This is the digital one.
 
-ChatGPT, Claude, Grok, Gemini, DeepSeek, Perplexity — one click, every
-conversation becomes a Markdown note with YAML frontmatter, wikilinks
-and asset folders, written straight to your disk. Drop the folder into
-Obsidian and the knowledge graph builds itself.
+Capture the loaded conversation from supported AI pages as Markdown with
+frontmatter, source references and optional assets. Open the output in Obsidian,
+or process it into Second Brain OS. Official account exports backfill history
+that was never opened in the browser.
 
 *Your AI work belongs on your disk, not on someone else's server.*
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 [![Chrome MV3](https://img.shields.io/badge/Chrome-MV3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
-[![Version](https://img.shields.io/badge/version-0.2.0-00bcd4?style=flat-square)](package.json)
+[![Version](https://img.shields.io/badge/version-0.3.0-00bcd4?style=flat-square)](package.json)
 [![Schema](https://img.shields.io/badge/schema-v0.2.0-7fffd4?style=flat-square)](FORMAT_SPEC.md)
 [![Local-first](https://img.shields.io/badge/local--first-yes-22c55e?style=flat-square)](#privacy)
 
@@ -43,25 +43,33 @@ into your second brain of choice. Kura never assumes.
 
 ## Quick start
 
-1. Install the extension *(Chrome Web Store link coming with v0.2.0
-   submission — see [CHROME_WEB_STORE_GUIDE.md](CHROME_WEB_STORE_GUIDE.md)
-   for manual install while it's in review)*.
-2. Open a conversation on ChatGPT, Claude, Gemini, Grok, DeepSeek or
-   Perplexity.
-3. Click the Kura icon → **Export to Kura**.
+1. Install an unpacked extension build using
+   [the manual install guide](CHROME_WEB_STORE_GUIDE.md). Chrome Web Store
+   availability is not verified by this repository.
+2. Open the side panel and **Connect vault** to select a private capture root,
+   such as `D:/private-captures/Kura`. Keep raw captures outside the MCP brain vault.
+3. Open a supported conversation. ChatGPT, Claude and Gemini threads save after
+   streaming settles; use **Export to Kura** or **Alt+Shift+K** for manual capture.
 4. Files land at:
    ```
-   ~/Downloads/Kura/<platform>/<YYYY-MM-DD>_<slug>/
+   <selected-capture-root>/<platform>/<YYYY-MM-DD>_<slug>/
    ├── conversation.md
+   ├── capture.json
    ├── prompts.md
    └── assets/
    ```
-5. Open `~/Downloads/Kura/` as a new Obsidian vault — the wikilinks,
-   backlinks and graph view light up immediately.
+5. Follow [capture and recovery](docs/CAPTURE-TO-BRAIN.md) and
+   [the Second Brain processing SOP](https://github.com/frankxai/second-brain-os/blob/main/docs/automation.md).
+   Intake creates pending summaries; source review and distillation turn them
+   into useful memory.
 
 ---
 
 ## Supported platforms
+
+The table lists implemented scraper targets. Native folder permission and live
+provider DOM checks still need verification. Media availability varies by host
+permissions. Google AI Studio archive intake is not claimed by the SBO adapter.
 
 | Platform     | Conversations | Inline media | Generated media |
 |--------------|:-------------:|:------------:|:---------------:|
@@ -78,12 +86,15 @@ Capture the current conversation from the popup, or hit
 
 ### Direct-to-disk vault
 
-Open the side panel and **Connect vault** once to pick a folder (e.g.
-`Arcanea/intake`). From then on, every capture is written straight into it —
-conversations under `<platform>/`, Suno tracks under `suno/` — with no
-Downloads-folder shuffle, and re-capturing a conversation overwrites in place
-instead of duplicating. Until a vault is connected, captures fall back to
-`Downloads/Kura/`, so the extension works out of the box.
+Open the side panel and **Connect vault** to pick a private folder. Conversation
+capture requires a writable grant. Sources go under `<platform>/`; Suno tracks
+go under `suno/`. Repeated captures preserve curated frontmatter and source
+revisions. A partial view cannot replace a fuller thread. The writer recovers
+existing folders by source ID if the browser index is cleared.
+
+An `!` badge asks for recovery. An `i` badge means text is saved but unsupported
+media needs a manual export. Explicit single-file library exports use
+non-overwriting Downloads; they do not constitute a completed thread capture.
 
 ---
 

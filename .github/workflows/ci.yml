@@ -11,6 +11,7 @@ name: CI
 # Gates prevent regression at the PR layer.
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
