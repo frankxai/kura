@@ -54,6 +54,7 @@ test.describe('Chat library in real Chromium', () => {
     await panel.getByRole('combobox', { name: 'Filter by platform' }).selectOption('claude');
     await expect(panel.locator('.chat-row')).toHaveCount(1);
     await expect(panel.locator('.lib-item-title')).toContainText('<img src=x onerror=alert(1)>');
+    await expect(panel.locator('.chat-row')).toContainText('2026-08-01');
     expect(await panel.locator('.chat-row img').count()).toBe(0);
     await panel.getByRole('combobox', { name: 'Filter by source' }).selectOption('open');
     await expect(panel.locator('.chat-row')).toHaveCount(0);
@@ -77,6 +78,32 @@ test.describe('Chat library in real Chromium', () => {
     await expect(panel.locator('.chat-row')).toHaveCount(2);
     await expect(panel.locator('#lib-list')).toHaveAttribute('aria-busy', 'false');
     await expect(panel.getByRole('button', { name: 'Show more chats', exact: true })).toBeHidden();
+    await expect(panel.locator('#connection-settings')).not.toHaveAttribute('open', '');
+    expect((await panel.locator('.chat-row').first().boundingBox())!.y).toBeLessThan(600);
+    await panel.locator('#connection-settings > summary').focus();
+    await panel.locator('#connection-settings > summary').press('Enter');
+    await expect(panel.getByRole('button', { name: 'Connect vault', exact: true })).toBeVisible();
+    await panel.evaluate(() => { document.getElementById('intake-status')!.textContent = 'Capture saved; 1 awaiting intake. Check setup and retry.'; });
+    await expect(panel.locator('#connection-summary')).toContainText('1 awaiting intake');
+    const contrast = await panel.evaluate(() => {
+      function luminance(color: string): number {
+        const rgb = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(n => {
+          const value = n / 255;
+          return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+        });
+        return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
+      }
+      const background = luminance(getComputedStyle(document.body).backgroundColor);
+      return ['.vault-hint a', '#lib-refresh', '.chat-resume', '.lib-item-meta'].map(selector => {
+        const foreground = luminance(getComputedStyle(document.querySelector(selector)!).color);
+        return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+      });
+    });
+    expect(contrast.every(ratio => ratio >= 4.5)).toBe(true);
+    await panel.locator('#connection-settings > summary').press('Enter');
+    await expect(panel.getByRole('button', { name: 'Connect vault', exact: true })).toBeHidden();
+    await panel.evaluate(() => { document.getElementById('intake-status')!.textContent = 'Local intake is off'; });
+    await panel.getByRole('tab', { name: 'Chats', exact: true }).focus();
     await panel.emulateMedia({ reducedMotion: 'reduce' });
     const measurements = await panel.evaluate(() => ({
       overflow: document.documentElement.scrollWidth > innerWidth,

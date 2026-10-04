@@ -28,6 +28,16 @@ const visibleTabIds = new Set<number>();
 
 initVault();
 initNativeIntake();
+const connectionSummary = document.getElementById('connection-summary')!;
+const vaultStatus = document.getElementById('vault-status')!;
+const intakeStatus = document.getElementById('intake-status')!;
+function connectionChanged(): void {
+  connectionSummary.textContent = `${vaultStatus.textContent} · ${intakeStatus.textContent}`;
+}
+// Keep intake receipts/errors visible even when setup controls are collapsed.
+const connectionObserver = new MutationObserver(connectionChanged);
+for (const element of [vaultStatus, intakeStatus]) connectionObserver.observe(element, { childList: true, subtree: true, characterData: true });
+connectionChanged();
 const cockpit = initCockpit();
 const suno = initSuno(text => { if (active === 'suno') stats.textContent = text; });
 
@@ -75,7 +85,7 @@ function render(items: ChatResult[], append: boolean): void {
     row.className = 'lib-item chat-row';
     const body = text('div', 'lib-item-body', '');
     body.append(text('div', 'lib-item-title', item.title));
-    const captured = item.capturedAt ? new Date(item.capturedAt).toLocaleDateString() : '';
+    const captured = item.capturedAt?.slice(0, 10) ?? '';
     body.append(text('div', 'lib-item-meta', [item.platform,
       item.openCount ? `Open${item.openCount > 1 ? ` in ${item.openCount} tabs` : ''}` : '',
       item.saved ? `Saved${captured ? ` · ${captured}` : ''}` : 'Title only'].filter(Boolean).join(' · ')));
