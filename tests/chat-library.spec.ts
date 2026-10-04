@@ -73,7 +73,7 @@ test.describe('Chat library in real Chromium', () => {
     await expect(panel.getByRole('tab', { name: 'Chats', exact: true })).toBeFocused();
     await expect(panel.locator('.chat-row')).toHaveCount(2);
     await expect(panel.locator('#lib-list')).toHaveAttribute('aria-busy', 'false');
-    await expect(panel.getByRole('button', { name: 'Show more', exact: true })).toBeHidden();
+    await expect(panel.getByRole('button', { name: 'Show more chats', exact: true })).toBeHidden();
     const measurements = await panel.evaluate(() => ({
       overflow: document.documentElement.scrollWidth > innerWidth,
       viewport: innerWidth,
@@ -180,7 +180,7 @@ test.describe('Chat library in real Chromium', () => {
     await panel.setViewportSize({ width: 320, height: 820 });
     await panel.getByRole('searchbox', { name: 'Search chats' }).fill('paginationfixture');
     await expect(panel.locator('.chat-row')).toHaveCount(40);
-    const more = panel.getByRole('button', { name: 'Show more', exact: true });
+    const more = panel.getByRole('button', { name: 'Show more chats', exact: true });
     await expect(more).toBeVisible();
     expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await more.click();
