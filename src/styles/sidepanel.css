@@ -5,13 +5,13 @@
 
 .sidepanel-body {
   width: 100%;
-  min-width: 320px;
+  min-width: 0;
   max-width: 100vw;
 }
 
 .lib-toolbar {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   padding: 12px 18px;
   border-bottom: 1px solid var(--border);
@@ -173,6 +173,7 @@
 
 .vault-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -186,6 +187,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  flex: 1 1 140px;
 }
 
 .vault-bar-label {
@@ -237,6 +239,37 @@
 
 .vault-connect {
   flex: none;
+}
+
+.sidepanel-body [hidden] { display: none !important; }
+.connection-settings { border-bottom: 1px solid var(--border); }
+.connection-settings > summary { min-height: 44px; padding: 12px 18px; cursor: pointer; color: var(--fg); }
+.connection-summary { display: block; margin-top: 4px; color: var(--fg-faint); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.sidepanel-body .vault-hint a { color: var(--teal); text-underline-offset: 3px; }
+
+/* Search is a frequent keyboard action: results and tabs change without motion. */
+.lib-item.chat-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; transition: none; }
+.chat-row .lib-item-title { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
+.chat-row .lib-item-meta { display: block; letter-spacing: normal; line-height: 1.5; }
+.chat-excerpt { margin-top: 8px; color: var(--fg); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.chat-tags { margin-top: 4px; color: var(--fg-faint); font-size: 12px; overflow-wrap: anywhere; }
+.chat-status { padding: 12px 18px 0; color: var(--fg-faint); font-size: 12px; line-height: 1.6; }
+.sidepanel-body .chat-resume { min-height: 44px; min-width: 44px; padding: 8px; white-space: normal; transition: none; }
+.chat-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.chat-filters .lib-filter { width: 100%; min-width: 0; min-height: 44px; padding: 8px; }
+.chat-filters .btn { grid-column: 1 / -1; justify-self: end; min-height: 44px; }
+.sidepanel-body .chat-more { width: calc(100% - 36px); margin: 0 18px 18px; min-height: 44px; }
+.lib-search { min-width: 0; min-height: 44px; }
+.sidepanel-body .tab { min-height: 44px; transition: none; }
+.sidepanel-body .tab::after { transition: none; }
+.chat-resume:active { background: var(--surface-strong); }
+@media (hover: hover) and (pointer: fine) {
+  .sidepanel-body .chat-resume:hover { background: var(--surface-strong); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidepanel-body *, .sidepanel-body *::before, .sidepanel-body *::after {
+    animation: none !important; transition: none !important;
+  }
 }
 
 .intake-bar { flex-wrap: wrap; justify-content: flex-start; }

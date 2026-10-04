@@ -23,6 +23,8 @@
 
   <!-- Shared vault: one connected folder backs both conversation capture
        (written under <platform>/) and the Suno harvester (under suno/). -->
+  <details id="connection-settings" class="connection-settings">
+    <summary><span>Capture settings</span><span id="connection-summary" class="connection-summary" role="status" aria-live="polite">Vault disconnected · Intake off</span></summary>
   <div class="vault-bar">
     <div class="vault-bar-info">
       <span class="vault-bar-label">Vault</span>
@@ -48,15 +50,16 @@
   <p class="vault-hint">Local intake creates pending summaries with no paid model calls.
     <a href="https://github.com/frankxai/kura/blob/main/docs/NATIVE-INTAKE.md" target="_blank" rel="noopener noreferrer">Setup</a>
   </p>
+  </details>
 
   <nav class="tabs" role="tablist" aria-label="Starlight panels">
-    <button class="tab is-active" id="tab-cockpit" role="tab" aria-selected="true" aria-controls="view-cockpit">Cockpit</button>
-    <button class="tab" id="tab-library" role="tab" aria-selected="false" aria-controls="view-library">Library</button>
-    <button class="tab" id="tab-suno" role="tab" aria-selected="false" aria-controls="view-suno">Suno</button>
+    <button class="tab is-active" id="tab-library" role="tab" aria-selected="true" aria-controls="view-library">Chats</button>
+    <button class="tab" id="tab-cockpit" role="tab" aria-selected="false" aria-controls="view-cockpit" tabindex="-1">Cockpit</button>
+    <button class="tab" id="tab-suno" role="tab" aria-selected="false" aria-controls="view-suno" tabindex="-1">Suno</button>
   </nav>
 
   <!-- ======================= Cockpit view ======================= -->
-  <section id="view-cockpit" role="tabpanel" aria-labelledby="tab-cockpit">
+  <section id="view-cockpit" role="tabpanel" aria-labelledby="tab-cockpit" class="hidden">
     <div class="cockpit-container">
       <div class="cockpit-header-banner">
         <div class="cockpit-headline">Your AI workspace</div>
@@ -126,14 +129,15 @@
   </section>
 
   <!-- ======================= Library view ======================= -->
-  <section id="view-library" role="tabpanel" aria-labelledby="tab-library" class="hidden">
+  <section id="view-library" role="tabpanel" aria-labelledby="tab-library">
     <div class="lib-toolbar"><a class="btn btn-ghost" href="images.html" target="_blank" rel="noopener">Open image library ↗</a></div>
     <div class="lib-toolbar">
       <input
         id="lib-search"
         type="search"
-        placeholder="Search captures…"
-        aria-label="Search captures"
+        placeholder="Search chats"
+        aria-label="Search chats"
+        maxlength="200"
         class="lib-search"
         autocomplete="off"
       />
@@ -148,12 +152,28 @@
       </select>
     </div>
 
+    <div class="lib-toolbar chat-filters">
+      <select id="lib-scope" class="lib-filter" aria-label="Filter by source">
+        <option value="all">Saved and open</option>
+        <option value="open">Open tabs</option>
+        <option value="saved">Saved captures</option>
+      </select>
+      <select id="lib-date" class="lib-filter" aria-label="Filter by capture date">
+        <option value="">Any capture date</option>
+        <option value="7">Saved in past 7 days</option>
+        <option value="30">Saved in past 30 days</option>
+      </select>
+      <button id="lib-refresh" class="btn btn-ghost" type="button">Refresh</button>
+    </div>
+    <p id="lib-status" class="chat-status" role="status" aria-live="polite">Search stays on this device.</p>
+
     <div id="lib-empty" class="lib-empty hidden">
       <p class="empty-title">No captures yet</p>
       <p class="empty-desc">Open a conversation on any supported AI platform, then click <strong>Export to Kura</strong> in the popup.</p>
     </div>
 
     <ul id="lib-list" class="lib-list"></ul>
+    <button id="lib-more" class="btn btn-ghost chat-more" type="button" hidden>Show more chats</button>
   </section>
 
   <!-- ======================= Suno view ======================= -->

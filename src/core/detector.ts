@@ -4,6 +4,7 @@
 // ============================================================
 
 import type { Platform } from './types';
+import { platformForUrl } from './chat-library';
 
 interface PlatformMatch {
   platform: Platform;
@@ -53,12 +54,8 @@ const PLATFORMS: PlatformMatch[] = [
 
 /** Detect platform from a URL */
 export function detectPlatform(url: string): PlatformMatch | null {
-  for (const p of PLATFORMS) {
-    if (p.patterns.some((pattern) => url.includes(pattern))) {
-      return p;
-    }
-  }
-  return null;
+  const platform = platformForUrl(url);
+  return PLATFORMS.find(p => p.platform === platform) ?? null;
 }
 
 /** Get platform display info */
