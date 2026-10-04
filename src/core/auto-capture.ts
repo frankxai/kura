@@ -66,7 +66,7 @@ export function installAutoCapture(
   };
   const changed = () => { failures = 0; schedule(); };
   const observer = new MutationObserver(changed);
-  observer.observe(document.body, {
+  observer.observe(document.documentElement, {
     childList: true, subtree: true, characterData: true, attributes: true,
     attributeFilter: ['data-is-streaming', 'aria-label', 'class'],
   });
