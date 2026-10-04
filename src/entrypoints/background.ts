@@ -7,19 +7,20 @@
 import { defineBackground } from 'wxt/utils/define-background';
 import { detectPlatform } from '@/core/detector';
 import { vault } from '@/core/storage';
+import { exportConversation, exportPrompts } from '@/core/exporter';
+import { VAULT_ROOT, buildSlug } from '@/core/frontmatter';
+import { buildWritePlan, sanitizeMediaFilename } from '@/core/capture-plan';
 import {
-  exportConversationBundle,
-  exportConversation,
-  exportPrompts,
-  renderMediaPromptSidecar,
-} from '@/core/exporter';
-import { VAULT_ROOT, assetName, buildSlug } from '@/core/frontmatter';
-import type {
-  ExportOptions,
-  DetectionResult,
-  Platform,
-  MediaItem,
-} from '@/core/types';
+  getActivePlatformTabs,
+  broadcastPrompt,
+  ensurePlatformTab,
+  dispatchPromptToTab,
+} from '@/core/dispatcher';
+import type { WritePlan } from '@/core/capture-plan';
+import type { ExportOptions, DetectionResult, Platform } from '@/core/types';
+
+/** Where a capture actually landed — surfaced to the popup. */
+type CaptureSink = 'fsa' | 'downloads';
 
 export default defineBackground({
   type: 'module',
@@ -54,7 +55,7 @@ export default defineBackground({
             url: job.url,
             filename: fullPath,
             saveAs: false,
-            conflictAction: 'overwrite',
+            conflictAction: 'uniquify',
           });
         } catch (err) {
           console.error('[Kura] Download failed:', fullPath, err);
@@ -76,10 +77,11 @@ export default defineBackground({
     }
 
     /** Helper: create a blob URL for in-memory content and queue it. */
-    function queueText(vaultPath: string, content: string, mimeType: string): void {
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      queueDownload({ url, vaultPath, isBlobUrl: true });
+    async function queueText(vaultPath: string, content: string, mimeType: string): Promise<number> {
+      // Object URLs are unavailable in MV3 service workers. Explicit downloads
+      // use data URLs; their source stays in the local index for manual retry.
+      const url = `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
+      return chrome.downloads.download({ url, filename: `${VAULT_ROOT}/${vaultPath}`, saveAs: false, conflictAction: 'uniquify' });
     }
 
     // ============================================================
@@ -87,112 +89,166 @@ export default defineBackground({
     // ============================================================
 
     /**
-     * Persist a detection result to disk per FORMAT_SPEC.md:
-     *   - conversation.md + prompts.md inside Kura/<platform>/<slug>/
-     *   - assets/<filename> for each media item
-     *   - assets/<filename>-prompt.md sidecar for AI-generated media
-     * Returns counts for the popup to display.
+     * Persist a detection result. IndexedDB gets the structured records (the
+     * query index); the files land either straight in the connected vault
+     * folder via the File System Access API, or — when no vault is connected /
+     * its grant has lapsed — in `Kura/` under Downloads. Returns counts + the
+     * sink so the popup can tell the user where it wrote.
      */
-    async function persistDetection(
+    let captureQueue: Promise<unknown> = Promise.resolve();
+    function persistDetection(detection: DetectionResult, options: ExportOptions, requireVault = false) {
+      const pending = captureQueue.then(() => persistDetectionNow(detection, options, requireVault));
+      captureQueue = pending.catch(() => {});
+      return pending;
+    }
+    async function persistDetectionNow(
       detection: DetectionResult,
       options: ExportOptions,
-    ): Promise<{ conversations: number; media: number; prompts: number; folders: string[] }> {
-      const folders = new Set<string>();
-      let conversationCount = 0;
-      let mediaCount = 0;
-      let promptCount = 0;
-
-      // 1. Conversations: emit bundles
+      requireVault = false,
+    ): Promise<{
+      conversations: number;
+      media: number;
+      prompts: number;
+      folders: string[];
+      sink: CaptureSink;
+      mediaSkipped: number;
+    }> {
+      // Reuse the first folder even after a title change or a later capture day.
+      const known = await vault.listConversations();
+      const occupied = new Set(known.map((conv) => `${conv.platform}/${conv.metadata?.kuraSlug ?? buildSlug(conv.title, conv.capturedAt)}`));
       for (const conv of detection.conversations) {
-        await vault.saveConversation(conv);
-        const bundle = exportConversationBundle(conv, options);
-        folders.add(bundle.folder);
-        for (const f of bundle.files) {
-          queueText(f.path, f.content, f.mimeType);
+        const previous = known.find((item) => item.id === conv.id && item.platform === conv.platform);
+        let slug = previous?.metadata?.kuraSlug as string | undefined;
+        if (previous && !slug) slug = buildSlug(previous.title, previous.capturedAt);
+        if (!slug) {
+          const base = buildSlug(conv.title, conv.capturedAt);
+          slug = base;
+          for (let suffix = 2; occupied.has(`${conv.platform}/${slug}`); suffix += 1) slug = `${base}-${suffix}`;
         }
-        conversationCount += 1;
+        occupied.add(`${conv.platform}/${slug}`);
+        conv.metadata = { ...conv.metadata, kuraSlug: slug };
       }
-
-      // 2. Media: route each item into the right conversation folder if we can
-      // associate it; otherwise it lands in a per-platform `_loose/` folder.
-      for (const media of detection.media) {
-        await vault.saveMedia(media);
-        const parentSlug = inferParentSlug(media, detection);
-        const ext = guessExt(media);
-        const filename = sanitizeFilename(media.filename) || assetName(
-          media.type === 'video' ? 'video' : 'img',
-          mediaCount + 1,
-          ext,
-        );
-
-        const vaultRelativePath = parentSlug
-          ? `${media.platform}/${parentSlug}/assets/${filename}`
-          : `${media.platform}/_loose/${filename}`;
-
-        queueDownload({
-          url: media.hdUrl || media.url,
-          vaultPath: vaultRelativePath,
-        });
-
-        // Sidecar prompt note for AI-generated media (Imagine, DALL-E, etc.)
-        if (media.prompt && parentSlug) {
-          const sidecar = renderMediaPromptSidecar(media, parentSlug, filename);
-          queueText(sidecar.path, sidecar.content, sidecar.mimeType);
+      const plan = buildWritePlan(detection, options);
+      let sink: CaptureSink;
+      let mediaSkipped = 0;
+      if (requireVault) {
+        const result = await tryWriteViaOffscreen(plan);
+        if (!result) throw new Error('Connect or re-grant your capture folder in Kura.');
+        if (result.failedMedia?.some((media) => media.retryable !== false)) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+        mediaSkipped = result.failedMedia?.length ?? 0;
+        reconcileIndexFolders(detection, result);
+        sink = 'fsa';
+      } else {
+        const result = await tryWriteViaOffscreen(plan);
+        if (result) {
+          if (result.failedMedia?.some((media) => media.retryable !== false)) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+          mediaSkipped = result.failedMedia?.length ?? 0;
+          reconcileIndexFolders(detection, result);
+          sink = 'fsa';
+        } else {
+          sink = await writePlanToVaultOrDownloads(plan);
         }
-
-        mediaCount += 1;
       }
-
-      // 3. Standalone prompts (not yet tied to a conversation, e.g. prompt-library
-      // browsers): land in `_index/loose-prompts-YYYY-MM-DD.md`.
-      if (detection.prompts.length > 0) {
-        for (const p of detection.prompts) {
-          await vault.savePrompt(p);
-        }
-        const collection = exportPrompts(detection.prompts, 'markdown', detection.platform);
-        queueText(`_index/${collection.filename}`, collection.content, collection.mimeType);
-        promptCount = detection.prompts.length;
-      }
+      for (const conv of detection.conversations) await vault.saveConversation(conv);
+      for (const m of detection.media) await vault.saveMedia(m);
+      for (const p of detection.prompts) await vault.savePrompt(p);
 
       return {
-        conversations: conversationCount,
-        media: mediaCount,
-        prompts: promptCount,
-        folders: Array.from(folders),
+        conversations: plan.counts.conversations,
+        media: Math.max(0, plan.counts.media - mediaSkipped),
+        mediaSkipped,
+        prompts: plan.counts.prompts,
+        folders: detection.conversations.map((conv) => `${conv.platform}/${conv.metadata?.kuraSlug}`),
+        sink,
       };
     }
 
-    /**
-     * Best-effort association of a media item with a captured conversation.
-     * If the media item came from inside a conversation, the scraper should set
-     * `metadata.conversationId`. Otherwise we fall back to the first conversation
-     * of the same platform (e.g. Grok Imagine gallery where there's no parent).
-     */
-    function inferParentSlug(media: MediaItem, detection: DetectionResult): string | null {
-      const convId = (media.metadata as Record<string, unknown> | undefined)?.conversationId;
-      if (typeof convId === 'string') {
-        const conv = detection.conversations.find((c) => c.id === convId);
-        if (conv) return buildSlug(conv.title, conv.capturedAt);
+    // ============================================================
+    // Direct-to-disk vault write (File System Access via offscreen doc)
+    // ============================================================
+
+    let offscreenReady: Promise<void> | null = null;
+
+    /** Ensure the single offscreen writer document exists. */
+    async function ensureOffscreen(): Promise<void> {
+      if (await chrome.offscreen.hasDocument()) return;
+      if (!offscreenReady) {
+        offscreenReady = (async () => {
+          try {
+            await chrome.offscreen.createDocument({
+              url: 'offscreen.html',
+              reasons: [chrome.offscreen.Reason.BLOBS],
+              justification:
+                'Write captured conversations into the local vault folder via the File System Access API.',
+            });
+          } catch (err) {
+            // A concurrent caller may have created it first — tolerate that.
+            if (!(await chrome.offscreen.hasDocument())) throw err;
+          }
+        })().finally(() => {
+          offscreenReady = null;
+        });
       }
-      if (detection.conversations.length > 0) {
-        const conv = detection.conversations[0];
-        return buildSlug(conv.title, conv.capturedAt);
-      }
-      return null;
+      await offscreenReady;
     }
 
-    function guessExt(media: MediaItem): string {
-      const fromName = media.filename.match(/\.([a-z0-9]{2,4})$/i)?.[1];
-      if (fromName) return fromName.toLowerCase();
-      return media.type === 'video' ? 'mp4' : 'png';
+    interface OffscreenWriteResult {
+      ok: boolean;
+      reason?: string;
+      error?: string;
+      folderMap?: Record<string, string>;
+      failedMedia?: { path: string; url: string; retryable?: boolean }[];
     }
 
-    function sanitizeFilename(name: string): string {
-      return name
-        // eslint-disable-next-line no-control-regex -- intentional: strip OS-reserved + control chars from filename
-        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
-        .replace(/\s+/g, '_')
-        .slice(0, 100);
+    function reconcileIndexFolders(detection: DetectionResult, result: OffscreenWriteResult) {
+      for (const conv of detection.conversations) {
+        const key = `${conv.platform}/${conv.metadata?.kuraSlug}`;
+        if (result.folderMap?.[key]) conv.metadata = { ...conv.metadata, kuraSlug: result.folderMap[key].split('/')[1] };
+      }
+    }
+
+    /** Ask the offscreen document to write the plan to the connected vault.
+     *  Returns null when FSA is unavailable (no offscreen API, no vault, or a
+     *  lapsed permission grant) so the caller can fall back to Downloads. */
+    async function tryWriteViaOffscreen(plan: WritePlan): Promise<OffscreenWriteResult | null> {
+      let res: OffscreenWriteResult | undefined;
+      try {
+        if (!chrome.offscreen) return null;
+        await ensureOffscreen();
+        res = (await chrome.runtime.sendMessage({
+          type: 'KURA_OFFSCREEN_WRITE',
+          plan,
+        })) as OffscreenWriteResult | undefined;
+      } catch {
+        return null;
+      }
+      if (res?.reason === 'error') throw new Error(res.error || 'Saved capture was protected. Inspect the connected folder.');
+      return res?.ok ? res : null;
+    }
+
+    async function writePlanToVaultOrDownloads(plan: WritePlan): Promise<CaptureSink> {
+      const res = await tryWriteViaOffscreen(plan);
+      if (res) {
+        // Media the offscreen doc couldn't fetch (a CDN host outside our
+        // host_permissions) still goes through Downloads, which bypasses CORS,
+        // so nothing is silently dropped.
+        for (const m of res.failedMedia ?? []) {
+          queueDownload({ url: m.url, vaultPath: m.path });
+        }
+        return 'fsa';
+      }
+      if (plan.counts.conversations > 0) throw new Error('Connect or re-grant your capture folder in Kura before capturing a thread.');
+      await enqueuePlanToDownloads(plan);
+      return 'downloads';
+    }
+
+    async function enqueuePlanToDownloads(plan: WritePlan): Promise<void> {
+      for (const f of plan.textFiles) {
+        await queueText(f.path, f.content, f.path.endsWith('.json') ? 'application/json' : 'text/markdown');
+      }
+      for (const m of plan.mediaFiles) {
+        queueDownload({ url: m.url, vaultPath: m.path });
+      }
     }
 
     /** Detect + persist the active tab's conversation. Shared by the popup's
@@ -230,9 +286,16 @@ export default defineBackground({
     // ============================================================
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (sender.id !== chrome.runtime.id) return;
+      const contentMessage = ['KURA_CONTENT_READY', 'VAULT_CONTENT_READY', 'THREADS_CONTENT_READY', 'STARLIGHT_AUTO_SAVE'].includes(message?.type);
+      const extensionPage = sender.id === chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL(''));
+      if (!extensionPage && !contentMessage) {
+        sendResponse({ ok: false, error: 'Open Kura to perform this action.' });
+        return;
+      }
       const handler = messageHandlers[message.type];
       if (handler) {
-        handler(message, sender).then(sendResponse);
+        handler(message, sender).then(sendResponse).catch((error) => sendResponse({ ok: false, error: error instanceof Error ? error.message : 'Capture failed. Check the connected folder and try again.' }));
         return true;
       }
     });
@@ -275,8 +338,8 @@ export default defineBackground({
         const conv = await vault.getConversation(id);
         if (!conv) return { error: 'Conversation not found in local index' };
         const out = exportConversation(conv, options);
-        queueText(`_index/${out.filename}`, out.content, out.mimeType);
-        return { filename: out.filename };
+        const downloadId = await queueText(`_index/${out.filename}`, out.content, out.mimeType);
+        return { filename: out.filename, downloadId };
       },
 
       KURA_EXPORT_PROMPTS: async (message) => {
@@ -284,8 +347,8 @@ export default defineBackground({
         const format = (message.format as 'markdown' | 'json') || 'markdown';
         const prompts = await vault.listPrompts(platform);
         const out = exportPrompts(prompts, format, platform ?? 'all');
-        queueText(`_index/${out.filename}`, out.content, out.mimeType);
-        return { filename: out.filename, count: prompts.length };
+        const downloadId = await queueText(`_index/${out.filename}`, out.content, out.mimeType);
+        return { filename: out.filename, count: prompts.length, downloadId };
       },
 
       KURA_SAVE: async (message) => {
@@ -309,14 +372,58 @@ export default defineBackground({
         return vault.listConversations(platform);
       },
 
+      // ============================================================
+      // Starlight Multi-Model Mesh & Dispatcher Handlers
+      // ============================================================
+
+      STARLIGHT_GET_ACTIVE_TABS: async () => getActivePlatformTabs(),
+
+      STARLIGHT_DISPATCH_PROMPT: async (message) => {
+        const prompt = (message.prompt as string) || '';
+        const targets = (message.targets as Platform[]) || ['claude', 'chatgpt', 'grok', 'gemini'];
+        const openMissing = Boolean(message.openMissing);
+        const autoSubmit = message.autoSubmit !== false;
+        return broadcastPrompt(prompt, targets, openMissing, autoSubmit);
+      },
+
+      STARLIGHT_RELAY_PROMPT: async (message) => {
+        const to = message.to as Platform;
+        const prompt = (message.prompt as string) || '';
+        const autoSubmit = message.autoSubmit !== false;
+        const tabId = await ensurePlatformTab(to);
+        return dispatchPromptToTab(tabId, to, prompt, autoSubmit);
+      },
+
+      STARLIGHT_AUTO_SAVE: async (message, sender) => {
+        const detection = message.detection as DetectionResult;
+        if (!detection || !detection.conversations) return { ok: false };
+        const platform = sender.tab?.url && detectPlatform(sender.tab.url)?.platform;
+        if (!platform || detection.platform !== platform || detection.conversations.some((conv) => conv.platform !== platform)) return { ok: false };
+        try {
+          const counts = await persistDetection(detection, defaultOptions(), true);
+          if (sender.tab?.id) {
+            await chrome.action.setBadgeText({ text: counts.mediaSkipped ? 'i' : '', tabId: sender.tab.id });
+            await chrome.action.setTitle({ title: counts.mediaSkipped ? `Kura: text saved; ${counts.mediaSkipped} media assets need manual export.` : 'Kura', tabId: sender.tab.id });
+          }
+          return { ok: true, counts };
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : 'Open Kura and check your capture folder.';
+          if (sender.tab?.id) {
+            await chrome.action.setBadgeText({ text: '!', tabId: sender.tab.id });
+            await chrome.action.setTitle({ title: `Kura: ${reason}`, tabId: sender.tab.id });
+          }
+          return { ok: false, reason };
+        }
+      },
+
       // Opt-in Arcanea integration — disabled by default per the local-first
       // manifesto. The user must explicitly click "Send to Arcanea" to fire.
       // This is the only Arcanea-aware code in the sovereign Kura extension;
       // everything else is brand-neutral.
       KURA_SEND_TO_ARCANEA: async (message) => {
         const detection = message.detection as DetectionResult;
-        const endpoint =
-          (message.endpoint as string) || 'https://arcanea.ai/api/kura/import';
+        const endpoint = 'https://arcanea.ai/api/kura/import';
+        if (message.endpoint && message.endpoint !== endpoint) return { error: 'Unsupported Arcanea endpoint.' };
 
         try {
           const response = await fetch(endpoint, {
@@ -368,7 +475,7 @@ export default defineBackground({
         for (const item of items) {
           queueDownload({
             url: item.url,
-            vaultPath: `${platform}/_loose/${sanitizeFilename(item.filename)}`,
+            vaultPath: `${platform}/_loose/${sanitizeMediaFilename(item.filename)}`,
           });
         }
         return { queued: items.length };
@@ -392,18 +499,34 @@ export default defineBackground({
     // Keyboard command: capture the active conversation without opening the
     // popup. Feedback lands on the action badge since there is no UI surface.
     chrome.commands.onCommand.addListener((command) => {
+      if (command === 'starlight-dispatch') {
+        void (async () => {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          if (tab?.windowId && chrome.sidePanel) {
+            await chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+          }
+        })();
+        return;
+      }
+
       if (command !== 'kura-capture') return;
       void (async () => {
-        const result = await captureActiveTab(defaultOptions());
+        let result;
+        try {
+          result = await captureActiveTab(defaultOptions());
+        } catch (error) {
+          result = { error: error instanceof Error ? error.message : 'Capture failed. Open Kura to check your folder.' };
+        }
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) return;
         const ok = !('error' in result);
         await chrome.action.setBadgeText({ text: ok ? '✓' : '!', tabId: tab.id });
+        await chrome.action.setTitle({ title: ok ? 'Kura' : `Kura: ${'error' in result ? result.error : ''}`, tabId: tab.id });
         await chrome.action.setBadgeBackgroundColor({
           color: ok ? '#4ade80' : '#f87171',
           tabId: tab.id,
         });
-        setTimeout(() => {
+        if (ok) setTimeout(() => {
           chrome.action.setBadgeText({ text: '', tabId: tab.id }).catch(() => {});
         }, 2500);
       })();

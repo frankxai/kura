@@ -58,14 +58,17 @@ export interface ConversationBundle {
 export function exportConversationBundle(
   conv: Conversation,
   options: ExportOptions = defaultOptions(),
+  existingSlug?: string,
 ): ConversationBundle {
-  const slug = buildSlug(conv.title, conv.capturedAt);
+  const slug = existingSlug ?? buildSlug(conv.title, conv.capturedAt);
+  if (!/^\d{4}-\d{2}-\d{2}_[a-z0-9-]+$/.test(slug)) throw new Error('Invalid capture folder');
   const folder = `${conv.platform}/${slug}`;
   const files: VaultFile[] = [];
+  const messageSpans: { start: number; length: number }[] = [];
 
   files.push({
     path: `${folder}/conversation.md`,
-    content: renderConversation(conv, slug, options),
+    content: renderConversation(conv, slug, options, messageSpans),
     mimeType: 'text/markdown',
   });
 
@@ -78,6 +81,21 @@ export function exportConversationBundle(
     });
   }
 
+  // Optional interoperability companion. The locked Markdown v0.2.0 contract
+  // stays unchanged; processors can verify exact roles against its rendered body.
+  const markdown = files[0].content;
+  files.push({
+    path: `${folder}/capture.json`,
+    content: JSON.stringify({
+      kind: 'kura-capture', packetVersion: '1.0.0',
+      capture: { id: conv.id, platform: conv.platform, title: conv.title, source: conv.url, capturedAt: conv.capturedAt },
+      messages: conv.messages,
+      messageSpans,
+      includeTimestamps: options.includeTimestamps,
+      renderedBody: markdown.replace(/^---\n[\s\S]*?\n---\n/, '').replace(/\r\n/g, '\n').trim(),
+    }, null, 2),
+    mimeType: 'application/json',
+  });
   return { slug, folder, files };
 }
 
@@ -222,7 +240,7 @@ export function renderMediaPromptSidecar(
 // Renderers
 // ============================================================
 
-function renderConversation(conv: Conversation, slug: string, options: ExportOptions): string {
+function renderConversation(conv: Conversation, slug: string, options: ExportOptions, spans?: { start: number; length: number }[]): string {
   const fm = renderFrontmatter(conversationFrontmatter(conv, slug));
   const label = assistantLabel(conv.platform);
 
@@ -231,10 +249,11 @@ function renderConversation(conv: Conversation, slug: string, options: ExportOpt
     '',
     `> **Platform:** ${conv.platform} · **Source:** [${truncate(conv.url, 60)}](${conv.url}) · **Captured:** ${conv.capturedAt}`,
     '',
-  ].join('\n');
+  ].join('\n').replace(/\r\n/g, '\n');
 
   let imgCounter = 0;
   let snippetCounter = 0;
+  let offset = header.length;
 
   const body = conv.messages
     .map((msg) => {
@@ -243,7 +262,9 @@ function renderConversation(conv: Conversation, slug: string, options: ExportOpt
       const blocks: string[] = [];
       blocks.push(`## ${role}${tsTag}`);
       blocks.push('');
-      blocks.push(msg.content.trim());
+      const content = msg.content.trim().replace(/\r\n/g, '\n');
+      spans?.push({ start: offset + `## ${role}${tsTag}\n\n`.length, length: content.length });
+      blocks.push(content);
       blocks.push('');
 
       if (options.includeMedia && msg.attachments?.length) {
@@ -280,7 +301,9 @@ function renderConversation(conv: Conversation, slug: string, options: ExportOpt
       }
 
       blocks.push('');
-      return blocks.join('\n');
+      const block = blocks.join('\n').replace(/\r\n/g, '\n');
+      offset += block.length + 1;
+      return block;
     })
     .join('\n');
 

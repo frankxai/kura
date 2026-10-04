@@ -27,8 +27,9 @@
 
   /* Text */
   --fg: #e7e7ea;
-  --fg-mute: #a1a1aa;
-  --fg-faint: #71717a;
+  --fg-mute: #b5e6eb;
+  --fg-tint: #b5e6eb;
+  --fg-faint: #899aa7;
   --fg-ghost: #52525b;
 
   /* Semantic */
@@ -100,9 +101,7 @@ body {
   font-size: 20px;
   color: var(--bg);
   background: linear-gradient(140deg, var(--teal), var(--gold) 140%);
-  box-shadow:
-    0 0 0 1px var(--teal-edge),
-    0 8px 22px -8px var(--teal-glow);
+  border: 1px solid var(--teal-edge);
 }
 
 .title {
@@ -115,7 +114,7 @@ body {
 .subtitle {
   margin-top: 1px;
   font-size: 11px;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   letter-spacing: 0.01em;
 }
 
@@ -368,12 +367,12 @@ body {
   background: linear-gradient(140deg, var(--teal), var(--cosmic));
   color: white;
   border-color: var(--teal-edge);
-  box-shadow: 0 4px 22px -10px var(--teal-glow);
+  box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.35);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px -10px var(--teal-glow);
+  box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.35);
 }
 
 .btn-accent {
@@ -384,7 +383,7 @@ body {
 
 .btn-accent:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 22px -10px var(--gold-soft);
+  box-shadow: 0 8px 16px -8px rgba(0, 0, 0, 0.35);
 }
 
 .btn-secondary {

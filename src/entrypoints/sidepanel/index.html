@@ -21,15 +21,100 @@
     </div>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Kura panels">
-    <button class="tab is-active" id="tab-library" role="tab" aria-selected="true" aria-controls="view-library">Library</button>
+  <!-- Shared vault: one connected folder backs both conversation capture
+       (written under <platform>/) and the Suno harvester (under suno/). -->
+  <div class="vault-bar">
+    <div class="vault-bar-info">
+      <span class="vault-bar-label">Vault</span>
+      <span id="vault-status" class="vault-status">no vault connected</span>
+    </div>
+    <button id="vault-connect" class="btn btn-ghost vault-connect" title="Choose the local vault / intake folder (e.g. Arcanea/intake). Conversations and Suno tracks write here.">
+      Connect vault
+    </button>
+  </div>
+  <p id="vault-hint" class="vault-hint">
+    Connect a folder to write straight to disk. Until then, captures land in <code>Downloads/Kura/</code>.
+  </p>
+
+  <nav class="tabs" role="tablist" aria-label="Starlight panels">
+    <button class="tab is-active" id="tab-cockpit" role="tab" aria-selected="true" aria-controls="view-cockpit">Cockpit</button>
+    <button class="tab" id="tab-library" role="tab" aria-selected="false" aria-controls="view-library">Library</button>
     <button class="tab" id="tab-suno" role="tab" aria-selected="false" aria-controls="view-suno">Suno</button>
   </nav>
 
-  <div class="lib-toolbar"><a class="btn btn-ghost" href="images.html" target="_blank" rel="noopener">Open image library ↗</a></div>
+  <!-- ======================= Cockpit view ======================= -->
+  <section id="view-cockpit" role="tabpanel" aria-labelledby="tab-cockpit">
+    <div class="cockpit-container">
+      <div class="cockpit-header-banner">
+        <div class="cockpit-headline">Your AI workspace</div>
+        <div class="cockpit-subline">Send a prompt to the AI tabs you choose</div>
+      </div>
+
+      <div class="cockpit-targets-row">
+        <label class="target-chip is-selected" data-platform="claude">
+          <input type="checkbox" checked value="claude" class="target-checkbox">
+          <span class="target-glyph">◈</span>
+          <span class="target-name">Claude</span>
+          <span class="target-status-dot" id="status-claude" title="Tab status"></span>
+        </label>
+        <label class="target-chip is-selected" data-platform="chatgpt">
+          <input type="checkbox" checked value="chatgpt" class="target-checkbox">
+          <span class="target-glyph">◐</span>
+          <span class="target-name">ChatGPT</span>
+          <span class="target-status-dot" id="status-chatgpt" title="Tab status"></span>
+        </label>
+        <label class="target-chip is-selected" data-platform="grok">
+          <input type="checkbox" checked value="grok" class="target-checkbox">
+          <span class="target-glyph">𝕏</span>
+          <span class="target-name">Grok</span>
+          <span class="target-status-dot" id="status-grok" title="Tab status"></span>
+        </label>
+        <label class="target-chip is-selected" data-platform="gemini">
+          <input type="checkbox" checked value="gemini" class="target-checkbox">
+          <span class="target-glyph">✦</span>
+          <span class="target-name">Gemini</span>
+          <span class="target-status-dot" id="status-gemini" title="Tab status"></span>
+        </label>
+      </div>
+
+      <div class="cockpit-input-box">
+        <textarea
+          id="cockpit-prompt"
+          class="cockpit-textarea"
+          placeholder="Type your prompt here to broadcast across all selected models… (Ctrl+Enter to send)"
+          rows="4"
+        ></textarea>
+        <div class="cockpit-actions-bar">
+          <label class="auto-open-label" title="Open new tab if a selected platform is not open">
+            <input type="checkbox" id="cockpit-auto-open" checked>
+            <span>Auto-open missing tabs</span>
+          </label>
+          <button id="cockpit-broadcast-btn" class="btn btn-primary broadcast-btn">
+            ✦ Broadcast Prompt
+          </button>
+        </div>
+      </div>
+
+      <div id="cockpit-receipts" class="cockpit-receipts hidden">
+        <div class="receipts-header">
+          <span>Broadcast Receipts</span>
+          <button id="cockpit-clear-log" class="btn btn-ghost" style="padding: 2px 6px; font-size: 11px;">Clear</button>
+        </div>
+        <ul id="cockpit-receipts-list" class="receipts-list"></ul>
+      </div>
+
+      <div class="cockpit-mesh-info">
+        <div class="info-card">
+          <span class="info-title">Capture to your local folder</span>
+          <span class="info-desc">Connect a folder above. Open ChatGPT, Claude and Gemini chats save after a response settles. Hover over ! for the save error. Open the full thread or re-grant folder access, then return to the chat. Use account exports to import older chats.</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ======================= Library view ======================= -->
-  <section id="view-library" role="tabpanel" aria-labelledby="tab-library">
+  <section id="view-library" role="tabpanel" aria-labelledby="tab-library" class="hidden">
+    <div class="lib-toolbar"><a class="btn btn-ghost" href="images.html" target="_blank" rel="noopener">Open image library ↗</a></div>
     <div class="lib-toolbar">
       <input
         id="lib-search"
@@ -61,12 +146,6 @@
   <!-- ======================= Suno view ======================= -->
   <section id="view-suno" role="tabpanel" aria-labelledby="tab-suno" class="hidden">
     <div class="suno-setup">
-      <div class="suno-folder-row">
-        <button id="suno-pick-folder" class="btn btn-ghost" title="Choose the local intake folder (e.g. Arcanea/intake)">
-          Choose intake folder
-        </button>
-        <span id="suno-folder-name" class="suno-folder-name">no folder connected</span>
-      </div>
       <div class="suno-handle-row">
         <label for="suno-handle" class="suno-label">Profile</label>
         <input id="suno-handle" class="lib-search suno-handle" type="text" value="frankx" autocomplete="off" spellcheck="false" />
@@ -98,14 +177,14 @@
 
     <div id="suno-empty" class="lib-empty">
       <p class="empty-title">No catalog yet</p>
-      <p class="empty-desc">Connect your intake folder, then click <strong>Index catalog</strong> to pull your public Suno tracks into <code>suno/catalog.jsonl</code>.</p>
+      <p class="empty-desc">Connect a vault above, then click <strong>Index catalog</strong> to pull your public Suno tracks into <code>suno/catalog.jsonl</code>.</p>
     </div>
 
     <ul id="suno-list" class="lib-list"></ul>
   </section>
 
   <footer class="footer">
-    <span>Kura v0.2.0</span>
+    <span>Kura v0.3.0</span>
     <span class="footer-dot">·</span>
     <a href="https://github.com/frankxai/arcanea-vault" class="footer-link" target="_blank" rel="noopener">github</a>
   </footer>

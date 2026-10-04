@@ -5,6 +5,7 @@
 
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { PlatformScraper } from '@/core/scraper';
+import { installAutoCapture } from '@/core/auto-capture';
 import type {
   Platform,
   DetectionResult,
@@ -143,14 +144,21 @@ class ChatGPTScraper extends PlatformScraper {
   }
 }
 
+import { injectPrompt } from '@/core/injector';
+
 export default defineContentScript({
   matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
   runAt: 'document_idle',
-  main() {
+  main(ctx) {
     const scraper = new ChatGPTScraper();
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (message.type === 'VAULT_DETECT') {
+      if (message.type === 'STARLIGHT_INJECT_PROMPT') {
+        const result = injectPrompt('chatgpt', (message.prompt as string) || '', message.autoSubmit !== false);
+        sendResponse(result);
+        return true;
+      }
+      if (message.type === 'KURA_DETECT' || message.type === 'VAULT_DETECT') {
         scraper.detect().then(sendResponse);
         return true;
       }
@@ -168,6 +176,14 @@ export default defineContentScript({
       }
     });
 
+    ctx.onInvalidated(installAutoCapture(
+      () => scraper.detect(),
+      'button[data-testid="stop-button"], [class*="result-streaming"]',
+      /\/c\/[a-zA-Z0-9-]+/,
+    ));
+
+    chrome.runtime.sendMessage({ type: 'KURA_CONTENT_READY', platform: 'chatgpt' });
     chrome.runtime.sendMessage({ type: 'VAULT_CONTENT_READY', platform: 'chatgpt' });
   },
 });
+

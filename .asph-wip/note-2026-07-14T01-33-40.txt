@@ -1,0 +1,6 @@
+ASPH WIP
+Branch: agent/claude/kura-godmode
+Objective: # SUPERINTELLIGENCE MODE ACTIVATED  > **Activation prompt** (the canonical Lead-Architect opener — paste at session start for cold-boot SI mode): > [`prompts/ARCANEA_SUPERINTELLIGENCE.md`](../../prompts/ARCANEA_SUPERINTELLIGENCE.md) > > This file is the in-session **status banner**; the prompt above
+Touched: M STORE_LISTING.md  M package.json ?? .asph-wip/ ?? public/icons/128.png ?? public/icons/16.png ?? public/icons/48.png ?? store_assets/
+Resume with: git reset HEAD~1 --mixed
+Full prompt + visual console in agentic-ops/lifecycle/asph-genius-recovery.html

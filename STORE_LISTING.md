@@ -224,7 +224,7 @@ border, no text, no embellishment.
 ## 6. Submission checklist
 
 - [ ] `pnpm build` produces clean `dist/`
-- [ ] Manifest version, package.json version, README badge all read `0.2.0`
+- [ ] Manifest version, package.json version, README badge all read `0.3.0`
 - [ ] Privacy policy page is live at `https://arcanea.ai/privacy/kura`
 - [ ] Marketing page is live at `https://arcanea.ai/kura`
 - [ ] 5 screenshots + 1 promo tile + 1 marquee tile (optional) generated

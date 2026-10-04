@@ -16,6 +16,9 @@ export default [
         sourceType: "module",
       },
       globals: {
+        HTMLTextAreaElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLLabelElement: 'readonly',
         // Chrome extension API
         chrome: "readonly",
         // Standard browser globals

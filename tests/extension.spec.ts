@@ -28,10 +28,10 @@ test.describe('Arcanea Kura extension — load + detection', () => {
       throw new Error('dist/ missing. Run `pnpm build` before this test.');
     }
 
-    // Chromium with the extension loaded. headless: false is required for
-    // MV3 service-worker extensions to register correctly.
+    // Bundled Chromium supports MV3 extensions in its headless channel.
     context = await chromium.launchPersistentContext('', {
-      headless: false,
+      channel: 'chromium',
+      headless: true,
       args: [
         `--disable-extensions-except=${DIST}`,
         `--load-extension=${DIST}`,
@@ -41,15 +41,21 @@ test.describe('Arcanea Kura extension — load + detection', () => {
   });
 
   test.afterAll(async () => {
-    await context?.close();
+    // Closing a persistent context with an MV3 extension loaded can hang on
+    // teardown (service worker / offscreen lifecycle). Cap it so a slow close
+    // never fails an otherwise-green run — the process exits right after.
+    await Promise.race([
+      context?.close(),
+      new Promise((resolve) => setTimeout(resolve, 8_000)),
+    ]);
   });
 
-  test('manifest has Kura name + v0.2.x + MV3', async () => {
+  test('manifest has Kura name + v0.3.x + MV3', async () => {
     const raw = fs.readFileSync(path.join(DIST, 'manifest.json'), 'utf-8');
     const manifest = JSON.parse(raw);
     expect(manifest.manifest_version).toBe(3);
     expect(manifest.name).toMatch(/^Kura/);
-    expect(manifest.version).toMatch(/^0\.2\./);
+    expect(manifest.version).toMatch(/^0\.3\./);
     expect(manifest.short_name).toBe('Kura');
   });
 
@@ -114,21 +120,27 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(popup.locator('.title')).toHaveText('Kura');
     await expect(popup.locator('.logo')).toHaveText('K');
     await expect(popup.locator('#btn-quick-export')).toContainText('Export to Kura');
-    await expect(popup.locator('footer')).toContainText('Kura v0.2.0');
+    await expect(popup.locator('footer')).toContainText('Kura v0.3.0');
   });
 
-  test('sidepanel HTML loads with library scaffolding', async () => {
+  test('sidepanel opens cockpit and switches to the library', async () => {
     const workers = context.serviceWorkers();
     const extensionId = workers[0].url().split('/')[2];
 
     const sidepanel = await context.newPage();
     await sidepanel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
 
+    await expect(sidepanel.locator('.title')).toHaveText('Starlight Cockpit');
+    await expect(sidepanel.locator('.info-desc')).toContainText('Open ChatGPT, Claude and Gemini');
+    await sidepanel.locator('#tab-library').click();
     await expect(sidepanel.locator('.title')).toHaveText('Library');
     await expect(sidepanel.locator('#lib-search')).toBeVisible();
     await expect(sidepanel.locator('#lib-filter')).toBeVisible();
     // 蔵 character should render in the platform badge
     await expect(sidepanel.locator('.platform-badge')).toContainText('蔵');
+    // Shared vault bar present and unconnected by default.
+    await expect(sidepanel.locator('#vault-status')).toContainText('no vault connected');
+    await expect(sidepanel.locator('#vault-connect')).toContainText('Connect vault');
   });
 
   test('sidepanel Suno tab gates harvester actions on folder connection', async () => {
@@ -142,8 +154,9 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(sidepanel.locator('#panel-title')).toHaveText('Suno Harvester');
     await expect(sidepanel.locator('#view-library')).toBeHidden();
     await expect(sidepanel.locator('#suno-handle')).toHaveValue('frankx');
-    // No intake folder connected yet — every harvest action must be gated off.
-    await expect(sidepanel.locator('#suno-folder-name')).toContainText('no folder connected');
+    // No vault connected yet — every harvest action must be gated off. The
+    // folder control now lives in the shared vault bar, not the Suno tab.
+    await expect(sidepanel.locator('#vault-status')).toContainText('no vault connected');
     await expect(sidepanel.locator('#suno-index')).toBeDisabled();
     await expect(sidepanel.locator('#suno-fetch-audio')).toBeDisabled();
     await expect(sidepanel.locator('#suno-fetch-av')).toBeDisabled();
@@ -151,5 +164,83 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await sidepanel.locator('#tab-library').click();
     await expect(sidepanel.locator('#panel-title')).toHaveText('Library');
     await expect(sidepanel.locator('#view-suno')).toBeHidden();
+  });
+
+  test('real host capture writes through offscreen FSA and protects the saved thread', async () => {
+    const extensionId = context.serviceWorkers()[0].url().split('/')[2];
+    const panel = await context.newPage();
+    await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+    // OPFS supplies a real browser directory handle and disk-backed writes.
+    // This verifies structured cloning and offscreen writes; the native user
+    // folder picker and its permission prompt remain a separate smoke check.
+    await panel.evaluate(async () => {
+      const root = await (await navigator.storage.getDirectory()).getDirectoryHandle('capture-e2e', { create: true });
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('kura-fs', 1);
+        request.onupgradeneeded = () => request.result.createObjectStore('handles');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('handles', 'readwrite');
+        tx.objectStore('handles').put(root, 'kura_vault');
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    });
+    const url = 'https://chatgpt.com/c/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    await context.route(url, (route) => route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(__dirname, 'fixtures', 'mock-chatgpt.html'), 'utf8') }));
+    const chat = await context.newPage();
+    await chat.goto(url);
+    const read = () => panel.evaluate(async () => {
+      try {
+        const root = await (await navigator.storage.getDirectory()).getDirectoryHandle('capture-e2e');
+        const platform = await root.getDirectoryHandle('chatgpt');
+        const folders: string[] = [];
+        for await (const [name, handle] of platform.entries()) if (handle.kind === 'directory') folders.push(name);
+        const folder = await platform.getDirectoryHandle(folders[0]);
+        const packet = JSON.parse(await (await (await folder.getFileHandle('capture.json')).getFile()).text());
+        let history = 0;
+        try { for await (const _ of (await folder.getDirectoryHandle('_history')).entries()) history++; } catch { /* first capture */ }
+        return { folders, packet, history };
+      } catch { return null; }
+    });
+    await expect.poll(async () => (await read())?.packet.messages.length, { timeout: 20_000 }).toBe(3);
+    const first = (await read())!;
+    expect(first.packet.capture.id).toBe('chatgpt-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+    expect(first.packet.messages[1].content).toContain('The fireproof Japanese storehouse');
+    await chat.evaluate(() => {
+      document.title = 'Renamed thread | ChatGPT';
+      document.querySelector('[data-message-author-role="assistant"] .markdown')!.textContent = 'Edited answer retained with its prior revision.';
+    });
+    await expect.poll(async () => (await read())?.packet.capture.title, { timeout: 20_000 }).toBe('Renamed thread');
+    let updated = (await read())!;
+    expect(updated.folders).toEqual(first.folders);
+    expect(updated.history).toBeGreaterThan(0);
+    await panel.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve) => {
+        const request = indexedDB.open('arcanea-vault', 1);
+        request.onsuccess = () => resolve(request.result);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('conversations', 'readwrite');
+        tx.objectStore('conversations').clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    });
+    await chat.evaluate(() => { document.title = 'Recovered thread | ChatGPT'; });
+    await expect.poll(async () => (await read())?.packet.capture.title, { timeout: 20_000 }).toBe('Recovered thread');
+    updated = (await read())!;
+    expect(updated.folders).toEqual(first.folders);
+    await chat.evaluate(() => document.querySelector('[data-message-author-role="user"]:last-child')!.remove());
+    await expect.poll(() => panel.evaluate(async (chatUrl) => {
+      const [tab] = await chrome.tabs.query({ url: chatUrl });
+      return chrome.action.getBadgeText({ tabId: tab.id });
+    }, url), { timeout: 20_000 }).toBe('!');
+    expect((await read())!.packet).toEqual(updated.packet);
+    expect(await panel.evaluate(() => chrome.downloads.search({}))).toEqual([]);
   });
 });

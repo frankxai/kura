@@ -6,6 +6,8 @@
 
 import type { Conversation, Platform } from '@/core/types';
 import { initSuno } from './suno';
+import { initVault } from './vault';
+import { initCockpit } from './cockpit';
 
 const $list = document.getElementById('lib-list') as HTMLUListElement;
 const $stats = document.getElementById('lib-stats')!;
@@ -13,39 +15,60 @@ const $empty = document.getElementById('lib-empty')!;
 const $search = document.getElementById('lib-search') as HTMLInputElement;
 const $filter = document.getElementById('lib-filter') as HTMLSelectElement;
 const $title = document.getElementById('panel-title')!;
+const $tabCockpit = document.getElementById('tab-cockpit') as HTMLButtonElement;
 const $tabLibrary = document.getElementById('tab-library') as HTMLButtonElement;
 const $tabSuno = document.getElementById('tab-suno') as HTMLButtonElement;
+const $viewCockpit = document.getElementById('view-cockpit')!;
 const $viewLibrary = document.getElementById('view-library')!;
 const $viewSuno = document.getElementById('view-suno')!;
 
 let all: Conversation[] = [];
-let activeTab: 'library' | 'suno' = 'library';
+let activeTab: 'cockpit' | 'library' | 'suno' = 'cockpit';
 
 // ---------------------------------------------------------- tabs
+
+initVault();
+
+const cockpit = initCockpit();
 
 const suno = initSuno((text) => {
   if (activeTab === 'suno') $stats.textContent = text;
 });
 
-function switchTab(tab: 'library' | 'suno'): void {
+function switchTab(tab: 'cockpit' | 'library' | 'suno'): void {
   activeTab = tab;
-  const library = tab === 'library';
-  $tabLibrary.classList.toggle('is-active', library);
-  $tabSuno.classList.toggle('is-active', !library);
-  $tabLibrary.setAttribute('aria-selected', String(library));
-  $tabSuno.setAttribute('aria-selected', String(!library));
-  $viewLibrary.classList.toggle('hidden', !library);
-  $viewSuno.classList.toggle('hidden', library);
-  $title.textContent = library ? 'Library' : 'Suno Harvester';
-  if (library) {
+  $tabCockpit.classList.toggle('is-active', tab === 'cockpit');
+  $tabLibrary.classList.toggle('is-active', tab === 'library');
+  $tabSuno.classList.toggle('is-active', tab === 'suno');
+
+  $tabCockpit.setAttribute('aria-selected', String(tab === 'cockpit'));
+  $tabLibrary.setAttribute('aria-selected', String(tab === 'library'));
+  $tabSuno.setAttribute('aria-selected', String(tab === 'suno'));
+
+  $viewCockpit.classList.toggle('hidden', tab !== 'cockpit');
+  $viewLibrary.classList.toggle('hidden', tab !== 'library');
+  $viewSuno.classList.toggle('hidden', tab !== 'suno');
+
+  if (tab === 'cockpit') {
+    $title.textContent = 'Starlight Cockpit';
+    $stats.textContent = 'Multi-Model Subscription Mesh';
+    cockpit.onShow();
+  } else if (tab === 'library') {
+    $title.textContent = 'Library';
+    $stats.textContent = `${all.length} captures`;
     applyFilters();
   } else {
+    $title.textContent = 'Suno Harvester';
     suno.onShow();
   }
 }
 
+$tabCockpit.addEventListener('click', () => switchTab('cockpit'));
 $tabLibrary.addEventListener('click', () => switchTab('library'));
 $tabSuno.addEventListener('click', () => switchTab('suno'));
+
+// Initialize in Cockpit view
+switchTab('cockpit');
 
 const PLATFORM_GLYPH: Record<Platform, string> = {
   chatgpt: '◐',

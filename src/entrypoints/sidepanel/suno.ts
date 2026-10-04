@@ -4,7 +4,6 @@
 // video at human cadence — straight to the local intake folder.
 // ============================================================
 
-import { hasStoredDirectory, loadDirectory, pickDirectory } from '@/core/fs';
 import {
   fetchFlagged,
   indexCatalog,
@@ -14,12 +13,10 @@ import {
   setFlag,
 } from '@/suno/harvester';
 import type { DownloadLedger, HarvestProgress, SunoFlags, SunoTrack } from '@/suno/types';
+import { onVaultChange } from './vault';
 
 const HANDLE_KEY = 'kura_suno_handle';
-const DIR_KEY = 'sunoIntake';
 
-const $pick = document.getElementById('suno-pick-folder') as HTMLButtonElement;
-const $folderName = document.getElementById('suno-folder-name')!;
 const $handle = document.getElementById('suno-handle') as HTMLInputElement;
 const $index = document.getElementById('suno-index') as HTMLButtonElement;
 const $fetchAudio = document.getElementById('suno-fetch-audio') as HTMLButtonElement;
@@ -50,7 +47,6 @@ export function initSuno(setStats: (text: string) => void): { onShow: () => void
     chrome.storage.local.set({ [HANDLE_KEY]: $handle.value.trim() });
   });
 
-  $pick.addEventListener('click', connectFolder);
   $index.addEventListener('click', () => run('index'));
   $fetchAudio.addEventListener('click', () => run('audio'));
   $fetchAv.addEventListener('click', () => run('av'));
@@ -58,41 +54,23 @@ export function initSuno(setStats: (text: string) => void): { onShow: () => void
   $search.addEventListener('input', renderList);
   $sort.addEventListener('change', renderList);
 
-  void restoreQuietly();
+  // The vault folder is shared across tabs — adopt it whenever it changes.
+  onVaultChange((handle) => void adoptRoot(handle));
   return { onShow: updateStats };
 }
 
-/** On load: reuse a stored handle when permission is still granted. */
-async function restoreQuietly(): Promise<void> {
-  if (await hasStoredDirectory(DIR_KEY)) {
-    $pick.textContent = 'Reconnect intake folder';
-    const handle = await loadDirectory(DIR_KEY, false);
-    if (handle) await adoptRoot(handle);
-  }
-}
-
-/** User gesture: re-grant permission on the stored handle or pick fresh. */
-async function connectFolder(): Promise<void> {
-  try {
-    const restored = await loadDirectory(DIR_KEY, true);
-    const handle = restored ?? (await pickDirectory(DIR_KEY));
-    await adoptRoot(handle);
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') return;
-    $folderName.textContent = `folder error: ${String(err)}`;
-    $folderName.classList.add('is-error');
-    $folderName.classList.remove('is-connected');
-  }
-}
-
-async function adoptRoot(handle: FileSystemDirectoryHandle): Promise<void> {
+async function adoptRoot(handle: FileSystemDirectoryHandle | null): Promise<void> {
   root = handle;
-  $folderName.textContent = `${handle.name}/suno/`;
-  $folderName.classList.add('is-connected');
-  $folderName.classList.remove('is-error');
-  $pick.textContent = 'Change folder';
   setBusy(false);
-  await reloadFromDisk();
+  if (handle) {
+    await reloadFromDisk();
+  } else {
+    catalog = [];
+    flags = { version: 1, flags: {} };
+    ledger = {};
+    renderList();
+    updateStats();
+  }
 }
 
 async function reloadFromDisk(): Promise<void> {
@@ -170,7 +148,7 @@ function flaggedCount(): number {
 
 function updateStats(): void {
   if (!root) {
-    statsLine('Connect an intake folder to begin');
+    statsLine('Connect a vault to begin');
     return;
   }
   const downloaded = Object.keys(ledger).length;

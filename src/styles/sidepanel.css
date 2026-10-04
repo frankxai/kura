@@ -34,6 +34,34 @@
 
 .lib-search::placeholder { color: var(--fg-faint); }
 
+/* Readable controls and quiet states for the capture workspace. */
+.sidepanel-body { --fg-faint: #a1a1aa; }
+.sidepanel-body .btn-primary,
+.sidepanel-body .btn-primary:hover { background: var(--teal); color: var(--bg); box-shadow: none; }
+.sidepanel-body .btn-secondary,
+.sidepanel-body .btn-secondary:hover { box-shadow: none; }
+.sidepanel-body .footer-link { font-size: 12px; }
+.sidepanel-body .cockpit-subline { color: #b5e6eb; }
+.sidepanel-body .btn { font-size: 12px; }
+.sidepanel-body .vault-status { font-size: 12px; }
+.sidepanel-body .target-status-dot,
+.sidepanel-body .suno-progress-fill,
+.sidepanel-body .vault-dot,
+.sidepanel-body .suno-dot { box-shadow: none; animation: none; }
+.sidepanel-body .subtitle,
+.sidepanel-body .suno-progress-text { color: #b5e6eb; font-size: 12px; }
+.sidepanel-body .info-title,
+.sidepanel-body .info-desc { font-size: 12px; }
+.sidepanel-body .logo,
+.sidepanel-body .tab::after,
+.sidepanel-body .vault-status::before { box-shadow: none; }
+.sidepanel-body .suno-progress-fill { transition: none; }
+.sidepanel-body :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.sidepanel-body .vault-bar-label,
+.sidepanel-body .suno-label,
+.sidepanel-body .suno-fetched { text-transform: none; font-size: 12px; }
+.sidepanel-body .receipt-item { border-left-width: 1px; }
+
 .lib-search:focus,
 .lib-filter:focus,
 .lib-search:hover,
@@ -43,7 +71,7 @@
 
 .lib-filter {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -102,7 +130,7 @@
 .lib-item-meta {
   margin-top: 2px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--fg-faint);
   letter-spacing: 0.04em;
   display: flex;
@@ -141,6 +169,96 @@
   border-color: var(--teal-edge);
 }
 
+/* -- Shared vault bar -- */
+
+.vault-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.vault-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.vault-bar-label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+.vault-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vault-status::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-hi);
+}
+
+.vault-status.is-connected {
+  color: var(--teal);
+}
+
+.vault-status.is-connected::before {
+  background: var(--ok);
+  box-shadow: none;
+}
+
+.vault-status.is-error {
+  color: var(--err);
+}
+
+.vault-status.is-error::before {
+  background: var(--err);
+  box-shadow: none;
+}
+
+.vault-connect {
+  flex: none;
+}
+
+.vault-hint {
+  margin: 0;
+  padding: 8px 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.vault-hint code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--teal);
+}
+
+.vault-hint.hidden {
+  display: none;
+}
+
 /* -- Tabs -- */
 
 .tabs {
@@ -176,13 +294,13 @@
   height: 2px;
   border-radius: 2px 2px 0 0;
   background: var(--teal);
-  box-shadow: 0 0 10px 1px var(--teal-glow);
+  box-shadow: none;
   opacity: 0;
   transition: opacity var(--t-fast) var(--ease);
 }
 
 .tab:hover {
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   background: var(--surface);
 }
 
@@ -223,9 +341,9 @@
   align-items: center;
   gap: 7px;
   min-width: 0;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -238,13 +356,13 @@
   height: 6px;
   border-radius: 999px;
   background: var(--fg-ghost);
-  box-shadow: 0 0 0 3px transparent;
+  box-shadow: none;
   transition: background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 
 .suno-folder-name.is-connected::before {
   background: var(--ok);
-  box-shadow: 0 0 0 3px var(--ok-glow);
+  box-shadow: none;
 }
 
 .suno-folder-name.is-error {
@@ -253,11 +371,11 @@
 
 .suno-folder-name.is-error::before {
   background: var(--err);
-  box-shadow: 0 0 0 3px var(--err-glow);
+  box-shadow: none;
 }
 
 .suno-label {
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-size: 12px;
   min-width: 44px;
 }
@@ -294,21 +412,21 @@
   width: 0%;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--teal), var(--gold));
-  box-shadow: 0 0 6px 0 var(--teal-glow);
-  transition: width var(--t-med) var(--ease);
+  box-shadow: none;
+  transition: none;
   animation: suno-pulse 1.8s var(--ease) infinite;
 }
 
 @keyframes suno-pulse {
-  0%, 100% { box-shadow: 0 0 6px 0 var(--teal-glow); }
-  50% { box-shadow: 0 0 14px 2px var(--teal-glow); }
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: none; }
 }
 
 .suno-progress-text {
   margin-top: 8px;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -325,7 +443,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
@@ -351,11 +469,223 @@
 .suno-fetched {
   color: var(--ok);
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.06em;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .suno-flag:hover { transform: none; }
   .suno-progress-fill { transition: none; animation: none; }
+}
+
+/* ============================================================
+   Starlight Cockpit Styles
+   ============================================================ */
+
+.cockpit-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cockpit-header-banner {
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(0, 188, 212, 0.08), rgba(13, 71, 161, 0.12));
+  border: 1px solid var(--teal-edge);
+  border-radius: 10px;
+}
+
+.cockpit-headline {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+}
+
+.cockpit-subline {
+  font-size: 12px;
+  color: var(--fg-tint);
+  margin-top: 2px;
+}
+
+.cockpit-targets-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.target-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--t-fast) var(--ease);
+}
+
+.target-chip:hover {
+  border-color: var(--teal-edge);
+  background: var(--surface-strong);
+}
+
+.target-chip.is-selected {
+  border-color: var(--teal-edge);
+  background: rgba(0, 188, 212, 0.08);
+}
+
+.target-checkbox {
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+
+.target-glyph {
+  font-size: 14px;
+  color: var(--teal);
+}
+
+.target-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg);
+  flex: 1;
+}
+
+.target-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg-ghost);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.target-status-dot.is-active {
+  background: var(--ok);
+  box-shadow: none;
+}
+
+.cockpit-input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-hi);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.cockpit-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  min-height: 80px;
+}
+
+.cockpit-textarea::placeholder {
+  color: var(--fg-faint);
+}
+
+.cockpit-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.auto-open-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-tint);
+  cursor: pointer;
+}
+
+.auto-open-label input {
+  accent-color: var(--teal);
+}
+
+.broadcast-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+}
+
+.cockpit-receipts {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.receipts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-tint);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.receipts-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.receipt-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.receipt-item.is-ok {
+  border-left: 2px solid var(--ok);
+}
+
+.receipt-item.is-error {
+  border-left: 2px solid var(--err);
+}
+
+.cockpit-mesh-info .info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.info-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal);
+  letter-spacing: 0.02em;
+}
+
+.info-desc {
+  font-size: 12px;
+  color: var(--fg-faint);
+  line-height: 1.4;
 }

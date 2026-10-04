@@ -5,6 +5,7 @@
 
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { PlatformScraper } from '@/core/scraper';
+import { installAutoCapture } from '@/core/auto-capture';
 import type {
   Platform,
   DetectionResult,
@@ -163,14 +164,21 @@ class ClaudeScraper extends PlatformScraper {
   }
 }
 
+import { injectPrompt } from '@/core/injector';
+
 export default defineContentScript({
   matches: ['https://claude.ai/*'],
   runAt: 'document_idle',
-  main() {
+  main(ctx) {
     const scraper = new ClaudeScraper();
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-      if (message.type === 'VAULT_DETECT') {
+      if (message.type === 'STARLIGHT_INJECT_PROMPT') {
+        const result = injectPrompt('claude', (message.prompt as string) || '', message.autoSubmit !== false);
+        sendResponse(result);
+        return true;
+      }
+      if (message.type === 'KURA_DETECT' || message.type === 'VAULT_DETECT') {
         scraper.detect().then(sendResponse);
         return true;
       }
@@ -188,6 +196,14 @@ export default defineContentScript({
       }
     });
 
+    ctx.onInvalidated(installAutoCapture(
+      () => scraper.detect(),
+      '[data-is-streaming="true"], button[aria-label*="Stop" i]',
+      /\/chat\/[a-zA-Z0-9-]+/,
+    ));
+
+    chrome.runtime.sendMessage({ type: 'KURA_CONTENT_READY', platform: 'claude' });
     chrome.runtime.sendMessage({ type: 'VAULT_CONTENT_READY', platform: 'claude' });
   },
 });
+
