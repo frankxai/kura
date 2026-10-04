@@ -11,6 +11,7 @@
 import { getDir, writeFile } from './fs';
 import { mergeRecapture, captureIdentity } from './recapture';
 import type { WritePlan } from './capture-plan';
+import type { CaptureRef } from './native-intake';
 
 export interface VaultWriteProgress {
   total: number;
@@ -26,6 +27,8 @@ export interface VaultWriteResult {
    *  The caller can retry these through chrome.downloads, which bypasses CORS. */
   failedMedia: { path: string; url: string; retryable?: boolean }[];
   folderMap: Record<string, string>;
+  captureRefs: CaptureRef[];
+  intakeWarnings?: number;
 }
 
 const MEDIA_CADENCE_MS = 280;
@@ -196,5 +199,17 @@ export async function writePlan(
     }
   }
 
-  return { written, failed, failedMedia, folderMap };
+  const captureRefs: CaptureRef[] = [];
+  let intakeWarnings = 0;
+  for (const file of plan.textFiles.filter((item) => item.path.endsWith('/capture.json'))) {
+    // Hash the actual saved packet, including when a clock-only recapture skipped writes.
+    try {
+      const saved = await readText(root, file.path.split('/'));
+      if (saved === null) throw new Error('Capture pointer is unavailable.');
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(saved));
+      captureRefs.push({ path: file.path.replace(/capture\.json$/, 'conversation.md'),
+        sha256: Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('') });
+    } catch { intakeWarnings++; }
+  }
+  return { written, failed, failedMedia, folderMap, captureRefs, ...(intakeWarnings ? { intakeWarnings } : {}) };
 }

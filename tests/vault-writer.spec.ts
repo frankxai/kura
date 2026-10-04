@@ -143,6 +143,20 @@ function fakeDirectory(files = new Map<string, FakeFile>(), prefix = ''): FileSy
 }
 
 test.describe('writePlan', () => {
+  test('intake pointer failure preserves the durable capture acknowledgement', async () => {
+    const files = new Map<string, FakeFile>();
+    const root = fakeDirectory(files);
+    const originalDigest = crypto.subtle.digest;
+    crypto.subtle.digest = async () => { throw new Error('synthetic intake hash failure'); };
+    try {
+      const plan = buildWritePlan(detection(), OPTIONS);
+      const result = await writePlan(root, plan);
+      expect(result.failed).toBe(0);
+      expect(result.captureRefs).toEqual([]);
+      expect(result.intakeWarnings).toBe(1);
+      expect(files.get(plan.textFiles.find((file) => file.path.endsWith('/conversation.md'))!.path)!.content).toContain('What should we call it?');
+    } finally { crypto.subtle.digest = originalDigest; }
+  });
   test('keeps source revisions and refuses a shorter DOM view', async () => {
     const files = new Map<string, FakeFile>();
     const root = fakeDirectory(files);
@@ -176,7 +190,7 @@ test.describe('writePlan', () => {
     };
 
     const r1 = await writePlan(root, plan);
-    expect(r1).toEqual({ written: 2, failed: 0, failedMedia: [], folderMap: {} });
+    expect(r1).toEqual({ written: 2, failed: 0, failedMedia: [], folderMap: {}, captureRefs: [] });
     expect(files.has('chatgpt/slug/conversation.md')).toBe(true);
     expect(files.has('chatgpt/slug/assets/a.png')).toBe(true);
 

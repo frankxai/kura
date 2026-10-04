@@ -8,6 +8,7 @@ import type { Conversation, Platform } from '@/core/types';
 import { initSuno } from './suno';
 import { initVault } from './vault';
 import { initCockpit } from './cockpit';
+import { initNativeIntake } from './native-intake';
 
 const $list = document.getElementById('lib-list') as HTMLUListElement;
 const $stats = document.getElementById('lib-stats')!;
@@ -28,6 +29,7 @@ let activeTab: 'cockpit' | 'library' | 'suno' = 'cockpit';
 // ---------------------------------------------------------- tabs
 
 initVault();
+initNativeIntake();
 
 const cockpit = initCockpit();
 

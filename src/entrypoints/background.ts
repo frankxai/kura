@@ -17,6 +17,8 @@ import {
   dispatchPromptToTab,
 } from '@/core/dispatcher';
 import type { WritePlan } from '@/core/capture-plan';
+import { NativeIntake, requestNative, INTAKE_KEY } from '@/core/native-intake';
+import type { CaptureRef } from '@/core/native-intake';
 import type { ExportOptions, DetectionResult, Platform } from '@/core/types';
 
 /** Where a capture actually landed — surfaced to the popup. */
@@ -25,6 +27,14 @@ type CaptureSink = 'fsa' | 'downloads';
 export default defineBackground({
   type: 'module',
   main() {
+    const storageReady = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+    void storageReady.catch(() => {});
+    const intake = new NativeIntake({
+      read: async () => { await storageReady; return (await chrome.storage.local.get(INTAKE_KEY))[INTAKE_KEY]; },
+      write: async (state) => { await storageReady; await chrome.storage.local.set({ [INTAKE_KEY]: state }); },
+      quarantine: async (state) => { await storageReady; if (state !== undefined) await chrome.storage.local.set({ [`kura_intake_recovery_${crypto.randomUUID()}`]: state }); },
+    }, requestNative);
+    const resumeIntake = () => { void intake.drain().catch(() => {}); };
     // ============================================================
     // Download queue (rate-limited, sequential)
     // ============================================================
@@ -112,6 +122,7 @@ export default defineBackground({
       folders: string[];
       sink: CaptureSink;
       mediaSkipped: number;
+      intakeQueued: boolean;
     }> {
       // Reuse the first folder even after a title change or a later capture day.
       const known = await vault.listConversations();
@@ -131,12 +142,16 @@ export default defineBackground({
       const plan = buildWritePlan(detection, options);
       let sink: CaptureSink;
       let mediaSkipped = 0;
+      let captureRefs: CaptureRef[] = [];
+      let intakeWarnings = 0;
       if (requireVault) {
         const result = await tryWriteViaOffscreen(plan);
         if (!result) throw new Error('Connect or re-grant your capture folder in Kura.');
         if (result.failedMedia?.some((media) => media.retryable !== false)) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
         mediaSkipped = result.failedMedia?.length ?? 0;
         reconcileIndexFolders(detection, result);
+        captureRefs = result.captureRefs ?? [];
+        intakeWarnings = result.intakeWarnings ?? 0;
         sink = 'fsa';
       } else {
         const result = await tryWriteViaOffscreen(plan);
@@ -144,6 +159,8 @@ export default defineBackground({
           if (result.failedMedia?.some((media) => media.retryable !== false)) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
           mediaSkipped = result.failedMedia?.length ?? 0;
           reconcileIndexFolders(detection, result);
+          captureRefs = result.captureRefs ?? [];
+          intakeWarnings = result.intakeWarnings ?? 0;
           sink = 'fsa';
         } else {
           sink = await writePlanToVaultOrDownloads(plan);
@@ -153,6 +170,13 @@ export default defineBackground({
       for (const m of detection.media) await vault.saveMedia(m);
       for (const p of detection.prompts) await vault.savePrompt(p);
 
+      let intakeQueued = false;
+      try {
+        await intake.noteMissed(intakeWarnings);
+        intakeQueued = (await intake.enqueue(captureRefs)) > 0;
+        resumeIntake();
+      } catch { /* Intake recovery never changes a durable capture acknowledgement. */ }
+
       return {
         conversations: plan.counts.conversations,
         media: Math.max(0, plan.counts.media - mediaSkipped),
@@ -160,6 +184,7 @@ export default defineBackground({
         prompts: plan.counts.prompts,
         folders: detection.conversations.map((conv) => `${conv.platform}/${conv.metadata?.kuraSlug}`),
         sink,
+        intakeQueued,
       };
     }
 
@@ -198,6 +223,8 @@ export default defineBackground({
       error?: string;
       folderMap?: Record<string, string>;
       failedMedia?: { path: string; url: string; retryable?: boolean }[];
+      captureRefs?: CaptureRef[];
+      intakeWarnings?: number;
     }
 
     function reconcileIndexFolders(detection: DetectionResult, result: OffscreenWriteResult) {
@@ -306,6 +333,15 @@ export default defineBackground({
     ) => Promise<unknown>;
 
     const messageHandlers: Record<string, MessageHandler> = {
+      KURA_INTAKE_STATUS: async () => intake.snapshot(),
+      KURA_INTAKE_ENABLE: async () => {
+        const state = await intake.enable();
+        resumeIntake();
+        return state;
+      },
+      KURA_INTAKE_DISABLE: async () => intake.disable(),
+      KURA_INTAKE_RESET: async () => intake.reset(),
+      KURA_INTAKE_RETRY: async () => { resumeIntake(); return intake.snapshot(); },
       KURA_CONTENT_READY: async (message) => {
         console.log(`[Kura] Content script ready: ${message.platform}`);
         return { ok: true };

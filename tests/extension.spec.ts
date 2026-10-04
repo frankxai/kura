@@ -57,6 +57,8 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     expect(manifest.name).toMatch(/^Kura/);
     expect(manifest.version).toMatch(/^0\.3\./);
     expect(manifest.short_name).toBe('Kura');
+    expect(manifest.optional_permissions).toContain('nativeMessaging');
+    expect(manifest.permissions).not.toContain('nativeMessaging');
   });
 
   test('service worker registers', async () => {
@@ -120,7 +122,7 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(popup.locator('.title')).toHaveText('Kura');
     await expect(popup.locator('.logo')).toHaveText('K');
     await expect(popup.locator('#btn-quick-export')).toContainText('Export to Kura');
-    await expect(popup.locator('footer')).toContainText('Kura v0.3.0');
+    await expect(popup.locator('footer')).toContainText('Kura v0.3.1');
   });
 
   test('sidepanel opens cockpit and switches to the library', async () => {
@@ -141,6 +143,9 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     // Shared vault bar present and unconnected by default.
     await expect(sidepanel.locator('#vault-status')).toContainText('no vault connected');
     await expect(sidepanel.locator('#vault-connect')).toContainText('Connect vault');
+    await expect(sidepanel.locator('#intake-status')).toHaveText('Local intake is off');
+    await expect(sidepanel.locator('#intake-connect')).toHaveText('Connect second brain');
+    await expect(sidepanel.locator('#intake-retry')).toBeHidden();
   });
 
   test('sidepanel Suno tab gates harvester actions on folder connection', async () => {
@@ -188,6 +193,11 @@ test.describe('Arcanea Kura extension — load + detection', () => {
         tx.onerror = () => reject(tx.error);
       });
       db.close();
+      // Native host is deliberately absent in CI: durable capture must still
+      // produce a valid retry pointer instead of losing or acknowledging it.
+      await chrome.storage.local.set({ kura_native_intake_v1: {
+        enabled: true, pending: [], status: 'ready', vault: 'synthetic-test', processed: 0,
+      } });
     });
     const url = 'https://chatgpt.com/c/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
     await context.route(url, (route) => route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(__dirname, 'fixtures', 'mock-chatgpt.html'), 'utf8') }));
@@ -200,16 +210,45 @@ test.describe('Arcanea Kura extension — load + detection', () => {
         const folders: string[] = [];
         for await (const [name, handle] of platform.entries()) if (handle.kind === 'directory') folders.push(name);
         const folder = await platform.getDirectoryHandle(folders[0]);
-        const packet = JSON.parse(await (await (await folder.getFileHandle('capture.json')).getFile()).text());
+        const packetText = await (await (await folder.getFileHandle('capture.json')).getFile()).text();
+        const packet = JSON.parse(packetText);
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(packetText));
+        const sha256 = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+        const intake = (await chrome.storage.local.get('kura_native_intake_v1')).kura_native_intake_v1;
         let history = 0;
         try { for await (const _ of (await folder.getDirectoryHandle('_history')).entries()) history++; } catch { /* first capture */ }
-        return { folders, packet, history };
+        return { folders, packet, history, sha256, intake };
       } catch { return null; }
     });
     await expect.poll(async () => (await read())?.packet.messages.length, { timeout: 20_000 }).toBe(3);
     const first = (await read())!;
     expect(first.packet.capture.id).toBe('chatgpt-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
     expect(first.packet.messages[1].content).toContain('The fireproof Japanese storehouse');
+    await expect.poll(async () => (await read())?.intake.pending, { timeout: 10_000 }).toEqual([
+      { path: `chatgpt/${first.folders[0]}/conversation.md`, sha256: first.sha256 },
+    ]);
+    await expect.poll(async () => (await read())?.intake.status).toBe('retry');
+    expect((await read())!.intake.processed).toBe(0);
+    // A real isolated content-script caller cannot pause or control native intake.
+    const blocked = await panel.evaluate(async (chatUrl) => {
+      const [tab] = await chrome.tabs.query({ url: chatUrl });
+      const [result] = await chrome.scripting.executeScript({ target: { tabId: tab.id! },
+        func: async () => {
+          const responses = [];
+          for (const type of ['KURA_INTAKE_STATUS', 'KURA_INTAKE_ENABLE', 'KURA_INTAKE_DISABLE', 'KURA_INTAKE_RETRY', 'KURA_INTAKE_RESET']) {
+            responses.push(await chrome.runtime.sendMessage({ type }));
+          }
+          let writeBlocked = false;
+          try { await chrome.storage.local.set({ kura_native_intake_v1: { enabled: false } }); }
+          catch { writeBlocked = true; }
+          return { responses, writeBlocked };
+        },
+      });
+      return result.result;
+    }, url);
+    expect(blocked.responses).toEqual(Array.from({ length: 5 }, () => ({ ok: false, error: 'Open Kura to perform this action.' })));
+    expect(blocked.writeBlocked).toBe(true);
+    expect((await read())!.intake.enabled).toBe(true);
     await chat.evaluate(() => {
       document.title = 'Renamed thread | ChatGPT';
       document.querySelector('[data-message-author-role="assistant"] .markdown')!.textContent = 'Edited answer retained with its prior revision.';
@@ -218,6 +257,9 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     let updated = (await read())!;
     expect(updated.folders).toEqual(first.folders);
     expect(updated.history).toBeGreaterThan(0);
+    await expect.poll(async () => (await read())?.intake.pending).toEqual([
+      { path: `chatgpt/${updated.folders[0]}/conversation.md`, sha256: updated.sha256 },
+    ]);
     await panel.evaluate(async () => {
       const db = await new Promise<IDBDatabase>((resolve) => {
         const request = indexedDB.open('arcanea-vault', 1);
