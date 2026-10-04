@@ -241,6 +241,8 @@
   flex: none;
 }
 
+.sidepanel-body [hidden] { display: none !important; }
+
 /* Search is a frequent keyboard action: results and tabs change without motion. */
 .lib-item.chat-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; transition: none; }
 .chat-row .lib-item-title { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; }
@@ -252,7 +254,7 @@
 .chat-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .chat-filters .lib-filter { width: 100%; min-width: 0; min-height: 44px; padding: 8px; }
 .chat-filters .btn { grid-column: 1 / -1; justify-self: end; min-height: 44px; }
-.chat-more { margin: 0 18px 18px; min-height: 44px; }
+.sidepanel-body .chat-more { width: calc(100% - 36px); margin: 0 18px 18px; min-height: 44px; }
 .lib-search { min-width: 0; min-height: 44px; }
 .sidepanel-body .tab { min-height: 44px; transition: none; }
 .chat-resume:active { background: var(--surface-strong); }

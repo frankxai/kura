@@ -73,6 +73,7 @@ test.describe('Chat library in real Chromium', () => {
     await expect(panel.getByRole('tab', { name: 'Chats', exact: true })).toBeFocused();
     await expect(panel.locator('.chat-row')).toHaveCount(2);
     await expect(panel.locator('#lib-list')).toHaveAttribute('aria-busy', 'false');
+    await expect(panel.getByRole('button', { name: 'Show more', exact: true })).toBeHidden();
     const measurements = await panel.evaluate(() => ({
       overflow: document.documentElement.scrollWidth > innerWidth,
       viewport: innerWidth,
@@ -156,5 +157,36 @@ test.describe('Chat library in real Chromium', () => {
     await panel.getByRole('button', { name: 'Refresh', exact: true }).click();
     await expect(panel.locator('#lib-status')).toContainText('1 of 1 matching chats');
     await panel.evaluate(() => { chrome.runtime.sendMessage = (window as unknown as { originalSendMessage: typeof chrome.runtime.sendMessage }).originalSendMessage; });
+  });
+
+  test('pagination stays bounded and its action fits the narrow panel', async () => {
+    // Seed only this empty-profile query index; exercise search rather than Downloads.
+    await panel.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>(resolve => {
+        const request = indexedDB.open('arcanea-vault', 1);
+        request.onsuccess = () => resolve(request.result);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const transaction = db.transaction('conversations', 'readwrite');
+        for (let i = 0; i < 45; i++) transaction.objectStore('conversations').put({
+          id: `page-fixture-${i}`, platform: 'claude', title: `Paginationfixture ${i}`,
+          url: `https://claude.ai/chat/page-fixture-${i}`, capturedAt: '2026-10-01T12:00:00Z', tags: [], messages: [],
+        });
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      });
+      db.close();
+    });
+    await panel.setViewportSize({ width: 320, height: 820 });
+    await panel.getByRole('searchbox', { name: 'Search chats' }).fill('paginationfixture');
+    await expect(panel.locator('.chat-row')).toHaveCount(40);
+    const more = panel.getByRole('button', { name: 'Show more', exact: true });
+    await expect(more).toBeVisible();
+    expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await more.click();
+    await expect(panel.locator('.chat-row')).toHaveCount(45);
+    await expect(more).toBeHidden();
+    await expect(panel.locator('#lib-status')).toContainText('45 of 45');
+    expect(new Set(await panel.locator('.lib-item-title').allTextContents()).size).toBe(45);
   });
 });
