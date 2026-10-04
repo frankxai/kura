@@ -6,6 +6,10 @@ message content and source identity, so edits and navigation can trigger another
 save even when the message count stays the same. Three delayed retries follow a
 failed write; returning to the chat triggers another attempt.
 
+A shorter view cannot overwrite a fuller saved transcript. Open the complete
+thread and repeat the capture. Changed transcripts retain content-addressed
+Markdown revisions in the conversation's `_history/` folder.
+
 Automatic capture requires a writable connected folder. A `!` badge means the
 save was not acknowledged: open Kura, connect or re-grant the folder, then return
 to the chat. Automatic capture does not fall back to a stream of Downloads.
@@ -18,6 +22,14 @@ and refuses to overwrite a different conversation identity. Keep the folder as
 your source of truth. If the extension index is cleared, restore/reconcile it
 with the existing files before continuing; automatic disk-index recovery remains
 open work. Media fetch failures do not prevent the transcript from being saved.
+
+New bundles also carry `capture.json` packet v1.0.0. It records exact message
+roles and spans that the importer verifies against the readable Markdown body.
+Embedded role headings, Unicode text and incomplete code blocks stay message
+data. Older Markdown-only captures retain conservative count and fence checks;
+recapture ambiguous files with the current extension. A mismatched packet stops
+ingestion until the capture finishes or is repeated. The Markdown schema remains
+v0.2.0; existing processors can ignore the optional companion.
 
 SBO now reads a v0.2.0 Kura capture or a complete `Kura/` capture root. Raw text
 stays in its private vault; the brain vault receives pending summary notes.

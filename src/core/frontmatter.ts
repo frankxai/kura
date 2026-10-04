@@ -51,7 +51,7 @@ function serializeValue(value: unknown): string {
 /** Quote a YAML string if it contains special chars or starts with a reserved token. */
 function quoteIfNeeded(s: string): string {
   if (s === '') return '""';
-  if (/^[a-zA-Z0-9_\-./:+]+$/.test(s) && !/^(true|false|null|yes|no|on|off)$/i.test(s)) {
+  if (/^[a-zA-Z0-9_\-./:+]+$/.test(s) && !/^[+\-]?\d/.test(s) && !/^(true|false|null|yes|no|on|off)$/i.test(s)) {
     return s;
   }
   return JSON.stringify(s);

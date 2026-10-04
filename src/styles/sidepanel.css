@@ -300,7 +300,7 @@
 }
 
 .tab:hover {
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   background: var(--surface);
 }
 
@@ -341,7 +341,7 @@
   align-items: center;
   gap: 7px;
   min-width: 0;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   overflow: hidden;
@@ -375,7 +375,7 @@
 }
 
 .suno-label {
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-size: 12px;
   min-width: 44px;
 }
@@ -424,7 +424,7 @@
 
 .suno-progress-text {
   margin-top: 8px;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 12px;
   letter-spacing: 0.02em;
@@ -443,7 +443,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
@@ -505,7 +505,7 @@
 
 .cockpit-subline {
   font-size: 12px;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   margin-top: 2px;
 }
 
@@ -609,7 +609,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   cursor: pointer;
 }
 
@@ -636,7 +636,7 @@
   align-items: center;
   font-size: 12px;
   font-weight: 600;
-  color: var(--fg-mute);
+  color: var(--fg-tint);
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;

@@ -15,6 +15,16 @@ test('recapture preserves curated fields and refuses identity collisions', () =>
   assert.match(merged, /New body/);
   assert.throws(() => mergeRecapture(old, next.replace('chatgpt-a', 'chatgpt-b')));
   assert.throws(() => mergeRecapture('broken metadata', next));
+  assert.throws(() => mergeRecapture(next, old), /more messages/);
+});
+
+test('recapture retains custom YAML keys and handles annotated identity', () => {
+  const old = '---\n# User annotation\nid: "a" # ID comment\ntitle: old\n"custom.key": retained\n心: preserved\nstatus: reviewed\n---\nOld';
+  const merged = mergeRecapture(old, '---\nid: a\ntitle: new\nstatus: raw\n---\nNew');
+  assert.match(merged, /# User annotation/);
+  assert.match(merged, /"custom.key": retained/);
+  assert.match(merged, /心: preserved/);
+  assert.match(merged, /status: reviewed/);
 });
 
 const page = (id = 'chatgpt-a', content = 'answer'): DetectionResult => ({

@@ -180,6 +180,8 @@ export default defineBackground({
 
     interface OffscreenWriteResult {
       ok: boolean;
+      reason?: string;
+      error?: string;
       failedMedia?: { path: string; url: string }[];
     }
 
@@ -187,17 +189,19 @@ export default defineBackground({
      *  Returns null when FSA is unavailable (no offscreen API, no vault, or a
      *  lapsed permission grant) so the caller can fall back to Downloads. */
     async function tryWriteViaOffscreen(plan: WritePlan): Promise<OffscreenWriteResult | null> {
+      let res: OffscreenWriteResult | undefined;
       try {
         if (!chrome.offscreen) return null;
         await ensureOffscreen();
-        const res = (await chrome.runtime.sendMessage({
+        res = (await chrome.runtime.sendMessage({
           type: 'KURA_OFFSCREEN_WRITE',
           plan,
         })) as OffscreenWriteResult | undefined;
-        return res && res.ok ? res : null;
       } catch {
         return null;
       }
+      if (res?.reason === 'error') throw new Error(res.error || 'Saved capture was protected. Inspect the connected folder.');
+      return res?.ok ? res : null;
     }
 
     async function writePlanToVaultOrDownloads(plan: WritePlan): Promise<CaptureSink> {
@@ -367,11 +371,18 @@ export default defineBackground({
         if (!platform || detection.platform !== platform || detection.conversations.some((conv) => conv.platform !== platform)) return { ok: false };
         try {
           const counts = await persistDetection(detection, defaultOptions(), true);
-          if (sender.tab?.id) await chrome.action.setBadgeText({ text: '', tabId: sender.tab.id });
+          if (sender.tab?.id) {
+            await chrome.action.setBadgeText({ text: '', tabId: sender.tab.id });
+            await chrome.action.setTitle({ title: 'Kura', tabId: sender.tab.id });
+          }
           return { ok: true, counts };
-        } catch {
-          if (sender.tab?.id) await chrome.action.setBadgeText({ text: '!', tabId: sender.tab.id });
-          return { ok: false, reason: 'vault-unavailable' };
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : 'Open Kura and check your capture folder.';
+          if (sender.tab?.id) {
+            await chrome.action.setBadgeText({ text: '!', tabId: sender.tab.id });
+            await chrome.action.setTitle({ title: `Kura: ${reason}`, tabId: sender.tab.id });
+          }
+          return { ok: false, reason };
         }
       },
 

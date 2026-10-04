@@ -56,6 +56,7 @@ test.describe('buildWritePlan', () => {
     const paths = plan.textFiles.map((f) => f.path).sort();
     expect(paths).toContain('chatgpt/2026-05-13_naming-the-extension/conversation.md');
     expect(paths).toContain('chatgpt/2026-05-13_naming-the-extension/prompts.md');
+    expect(paths).toContain('chatgpt/2026-05-13_naming-the-extension/capture.json');
     expect(plan.counts).toEqual({ conversations: 1, media: 0, prompts: 0 });
     expect(plan.folders).toEqual(['chatgpt/2026-05-13_naming-the-extension']);
   });
@@ -142,6 +143,21 @@ function fakeDirectory(files = new Map<string, FakeFile>(), prefix = ''): FileSy
 }
 
 test.describe('writePlan', () => {
+  test('keeps source revisions and refuses a shorter DOM view', async () => {
+    const files = new Map<string, FakeFile>();
+    const root = fakeDirectory(files);
+    const original = buildWritePlan(detection(), OPTIONS);
+    await writePlan(root, original);
+    const shorter = buildWritePlan(detection({ conversations: [conversation({ messages: [{ role: 'user', content: 'Only a partial view' }] })] }), OPTIONS);
+    await expect(writePlan(root, shorter)).rejects.toThrow('more messages');
+    const note = original.textFiles.find((file) => file.path.endsWith('/conversation.md'))!;
+    expect(files.get(note.path)!.content).toBe(note.content);
+    const updated = buildWritePlan(detection({ conversations: [conversation({ messages: [{ role: 'user', content: 'Question' }, { role: 'assistant', content: 'Edited answer' }] })] }), OPTIONS);
+    await writePlan(root, updated);
+    const history = [...files.entries()].filter(([key]) => key.includes('/_history/'));
+    expect(history).toHaveLength(1);
+    expect(history[0][1].content).toBe(note.content);
+  });
   test('writes text + media to disk and is idempotent on re-run', async () => {
     const files = new Map<string, FakeFile>();
     const root = fakeDirectory(files);

@@ -56,7 +56,13 @@ export async function writePlan(
       const dir = await getDir(root, parts.slice(0, -1));
       try {
         const handle = await dir.getFileHandle('conversation.md');
-        content = mergeRecapture(await (await handle.getFile()).text(), content);
+        const existing = await (await handle.getFile()).text();
+        content = mergeRecapture(existing, content);
+        if (existing !== content) {
+          const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(existing));
+          const key = Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('');
+          await writeFile(root, [...parts.slice(0, -1), '_history', `${key.slice(0, 32)}.md`], existing);
+        }
       } catch (error) {
         if (!(error instanceof DOMException && error.name === 'NotFoundError')) throw error;
       }
