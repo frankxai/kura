@@ -49,7 +49,7 @@ export function buildWritePlan(
   const folders = new Set<string>();
 
   for (const conv of detection.conversations) {
-    const bundle = exportConversationBundle(conv, options);
+    const bundle = exportConversationBundle(conv, options, conv.metadata?.kuraSlug as string | undefined);
     folders.add(bundle.folder);
     for (const f of bundle.files) {
       textFiles.push({ path: f.path, content: f.content });
@@ -104,11 +104,11 @@ function inferParentSlug(media: MediaItem, detection: DetectionResult): string |
   const convId = (media.metadata as Record<string, unknown> | undefined)?.conversationId;
   if (typeof convId === 'string') {
     const conv = detection.conversations.find((c) => c.id === convId);
-    if (conv) return buildSlug(conv.title, conv.capturedAt);
+    if (conv) return (conv.metadata?.kuraSlug as string | undefined) ?? buildSlug(conv.title, conv.capturedAt);
   }
   if (detection.conversations.length > 0) {
     const conv = detection.conversations[0];
-    return buildSlug(conv.title, conv.capturedAt);
+    return (conv.metadata?.kuraSlug as string | undefined) ?? buildSlug(conv.title, conv.capturedAt);
   }
   return null;
 }

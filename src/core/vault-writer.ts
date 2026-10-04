@@ -8,7 +8,8 @@
 // MV3 service worker cannot hold a directory handle.
 // ============================================================
 
-import { writeFile } from './fs';
+import { getDir, writeFile } from './fs';
+import { mergeRecapture } from './recapture';
 import type { WritePlan } from './capture-plan';
 
 export interface VaultWriteProgress {
@@ -49,7 +50,18 @@ export async function writePlan(
 
   for (const file of plan.textFiles) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    await writeFile(root, file.path.split('/'), file.content);
+    let content = file.content;
+    if (file.path.endsWith('/conversation.md')) {
+      const parts = file.path.split('/');
+      const dir = await getDir(root, parts.slice(0, -1));
+      try {
+        const handle = await dir.getFileHandle('conversation.md');
+        content = mergeRecapture(await (await handle.getFile()).text(), content);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'NotFoundError')) throw error;
+      }
+    }
+    await writeFile(root, file.path.split('/'), content);
     written += 1;
     report(file.path);
   }

@@ -2,10 +2,11 @@
   "name": "kura",
   "version": "0.3.0",
   "private": true,
-  "description": "Kura — export your most precious writing. Local-first Chrome extension that captures conversations, prompts and AI-generated media from every major AI platform into an Obsidian-compatible vault on disk. No cloud. No tracking. Built by Arcanea, free for everyone.",
+  "description": "Kura \u2014 export your most precious writing. Local-first Chrome extension that captures conversations, prompts and AI-generated media from every major AI platform into an Obsidian-compatible vault on disk. No cloud. No tracking. Built by Arcanea, free for everyone.",
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "scripts": {
+    "test:capture": "node --experimental-strip-types --test tests/auto-capture.test.ts",
     "postinstall": "wxt prepare",
     "dev": "wxt",
     "build": "tsc --noEmit && wxt build",
@@ -13,7 +14,9 @@
     "lint": "pnpm exec eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "test:extension": "pnpm build && pnpm exec playwright test"
+    "test:extension": "pnpm build && pnpm exec playwright test",
+    "test:images": "playwright test tests/image-import.spec.ts",
+    "build:web": "npm run build && node scripts/build-web.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -24,7 +27,7 @@
     "@typescript-eslint/parser": "^8.46.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.37.0",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.23",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "wxt": "^0.20.27"
@@ -33,7 +36,7 @@
   "author": "FrankX <frank@arcanea.ai>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/frankxai/arcanea-vault"
+    "url": "https://github.com/frankxai/kura"
   },
   "keywords": [
     "chrome-extension",
@@ -50,5 +53,21 @@
     "knowledge-graph",
     "worldbuilding",
     "arcanea"
-  ]
+  ],
+  "pnpm": {
+    "overrides": {
+      "shell-quote": "^1.8.4",
+      "@humanfs/node@<0.16.8": "^0.16.8",
+      "adm-zip@<0.6.1": "^0.6.1",
+      "baseline-browser-mapping@<2.11.0": "^2.11.0",
+      "brace-expansion@<1.1.18": "^1.1.18",
+      "brace-expansion@>=5.0.0 <5.0.9": "^5.0.9",
+      "browserslist@<4.28.7": "^4.28.7",
+      "js-yaml@>=4.0.0 <4.3.2": "^4.3.2",
+      "nanoid@>=3.0.0 <3.3.18": "^3.3.18",
+      "postcss@<8.5.23": "^8.5.23",
+      "postcss-selector-parser@>=6.0.0 <6.1.3": "^6.1.3",
+      "tmp@<0.2.6": "^0.2.6"
+    }
+  }
 }

@@ -14,10 +14,11 @@ import { writePlan } from '@/core/vault-writer';
 import { VAULT_DIR_KEY } from '@/core/vault-keys';
 import type { WritePlan } from '@/core/capture-plan';
 
+let writing: Promise<void> = Promise.resolve();
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== 'KURA_OFFSCREEN_WRITE') return;
 
-  void (async () => {
+  writing = writing.then(async () => {
     try {
       const root = await loadDirectory(VAULT_DIR_KEY, false);
       if (!root) {
@@ -31,7 +32,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     } catch (err) {
       sendResponse({ ok: false, reason: 'error', error: String(err) });
     }
-  })();
+  });
 
   return true; // async sendResponse
 });

@@ -1,10 +1,10 @@
-﻿# arcanea-vault â€” Agent Instructions
+# Kura — Agent Instructions
 
 Read `CLAUDE.md` first when present. This file is the cross-agent entry point.
 
 ## Repo Role
 
-`arcanea-vault` contains Arcanea storage/vault primitives. Treat persistence, migrations, and data contracts as high-risk surfaces.
+`frankxai/kura` is the local-first Chrome extension for conversation capture and media intake. The historical `arcanea-vault` IndexedDB name is retained for compatibility; it is not the product identity. Treat persistence, migrations, and data contracts as high-risk surfaces.
 
 ## Work Pattern
 
@@ -34,4 +34,3 @@ For any site, app, landing page, dashboard, visual identity, brand, motion, medi
 - C:\Users\frank\starlight\repos\VISUAL_QA_GATE.md
 
 When motion, scroll, generated media, GIF/video, or premium polish matters, route through the Motion Design Studio plugin/skills and verify the result visually.
-

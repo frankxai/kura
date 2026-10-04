@@ -58,8 +58,10 @@ export interface ConversationBundle {
 export function exportConversationBundle(
   conv: Conversation,
   options: ExportOptions = defaultOptions(),
+  existingSlug?: string,
 ): ConversationBundle {
-  const slug = buildSlug(conv.title, conv.capturedAt);
+  const slug = existingSlug ?? buildSlug(conv.title, conv.capturedAt);
+  if (!/^\d{4}-\d{2}-\d{2}_[a-z0-9-]+$/.test(slug)) throw new Error('Invalid capture folder');
   const folder = `${conv.platform}/${slug}`;
   const files: VaultFile[] = [];
 

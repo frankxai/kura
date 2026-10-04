@@ -16,6 +16,7 @@
 
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { PlatformScraper } from '@/core/scraper';
+import { installAutoCapture } from '@/core/auto-capture';
 import type {
   Platform,
   DetectionResult,
@@ -388,7 +389,7 @@ import { injectPrompt } from '@/core/injector';
 export default defineContentScript({
   matches: ['https://gemini.google.com/*', 'https://aistudio.google.com/*'],
   runAt: 'document_idle',
-  main() {
+  main(ctx) {
     const scraper = new GeminiScraper();
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -415,31 +416,11 @@ export default defineContentScript({
       }
     });
 
-    // Auto-sync stream observer: captures silently when generation finishes
-    let autoSaveTimer: number | null = null;
-    let lastMsgCount = 0;
-
-    const observer = new MutationObserver(() => {
-      const isStreaming = document.querySelector('mat-progress-bar, [class*="streaming"]');
-      if (!isStreaming) {
-        if (autoSaveTimer) clearTimeout(autoSaveTimer);
-        autoSaveTimer = window.setTimeout(async () => {
-          const turns = document.querySelectorAll('.user-query-container, .response-container');
-          if (turns.length > lastMsgCount && turns.length > 0) {
-            lastMsgCount = turns.length;
-            const detection = await scraper.detect();
-            if (detection.conversations.length > 0) {
-              chrome.runtime.sendMessage({
-                type: 'STARLIGHT_AUTO_SAVE',
-                detection,
-              });
-            }
-          }
-        }, 2500);
-      }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
+    ctx.onInvalidated(installAutoCapture(
+      () => scraper.detect(),
+      '[data-is-streaming="true"], button[aria-label*="Stop" i], .stop-button',
+      /\/app\/[a-zA-Z0-9_-]+/,
+    ));
 
     chrome.runtime.sendMessage({ type: 'KURA_CONTENT_READY', platform: 'gemini' });
     chrome.runtime.sendMessage({ type: 'VAULT_CONTENT_READY', platform: 'gemini' });

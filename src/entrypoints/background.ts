@@ -8,7 +8,7 @@ import { defineBackground } from 'wxt/utils/define-background';
 import { detectPlatform } from '@/core/detector';
 import { vault } from '@/core/storage';
 import { exportConversation, exportPrompts } from '@/core/exporter';
-import { VAULT_ROOT } from '@/core/frontmatter';
+import { VAULT_ROOT, buildSlug } from '@/core/frontmatter';
 import { buildWritePlan, sanitizeMediaFilename } from '@/core/capture-plan';
 import {
   getActivePlatformTabs,
@@ -78,9 +78,10 @@ export default defineBackground({
 
     /** Helper: create a blob URL for in-memory content and queue it. */
     function queueText(vaultPath: string, content: string, mimeType: string): void {
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      queueDownload({ url, vaultPath, isBlobUrl: true });
+      // Object URLs are unavailable in MV3 service workers. Data URLs survive
+      // worker suspension and need no offscreen Blob lifetime management.
+      const url = `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
+      queueDownload({ url, vaultPath });
     }
 
     // ============================================================
@@ -94,9 +95,16 @@ export default defineBackground({
      * its grant has lapsed — in `Kura/` under Downloads. Returns counts + the
      * sink so the popup can tell the user where it wrote.
      */
-    async function persistDetection(
+    let captureQueue: Promise<unknown> = Promise.resolve();
+    function persistDetection(detection: DetectionResult, options: ExportOptions, requireVault = false) {
+      const pending = captureQueue.then(() => persistDetectionNow(detection, options, requireVault));
+      captureQueue = pending.catch(() => {});
+      return pending;
+    }
+    async function persistDetectionNow(
       detection: DetectionResult,
       options: ExportOptions,
+      requireVault = false,
     ): Promise<{
       conversations: number;
       media: number;
@@ -104,12 +112,33 @@ export default defineBackground({
       folders: string[];
       sink: CaptureSink;
     }> {
+      // Reuse the first folder even after a title change or a later capture day.
+      const known = await vault.listConversations();
+      const occupied = new Set(known.map((conv) => `${conv.platform}/${conv.metadata?.kuraSlug ?? buildSlug(conv.title, conv.capturedAt)}`));
+      for (const conv of detection.conversations) {
+        const previous = known.find((item) => item.id === conv.id && item.platform === conv.platform);
+        let slug = previous?.metadata?.kuraSlug as string | undefined;
+        if (previous && !slug) slug = buildSlug(previous.title, previous.capturedAt);
+        if (!slug) {
+          const base = buildSlug(conv.title, conv.capturedAt);
+          slug = base;
+          for (let suffix = 2; occupied.has(`${conv.platform}/${slug}`); suffix += 1) slug = `${base}-${suffix}`;
+        }
+        occupied.add(`${conv.platform}/${slug}`);
+        conv.metadata = { ...conv.metadata, kuraSlug: slug };
+      }
+      const plan = buildWritePlan(detection, options);
+      let sink: CaptureSink;
+      if (requireVault) {
+        const result = await tryWriteViaOffscreen(plan);
+        if (!result) throw new Error('Connect or re-grant your capture folder in Kura.');
+        sink = 'fsa';
+      } else {
+        sink = await writePlanToVaultOrDownloads(plan);
+      }
       for (const conv of detection.conversations) await vault.saveConversation(conv);
       for (const m of detection.media) await vault.saveMedia(m);
       for (const p of detection.prompts) await vault.savePrompt(p);
-
-      const plan = buildWritePlan(detection, options);
-      const sink = await writePlanToVaultOrDownloads(plan);
 
       return {
         conversations: plan.counts.conversations,
@@ -232,7 +261,7 @@ export default defineBackground({
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const handler = messageHandlers[message.type];
       if (handler) {
-        handler(message, sender).then(sendResponse);
+        handler(message, sender).then(sendResponse).catch(() => sendResponse({ ok: false, error: 'Capture failed. Check the connected folder and try again.' }));
         return true;
       }
     });
@@ -331,11 +360,19 @@ export default defineBackground({
         return dispatchPromptToTab(tabId, to, prompt, autoSubmit);
       },
 
-      STARLIGHT_AUTO_SAVE: async (message) => {
+      STARLIGHT_AUTO_SAVE: async (message, sender) => {
         const detection = message.detection as DetectionResult;
         if (!detection || !detection.conversations) return { ok: false };
-        const counts = await persistDetection(detection, defaultOptions());
-        return { ok: true, counts };
+        const platform = sender.tab?.url && detectPlatform(sender.tab.url)?.platform;
+        if (!platform || detection.platform !== platform || detection.conversations.some((conv) => conv.platform !== platform)) return { ok: false };
+        try {
+          const counts = await persistDetection(detection, defaultOptions(), true);
+          if (sender.tab?.id) await chrome.action.setBadgeText({ text: '', tabId: sender.tab.id });
+          return { ok: true, counts };
+        } catch {
+          if (sender.tab?.id) await chrome.action.setBadgeText({ text: '!', tabId: sender.tab.id });
+          return { ok: false, reason: 'vault-unavailable' };
+        }
       },
 
       // Opt-in Arcanea integration — disabled by default per the local-first

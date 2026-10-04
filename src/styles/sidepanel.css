@@ -34,6 +34,34 @@
 
 .lib-search::placeholder { color: var(--fg-faint); }
 
+/* Readable controls and quiet states for the capture workspace. */
+.sidepanel-body { --fg-faint: #a1a1aa; }
+.sidepanel-body .btn-primary,
+.sidepanel-body .btn-primary:hover { background: var(--teal); color: var(--bg); box-shadow: none; }
+.sidepanel-body .btn-secondary,
+.sidepanel-body .btn-secondary:hover { box-shadow: none; }
+.sidepanel-body .footer-link { font-size: 12px; }
+.sidepanel-body .cockpit-subline { color: #b5e6eb; }
+.sidepanel-body .btn { font-size: 12px; }
+.sidepanel-body .vault-status { font-size: 12px; }
+.sidepanel-body .target-status-dot,
+.sidepanel-body .suno-progress-fill,
+.sidepanel-body .vault-dot,
+.sidepanel-body .suno-dot { box-shadow: none; animation: none; }
+.sidepanel-body .subtitle,
+.sidepanel-body .suno-progress-text { color: #b5e6eb; font-size: 12px; }
+.sidepanel-body .info-title,
+.sidepanel-body .info-desc { font-size: 12px; }
+.sidepanel-body .logo,
+.sidepanel-body .tab::after,
+.sidepanel-body .vault-status::before { box-shadow: none; }
+.sidepanel-body .suno-progress-fill { transition: none; }
+.sidepanel-body :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.sidepanel-body .vault-bar-label,
+.sidepanel-body .suno-label,
+.sidepanel-body .suno-fetched { text-transform: none; font-size: 12px; }
+.sidepanel-body .receipt-item { border-left-width: 1px; }
+
 .lib-search:focus,
 .lib-filter:focus,
 .lib-search:hover,
@@ -43,7 +71,7 @@
 
 .lib-filter {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -102,7 +130,7 @@
 .lib-item-meta {
   margin-top: 2px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--fg-faint);
   letter-spacing: 0.04em;
   display: flex;
@@ -161,7 +189,7 @@
 }
 
 .vault-bar-label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--fg-dim);
@@ -195,7 +223,7 @@
 
 .vault-status.is-connected::before {
   background: var(--ok);
-  box-shadow: 0 0 0 3px var(--ok-glow);
+  box-shadow: none;
 }
 
 .vault-status.is-error {
@@ -204,7 +232,7 @@
 
 .vault-status.is-error::before {
   background: var(--err);
-  box-shadow: 0 0 0 3px var(--err-glow);
+  box-shadow: none;
 }
 
 .vault-connect {
@@ -223,7 +251,7 @@
 
 .vault-hint code {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--teal);
 }
 
@@ -266,7 +294,7 @@
   height: 2px;
   border-radius: 2px 2px 0 0;
   background: var(--teal);
-  box-shadow: 0 0 10px 1px var(--teal-glow);
+  box-shadow: none;
   opacity: 0;
   transition: opacity var(--t-fast) var(--ease);
 }
@@ -315,7 +343,7 @@
   min-width: 0;
   color: var(--fg-mute);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -328,13 +356,13 @@
   height: 6px;
   border-radius: 999px;
   background: var(--fg-ghost);
-  box-shadow: 0 0 0 3px transparent;
+  box-shadow: none;
   transition: background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 
 .suno-folder-name.is-connected::before {
   background: var(--ok);
-  box-shadow: 0 0 0 3px var(--ok-glow);
+  box-shadow: none;
 }
 
 .suno-folder-name.is-error {
@@ -343,7 +371,7 @@
 
 .suno-folder-name.is-error::before {
   background: var(--err);
-  box-shadow: 0 0 0 3px var(--err-glow);
+  box-shadow: none;
 }
 
 .suno-label {
@@ -384,21 +412,21 @@
   width: 0%;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--teal), var(--gold));
-  box-shadow: 0 0 6px 0 var(--teal-glow);
-  transition: width var(--t-med) var(--ease);
+  box-shadow: none;
+  transition: none;
   animation: suno-pulse 1.8s var(--ease) infinite;
 }
 
 @keyframes suno-pulse {
-  0%, 100% { box-shadow: 0 0 6px 0 var(--teal-glow); }
-  50% { box-shadow: 0 0 14px 2px var(--teal-glow); }
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: none; }
 }
 
 .suno-progress-text {
   margin-top: 8px;
   color: var(--fg-mute);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -441,7 +469,7 @@
 .suno-fetched {
   color: var(--ok);
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.06em;
 }
 
@@ -476,7 +504,7 @@
 }
 
 .cockpit-subline {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fg-mute);
   margin-top: 2px;
 }
@@ -537,7 +565,7 @@
 
 .target-status-dot.is-active {
   background: var(--ok);
-  box-shadow: 0 0 8px var(--ok-glow);
+  box-shadow: none;
 }
 
 .cockpit-input-box {
@@ -580,7 +608,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fg-mute);
   cursor: pointer;
 }
@@ -606,7 +634,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--fg-mute);
   margin-bottom: 8px;
@@ -650,15 +678,14 @@
 }
 
 .info-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--teal);
   letter-spacing: 0.02em;
 }
 
 .info-desc {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fg-faint);
   line-height: 1.4;
 }
-

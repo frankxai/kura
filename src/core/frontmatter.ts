@@ -54,7 +54,7 @@ function quoteIfNeeded(s: string): string {
   if (/^[a-zA-Z0-9_\-./:+]+$/.test(s) && !/^(true|false|null|yes|no|on|off)$/i.test(s)) {
     return s;
   }
-  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  return JSON.stringify(s);
 }
 
 /** Render an ordered key/value object as a YAML frontmatter block. */

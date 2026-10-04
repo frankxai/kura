@@ -5,6 +5,7 @@
 
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { PlatformScraper } from '@/core/scraper';
+import { installAutoCapture } from '@/core/auto-capture';
 import type {
   Platform,
   DetectionResult,
@@ -148,7 +149,7 @@ import { injectPrompt } from '@/core/injector';
 export default defineContentScript({
   matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
   runAt: 'document_idle',
-  main() {
+  main(ctx) {
     const scraper = new ChatGPTScraper();
 
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -175,31 +176,11 @@ export default defineContentScript({
       }
     });
 
-    // Auto-sync stream observer: captures silently when generation finishes
-    let autoSaveTimer: number | null = null;
-    let lastMsgCount = 0;
-
-    const observer = new MutationObserver(() => {
-      const isStreaming = document.querySelector('button[data-testid="stop-button"], [class*="result-streaming"]');
-      if (!isStreaming) {
-        if (autoSaveTimer) clearTimeout(autoSaveTimer);
-        autoSaveTimer = window.setTimeout(async () => {
-          const turns = document.querySelectorAll('[data-message-author-role]');
-          if (turns.length > lastMsgCount && turns.length > 0) {
-            lastMsgCount = turns.length;
-            const detection = await scraper.detect();
-            if (detection.conversations.length > 0) {
-              chrome.runtime.sendMessage({
-                type: 'STARLIGHT_AUTO_SAVE',
-                detection,
-              });
-            }
-          }
-        }, 2500);
-      }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
+    ctx.onInvalidated(installAutoCapture(
+      () => scraper.detect(),
+      'button[data-testid="stop-button"], [class*="result-streaming"]',
+      /\/c\/[a-zA-Z0-9-]+/,
+    ));
 
     chrome.runtime.sendMessage({ type: 'KURA_CONTENT_READY', platform: 'chatgpt' });
     chrome.runtime.sendMessage({ type: 'VAULT_CONTENT_READY', platform: 'chatgpt' });

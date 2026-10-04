@@ -31,7 +31,8 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     // Chromium with the extension loaded. headless: false is required for
     // MV3 service-worker extensions to register correctly.
     context = await chromium.launchPersistentContext('', {
-      headless: false,
+      channel: 'chromium',
+      headless: true,
       args: [
         `--disable-extensions-except=${DIST}`,
         `--load-extension=${DIST}`,
