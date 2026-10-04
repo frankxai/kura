@@ -1,5 +1,6 @@
 import { test, expect, chromium, type BrowserContext, type Page } from '@playwright/test';
 import path from 'node:path';
+import { mkdir } from 'node:fs/promises';
 
 // CI-owned browser, synthetic public fixtures. Never loads the user's profile.
 test.describe('Chat library in real Chromium', () => {
@@ -8,6 +9,7 @@ test.describe('Chat library in real Chromium', () => {
   let chat: Page;
   const url = 'https://chatgpt.com/c/library-fixture';
   test.beforeAll(async () => {
+    await mkdir('test-results', { recursive: true });
     const dist = path.resolve('dist');
     context = await chromium.launchPersistentContext('', { channel: 'chromium', headless: true,
       args: [`--disable-extensions-except=${dist}`, `--load-extension=${dist}`] });
@@ -88,13 +90,13 @@ test.describe('Chat library in real Chromium', () => {
       rows: [...document.querySelectorAll('.chat-row')].map(e => getComputedStyle(e).transitionDuration),
       targets: [...document.querySelectorAll('.chat-resume')].map(e => e.getBoundingClientRect().height),
     }));
-    await testInfo.attach('chat-library-narrow.png', { body: await panel.screenshot({ fullPage: true }), contentType: 'image/png' });
+    await testInfo.attach('chat-library-narrow.png', { body: await panel.screenshot({ fullPage: true, path: 'test-results/chat-library-narrow.png' }), contentType: 'image/png' });
     expect(measurements.overflow, JSON.stringify(measurements)).toBe(false);
     expect(measurements.outline).toBe('solid');
     expect(measurements.rows.every(d => d === '0s')).toBe(true);
     expect(measurements.targets.every(height => height >= 44)).toBe(true);
     await panel.setViewportSize({ width: 480, height: 820 });
-    await testInfo.attach('chat-library-wide.png', { body: await panel.screenshot({ fullPage: true }), contentType: 'image/png' });
+    await testInfo.attach('chat-library-wide.png', { body: await panel.screenshot({ fullPage: true, path: 'test-results/chat-library-wide.png' }), contentType: 'image/png' });
   });
   test('rapid query changes and panel switches leave the latest query in place', async () => {
     await panel.getByRole('searchbox', { name: 'Search chats' }).fill('claude');
