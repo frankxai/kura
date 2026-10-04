@@ -1,4 +1,4 @@
-import type { ChatPage, ChatResult } from '@/core/chat-library';
+import { platformForUrl, type ChatPage, type ChatResult } from '@/core/chat-library';
 import { initSuno } from './suno';
 import { initVault } from './vault';
 import { initCockpit } from './cockpit';
@@ -22,6 +22,9 @@ let active: Panel = 'library';
 let generation = 0;
 let nextOffset: number | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
+let loadingMore = false;
+const renderedKeys = new Set<string>();
+const visibleTabIds = new Set<number>();
 
 initVault();
 initNativeIntake();
@@ -30,6 +33,7 @@ const suno = initSuno(text => { if (active === 'suno') stats.textContent = text;
 
 function switchTab(name: Panel): void {
   active = name;
+  if (name !== 'library' && timer) { clearTimeout(timer); timer = undefined; }
   for (const [index, tab] of tabs.entries()) {
     const selected = names[index] === name;
     tab.classList.toggle('is-active', selected);
@@ -62,8 +66,11 @@ function text(tag: string, className: string, value: string): HTMLElement {
   return element;
 }
 function render(items: ChatResult[], append: boolean): void {
-  if (!append) list.replaceChildren();
+  if (!append) { list.replaceChildren(); renderedKeys.clear(); visibleTabIds.clear(); }
   for (const item of items) {
+    if (renderedKeys.has(item.key)) continue;
+    renderedKeys.add(item.key);
+    if (item.tabId !== undefined) visibleTabIds.add(item.tabId);
     const row = document.createElement('li');
     row.className = 'lib-item chat-row';
     const body = text('div', 'lib-item-body', '');
@@ -94,6 +101,7 @@ function render(items: ChatResult[], append: boolean): void {
 
 async function lookup(append = false): Promise<void> {
   const current = ++generation;
+  loadingMore = append;
   more.disabled = true;
   list.setAttribute('aria-busy', 'true');
   status.textContent = 'Searching local captures and open AI tabs…';
@@ -116,23 +124,40 @@ async function lookup(append = false): Promise<void> {
     if (active === 'library') stats.textContent = `${result.total} chat${result.total === 1 ? '' : 's'} found locally`;
   } catch {
     if (current !== generation) return;
-    status.textContent = 'Search is unavailable. Refresh to retry; your saved captures are unchanged.';
-    more.hidden = true;
+    status.textContent = append ? 'Could not load more chats. Show more chats to retry this page.'
+      : 'Search is unavailable. Refresh to retry; your saved captures are unchanged.';
+    if (!append) {
+      render([], false);
+      if (active === 'library') stats.textContent = 'Search is unavailable';
+      nextOffset = null;
+      empty.classList.remove('hidden');
+      empty.querySelector('.empty-title')!.textContent = 'Search is unavailable';
+      empty.querySelector('.empty-desc')!.textContent = 'Refresh to retry. Your saved captures are unchanged.';
+    }
+    more.hidden = nextOffset === null;
   } finally {
-    if (current === generation) { more.disabled = false; list.setAttribute('aria-busy', 'false'); }
+    if (current === generation) { loadingMore = false; more.disabled = false; list.setAttribute('aria-busy', 'false'); }
   }
 }
-function schedule(): void {
+function schedule(delay = 120): void {
   generation++;
   more.disabled = true;
   if (timer) clearTimeout(timer);
-  timer = setTimeout(() => { void lookup(); }, 120);
+  timer = setTimeout(() => { void lookup(); }, delay);
 }
-search.addEventListener('input', schedule);
-for (const filter of [platform, scope, date]) filter.addEventListener('change', schedule);
+search.addEventListener('input', () => schedule());
+for (const filter of [platform, scope, date]) filter.addEventListener('change', () => schedule());
 refresh.addEventListener('click', () => { if (timer) clearTimeout(timer); void lookup(); });
-more.addEventListener('click', () => { void lookup(true); });
-chrome.tabs.onCreated.addListener(schedule);
-chrome.tabs.onRemoved.addListener(schedule);
-chrome.tabs.onUpdated.addListener((_id, change) => { if (change.url || change.title) schedule(); });
+more.addEventListener('click', () => { if (timer) clearTimeout(timer); void lookup(true); });
+function tabChanged(id: number | undefined, url?: string): void {
+  if (active !== 'library' || (id === undefined || (!platformForUrl(url ?? '') && !visibleTabIds.has(id)))) return;
+  if (loadingMore || list.childElementCount > 40) {
+    status.textContent = 'Open tabs changed. Refresh to update the list; your place is preserved.';
+    return;
+  }
+  schedule(700);
+}
+chrome.tabs.onCreated.addListener(tab => tabChanged(tab.id, tab.url));
+chrome.tabs.onRemoved.addListener(id => tabChanged(id));
+chrome.tabs.onUpdated.addListener((id, change, tab) => { if (change.url || change.title) tabChanged(id, tab.url); });
 switchTab('library');

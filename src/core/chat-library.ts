@@ -8,10 +8,11 @@ const HOSTS: Record<string, Platform> = {
 };
 
 export function platformForUrl(value: string): Platform | null {
+  if (typeof value !== 'string' || value.length > 2048) return null;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' && !url.username && !url.password && !url.port
-      ? HOSTS[url.hostname] ?? null : null;
+      && Object.hasOwn(HOSTS, url.hostname) ? HOSTS[url.hostname] : null;
   } catch { return null; }
 }
 
@@ -20,7 +21,8 @@ function threadKey(value: string): string | null {
   const platform = platformForUrl(value);
   if (!platform) return null;
   const url = new URL(value);
-  if (!url.pathname.replace(/\/$/, '') || /^\/(new|app|chat|settings|login|auth)\/?$/.test(url.pathname)) return null;
+  const pathname = url.pathname.replace(/^\/u\/\d+(?=\/)/, '').replace(/\/$/, '');
+  if (!pathname || /^\/(new|app|chat|settings|login|auth)$/.test(pathname) || pathname === '/prompts/new_chat') return null;
   url.hash = '';
   for (const key of [...url.searchParams.keys()]) if (key.startsWith('utm_')) url.searchParams.delete(key);
   url.searchParams.sort();
@@ -46,8 +48,17 @@ export interface ChatPage { items: ChatResult[]; total: number; offset: number; 
 function folded(value: string): string { return value.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase(); }
 function excerpt(text: string, terms: string[]): string {
   const clean = text.replace(/\s+/g, ' ').trim();
-  // Locate in the original string to keep display offsets correct for Unicode.
-  const at = terms.map(t => clean.toLocaleLowerCase().indexOf(t)).find(n => n >= 0) ?? 0;
+  const normalized = folded(clean);
+  const match = terms.map(t => normalized.indexOf(t)).find(n => n >= 0) ?? 0;
+  // Map the folded match back to display offsets, including ligatures/accents.
+  let at = 0;
+  let offset = 0;
+  for (const char of clean) {
+    const size = folded(char).length;
+    if (offset + size > match) break;
+    offset += size;
+    at += char.length;
+  }
   const start = Math.max(0, at - 60);
   return (start ? '…' : '') + clean.slice(start, start + 240) + (clean.length > start + 240 ? '…' : '');
 }
@@ -65,12 +76,16 @@ export function searchChats(captures: Conversation[], tabs: OpenChat[], request:
   const terms = [...new Set(folded(request.query?.trim() ?? '').split(/\s+/).filter(Boolean))];
   const rows = new Map<string, { result: ChatResult; capture?: Conversation; titles: string[] }>();
   for (const capture of captures) {
-    if (platformForUrl(capture.url) !== capture.platform) continue;
+    if (platformForUrl(capture.url) !== capture.platform || capture.id.length > 200) continue;
     const key = threadKey(capture.url) ?? `capture:${capture.platform}:${capture.id}`;
     const previous = rows.get(key);
-    if (previous?.result.capturedAt && previous.result.capturedAt > capture.capturedAt) continue;
+    const time = Date.parse(capture.capturedAt);
+    const previousTime = previous?.capture ? Date.parse(previous.capture.capturedAt) : -Infinity;
+    if (previous?.capture && ((Number.isFinite(previousTime) ? previousTime : 0) > (Number.isFinite(time) ? time : 0)
+      || ((Number.isFinite(previousTime) ? previousTime : 0) === (Number.isFinite(time) ? time : 0)
+        && previous.capture.id.localeCompare(capture.id) >= 0))) continue;
     rows.set(key, { capture, titles: [capture.title], result: { key, platform: capture.platform, title: capture.title.slice(0, 300) || 'Untitled',
-      url: capture.url, capturedAt: capture.capturedAt, messageCount: capture.messages.length,
+      url: capture.url, capturedAt: Number.isFinite(time) ? new Date(time).toISOString() : undefined, messageCount: capture.messages.length,
       tags: (capture.tags ?? []).filter(t => typeof t === 'string').slice(0, 8).map(t => t.slice(0, 60)),
       snippet: '', saved: true, openCount: 0, active: false } });
   }
@@ -96,7 +111,7 @@ export function searchChats(captures: Conversation[], tabs: OpenChat[], request:
     const title = folded(titles.join(' '));
     const tags = folded(result.tags.join(' '));
     const messages = capture?.messages ?? [];
-    const matches = messages.map(m => folded(m.content));
+    const matches = terms.length ? messages.map(m => folded(m.content)) : [];
     if (!terms.every(t => title.includes(t) || tags.includes(t) || matches.some(m => m.includes(t)))) continue;
     const matchIndex = matches.findIndex(m => terms.some(t => m.includes(t)));
     result.snippet = matchIndex >= 0 ? excerpt(messages[matchIndex].content, terms) : '';
@@ -126,5 +141,11 @@ export async function resumeChat(request: { tabId?: number; url: string; tabUrl?
   const existing = key && tabs.find(t => !t.incognito && t.id !== undefined && t.url && threadKey(t.url) === key);
   if (existing && existing.id !== undefined && existing.url) {
     await resumeChat({ ...request, tabId: existing.id, tabUrl: existing.url });
-  } else { await chrome.tabs.create({ url: request.url, active: true }); }
+  } else {
+    const windows = await chrome.windows.getAll({ windowTypes: ['normal'] });
+    const target = windows.find(w => !w.incognito && w.focused) ?? windows.find(w => !w.incognito);
+    if (target?.id === undefined) throw new Error('Open a regular browser window before opening this source.');
+    await chrome.tabs.create({ url: request.url, active: true, windowId: target.id });
+    await chrome.windows.update(target.id, { focused: true });
+  }
 }

@@ -65,7 +65,8 @@ test.describe('Chat library in real Chromium', () => {
   });
   test('keyboard tabs, visible focus, 320px width, reduced motion and touch targets', async ({}, testInfo) => {
     await panel.setViewportSize({ width: 320, height: 820 });
-    await panel.emulateMedia({ reducedMotion: 'reduce' });
+    await panel.emulateMedia({ reducedMotion: 'no-preference' });
+    expect(await panel.getByRole('tab', { name: 'Chats', exact: true }).evaluate(e => getComputedStyle(e, '::after').transitionDuration)).toBe('0s');
     await panel.getByRole('tab', { name: 'Chats', exact: true }).focus();
     await panel.getByRole('tab', { name: 'Chats', exact: true }).press('ArrowRight');
     await expect(panel.getByRole('tab', { name: 'Cockpit', exact: true })).toBeFocused();
@@ -74,6 +75,7 @@ test.describe('Chat library in real Chromium', () => {
     await expect(panel.locator('.chat-row')).toHaveCount(2);
     await expect(panel.locator('#lib-list')).toHaveAttribute('aria-busy', 'false');
     await expect(panel.getByRole('button', { name: 'Show more chats', exact: true })).toBeHidden();
+    await panel.emulateMedia({ reducedMotion: 'reduce' });
     const measurements = await panel.evaluate(() => ({
       overflow: document.documentElement.scrollWidth > innerWidth,
       viewport: innerWidth,
@@ -153,6 +155,7 @@ test.describe('Chat library in real Chromium', () => {
     await panel.evaluate(() => { (window as unknown as { libraryTest: { fail: boolean } }).libraryTest.fail = true; });
     await panel.getByRole('button', { name: 'Refresh', exact: true }).click();
     await expect(panel.locator('#lib-status')).toContainText('Search is unavailable');
+    await expect(panel.locator('.chat-row')).toHaveCount(0);
     await expect(panel.getByRole('searchbox', { name: 'Search chats' })).toHaveValue('resend');
     await panel.getByRole('button', { name: 'Refresh', exact: true }).click();
     await expect(panel.locator('#lib-status')).toContainText('1 of 1 matching chats');
@@ -183,10 +186,32 @@ test.describe('Chat library in real Chromium', () => {
     const more = panel.getByRole('button', { name: 'Show more chats', exact: true });
     await expect(more).toBeVisible();
     expect(await panel.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await panel.evaluate(() => {
+      const original = chrome.runtime.sendMessage.bind(chrome.runtime);
+      let fail = true;
+      Object.assign(window, { paginationOriginal: original });
+      chrome.runtime.sendMessage = (async (message: { type: string; query?: { offset?: number } }) => {
+        if (message.type === 'STARLIGHT_LIBRARY_SEARCH' && message.query?.offset === 40 && fail) {
+          fail = false;
+          throw new Error('Synthetic next-page failure');
+        }
+        return original(message);
+      }) as typeof chrome.runtime.sendMessage;
+    });
+    await more.click();
+    await expect(panel.locator('#lib-status')).toContainText('Could not load more chats');
+    await expect(panel.locator('.chat-row')).toHaveCount(40);
+    await expect(more).toBeVisible();
     await more.click();
     await expect(panel.locator('.chat-row')).toHaveCount(45);
     await expect(more).toBeHidden();
     await expect(panel.locator('#lib-status')).toContainText('45 of 45');
     expect(new Set(await panel.locator('.lib-item-title').allTextContents()).size).toBe(45);
+    const other = await context.newPage();
+    await other.goto(`${url}-other`);
+    await expect(panel.locator('#lib-status')).toContainText('Refresh to update');
+    await expect(panel.locator('.chat-row')).toHaveCount(45);
+    await other.close();
+    await panel.evaluate(() => { chrome.runtime.sendMessage = (window as unknown as { paginationOriginal: typeof chrome.runtime.sendMessage }).paginationOriginal; });
   });
 });

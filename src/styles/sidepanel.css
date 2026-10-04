@@ -257,6 +257,7 @@
 .sidepanel-body .chat-more { width: calc(100% - 36px); margin: 0 18px 18px; min-height: 44px; }
 .lib-search { min-width: 0; min-height: 44px; }
 .sidepanel-body .tab { min-height: 44px; transition: none; }
+.sidepanel-body .tab::after { transition: none; }
 .chat-resume:active { background: var(--surface-strong); }
 @media (hover: hover) and (pointer: fine) {
   .sidepanel-body .chat-resume:hover { background: var(--surface-strong); }
