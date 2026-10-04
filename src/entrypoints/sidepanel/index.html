@@ -33,7 +33,19 @@
     </button>
   </div>
   <p id="vault-hint" class="vault-hint">
-    Connect a folder to write straight to disk. Until then, captures land in <code>Downloads/Kura/</code>.
+    Connect a private capture folder to save conversations. Keep it outside your second brain's reviewed notes.
+  </p>
+
+  <div class="vault-bar intake-bar">
+    <div class="vault-bar-info">
+      <span class="vault-bar-label">Second brain</span>
+      <span id="intake-status" class="vault-status" role="status" aria-live="polite">Local intake is off</span>
+    </div>
+    <button id="intake-connect" class="btn btn-ghost vault-connect">Connect second brain</button>
+    <button id="intake-retry" class="btn btn-ghost vault-connect" hidden>Retry intake</button>
+  </div>
+  <p class="vault-hint">Local intake creates pending summaries with no paid model calls.
+    <a href="https://github.com/frankxai/kura/blob/main/docs/NATIVE-INTAKE.md" target="_blank" rel="noopener noreferrer">Setup</a>
   </p>
 
   <nav class="tabs" role="tablist" aria-label="Starlight panels">
@@ -184,9 +196,9 @@
   </section>
 
   <footer class="footer">
-    <span>Kura v0.3.0</span>
+    <span>Kura v0.3.1</span>
     <span class="footer-dot">·</span>
-    <a href="https://github.com/frankxai/arcanea-vault" class="footer-link" target="_blank" rel="noopener">github</a>
+    <a href="https://github.com/frankxai/kura" class="footer-link" target="_blank" rel="noopener">github</a>
   </footer>
 
   <script type="module" src="./main.ts"></script>

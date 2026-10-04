@@ -239,6 +239,11 @@
   flex: none;
 }
 
+.intake-bar { flex-wrap: wrap; justify-content: flex-start; }
+.intake-bar .vault-bar-info { flex-basis: 100%; align-items: flex-start; flex-direction: column; }
+.intake-bar .vault-status { white-space: normal; overflow-wrap: anywhere; }
+.intake-bar [hidden] { display: none; }
+
 .vault-hint {
   margin: 0;
   padding: 8px 18px;
