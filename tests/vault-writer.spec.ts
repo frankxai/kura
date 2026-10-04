@@ -66,15 +66,15 @@ test.describe('buildWritePlan', () => {
       id: 'm1',
       platform: 'chatgpt',
       type: 'image',
-      url: 'https://cdn.example/img.png',
-      hdUrl: 'https://cdn.example/img-hd.png',
+      url: 'https://assets.grok.com/img.png',
+      hdUrl: 'https://assets.grok.com/img-hd.png',
       prompt: 'a teal storehouse',
       filename: 'dalle.png',
       capturedAt: '2026-05-13T22:15:00.000Z',
     };
     const plan = buildWritePlan(detection({ media: [media] }), OPTIONS);
     expect(plan.mediaFiles).toEqual([
-      { path: 'chatgpt/2026-05-13_naming-the-extension/assets/dalle.png', url: 'https://cdn.example/img-hd.png' },
+      { path: 'chatgpt/2026-05-13_naming-the-extension/assets/dalle.png', url: 'https://assets.grok.com/img-hd.png' },
     ]);
     // Sidecar prompt note lands beside the asset.
     expect(plan.textFiles.map((f) => f.path)).toContain(
@@ -87,7 +87,7 @@ test.describe('buildWritePlan', () => {
       id: 'm2',
       platform: 'grok',
       type: 'image',
-      url: 'https://cdn.example/x.jpg',
+      url: 'https://assets.grok.com/x.jpg',
       prompt: '',
       filename: 'x.jpg',
       capturedAt: '2026-05-13T22:15:00.000Z',
@@ -154,9 +154,14 @@ test.describe('writePlan', () => {
     expect(files.get(note.path)!.content).toBe(note.content);
     const updated = buildWritePlan(detection({ conversations: [conversation({ messages: [{ role: 'user', content: 'Question' }, { role: 'assistant', content: 'Edited answer' }] })] }), OPTIONS);
     await writePlan(root, updated);
-    const history = [...files.entries()].filter(([key]) => key.includes('/_history/'));
+    const history = [...files.entries()].filter(([key]) => key.includes('/_history/') && key.endsWith('/conversation.md'));
     expect(history).toHaveLength(1);
     expect(history[0][1].content).toBe(note.content);
+    expect([...files.keys()].filter((key) => key.includes('/_history/') && key.endsWith('/capture.json'))).toHaveLength(1);
+    const after = files.get(note.path)!.content;
+    await writePlan(root, buildWritePlan(detection({ conversations: [conversation({ capturedAt: '2026-05-13T23:14:00.000Z', messages: [{ role: 'user', content: 'Question' }, { role: 'assistant', content: 'Edited answer' }] })] }), OPTIONS));
+    expect(files.get(note.path)!.content).toBe(after);
+    expect([...files.keys()].filter((key) => key.includes('/_history/') && key.endsWith('/conversation.md'))).toHaveLength(1);
   });
   test('writes text + media to disk and is idempotent on re-run', async () => {
     const files = new Map<string, FakeFile>();
@@ -165,13 +170,13 @@ test.describe('writePlan', () => {
 
     const plan = {
       textFiles: [{ path: 'chatgpt/slug/conversation.md', content: '---\nid: c1\nstatus: raw\ntags: []\n---\n# hi' }],
-      mediaFiles: [{ path: 'chatgpt/slug/assets/a.png', url: 'https://cdn/a.png' }],
+      mediaFiles: [{ path: 'chatgpt/slug/assets/a.png', url: 'https://assets.grok.com/a.png' }],
       counts: { conversations: 1, media: 1, prompts: 0 },
       folders: ['chatgpt/slug'],
     };
 
     const r1 = await writePlan(root, plan);
-    expect(r1).toEqual({ written: 2, failed: 0, failedMedia: [] });
+    expect(r1).toEqual({ written: 2, failed: 0, failedMedia: [], folderMap: {} });
     expect(files.has('chatgpt/slug/conversation.md')).toBe(true);
     expect(files.has('chatgpt/slug/assets/a.png')).toBe(true);
 
@@ -189,7 +194,7 @@ test.describe('writePlan', () => {
 
     const plan = {
       textFiles: [{ path: 'chatgpt/slug/conversation.md', content: '---\nid: c1\nstatus: raw\ntags: []\n---\n# hi' }],
-      mediaFiles: [{ path: 'chatgpt/slug/assets/a.png', url: 'https://locked-cdn/a.png' }],
+      mediaFiles: [{ path: 'chatgpt/slug/assets/a.png', url: 'https://assets.grok.com/locked.png' }],
       counts: { conversations: 1, media: 1, prompts: 0 },
       folders: ['chatgpt/slug'],
     };
@@ -197,8 +202,23 @@ test.describe('writePlan', () => {
     const res = await writePlan(root, plan);
     expect(res.written).toBe(1);
     expect(res.failed).toBe(1);
-    expect(res.failedMedia).toEqual([{ path: 'chatgpt/slug/assets/a.png', url: 'https://locked-cdn/a.png' }]);
+    expect(res.failedMedia).toEqual([{ path: 'chatgpt/slug/assets/a.png', url: 'https://assets.grok.com/locked.png' }]);
     // The irreplaceable conversation markdown was still written.
     expect(files.has('chatgpt/slug/conversation.md')).toBe(true);
+  });
+  test('rejects traversal before writing and does not fetch unapproved media', async () => {
+    const files = new Map<string, FakeFile>();
+    const root = fakeDirectory(files);
+    const plan = buildWritePlan(detection(), OPTIONS);
+    plan.textFiles.push({ path: 'chatgpt/../outside.md', content: 'unsafe' });
+    await expect(writePlan(root, plan)).rejects.toThrow('Invalid capture path');
+    expect(files.size).toBe(0);
+    plan.textFiles.pop();
+    let requests = 0;
+    globalThis.fetch = (async () => { requests++; return new Response('unexpected'); }) as typeof fetch;
+    plan.mediaFiles.push({ path: `${plan.folders[0]}/assets/a.png`, url: 'https://unapproved.example/a.png' });
+    const result = await writePlan(root, plan);
+    expect(requests).toBe(0);
+    expect(result.failed).toBe(1);
   });
 });

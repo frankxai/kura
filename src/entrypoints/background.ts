@@ -55,7 +55,7 @@ export default defineBackground({
             url: job.url,
             filename: fullPath,
             saveAs: false,
-            conflictAction: 'overwrite',
+            conflictAction: 'uniquify',
           });
         } catch (err) {
           console.error('[Kura] Download failed:', fullPath, err);
@@ -78,8 +78,8 @@ export default defineBackground({
 
     /** Helper: create a blob URL for in-memory content and queue it. */
     function queueText(vaultPath: string, content: string, mimeType: string): void {
-      // Object URLs are unavailable in MV3 service workers. Data URLs survive
-      // worker suspension and need no offscreen Blob lifetime management.
+      // Object URLs are unavailable in MV3 service workers. Explicit downloads
+      // use data URLs; their source stays in the local index for manual retry.
       const url = `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
       queueDownload({ url, vaultPath });
     }
@@ -132,9 +132,18 @@ export default defineBackground({
       if (requireVault) {
         const result = await tryWriteViaOffscreen(plan);
         if (!result) throw new Error('Connect or re-grant your capture folder in Kura.');
+        if (result.failedMedia?.length) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+        reconcileIndexFolders(detection, result);
         sink = 'fsa';
       } else {
-        sink = await writePlanToVaultOrDownloads(plan);
+        const result = await tryWriteViaOffscreen(plan);
+        if (result) {
+          if (result.failedMedia?.length) throw new Error('Text was saved; some media could not be fetched. Retry capture to save those assets.');
+          reconcileIndexFolders(detection, result);
+          sink = 'fsa';
+        } else {
+          sink = await writePlanToVaultOrDownloads(plan);
+        }
       }
       for (const conv of detection.conversations) await vault.saveConversation(conv);
       for (const m of detection.media) await vault.saveMedia(m);
@@ -144,7 +153,7 @@ export default defineBackground({
         conversations: plan.counts.conversations,
         media: plan.counts.media,
         prompts: plan.counts.prompts,
-        folders: plan.folders,
+        folders: detection.conversations.map((conv) => `${conv.platform}/${conv.metadata?.kuraSlug}`),
         sink,
       };
     }
@@ -182,7 +191,15 @@ export default defineBackground({
       ok: boolean;
       reason?: string;
       error?: string;
+      folderMap?: Record<string, string>;
       failedMedia?: { path: string; url: string }[];
+    }
+
+    function reconcileIndexFolders(detection: DetectionResult, result: OffscreenWriteResult) {
+      for (const conv of detection.conversations) {
+        const key = `${conv.platform}/${conv.metadata?.kuraSlug}`;
+        if (result.folderMap?.[key]) conv.metadata = { ...conv.metadata, kuraSlug: result.folderMap[key].split('/')[1] };
+      }
     }
 
     /** Ask the offscreen document to write the plan to the connected vault.
@@ -215,6 +232,7 @@ export default defineBackground({
         }
         return 'fsa';
       }
+      if (plan.counts.conversations > 0) throw new Error('Connect or re-grant your capture folder in Kura before capturing a thread.');
       enqueuePlanToDownloads(plan);
       return 'downloads';
     }
@@ -263,6 +281,13 @@ export default defineBackground({
     // ============================================================
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (sender.id !== chrome.runtime.id) return;
+      const contentMessage = ['KURA_CONTENT_READY', 'VAULT_CONTENT_READY', 'THREADS_CONTENT_READY', 'STARLIGHT_AUTO_SAVE'].includes(message?.type);
+      const extensionPage = sender.id === chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL(''));
+      if (!extensionPage && !contentMessage) {
+        sendResponse({ ok: false, error: 'Open Kura to perform this action.' });
+        return;
+      }
       const handler = messageHandlers[message.type];
       if (handler) {
         handler(message, sender).then(sendResponse).catch(() => sendResponse({ ok: false, error: 'Capture failed. Check the connected folder and try again.' }));
@@ -392,8 +417,8 @@ export default defineBackground({
       // everything else is brand-neutral.
       KURA_SEND_TO_ARCANEA: async (message) => {
         const detection = message.detection as DetectionResult;
-        const endpoint =
-          (message.endpoint as string) || 'https://arcanea.ai/api/kura/import';
+        const endpoint = 'https://arcanea.ai/api/kura/import';
+        if (message.endpoint && message.endpoint !== endpoint) return { error: 'Unsupported Arcanea endpoint.' };
 
         try {
           const response = await fetch(endpoint, {

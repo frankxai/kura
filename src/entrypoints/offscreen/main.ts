@@ -15,8 +15,12 @@ import { VAULT_DIR_KEY } from '@/core/vault-keys';
 import type { WritePlan } from '@/core/capture-plan';
 
 let writing: Promise<void> = Promise.resolve();
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type !== 'KURA_OFFSCREEN_WRITE') return;
+  if (sender.id !== chrome.runtime.id || sender.tab) {
+    sendResponse({ ok: false, reason: 'error', error: 'Only the Kura background writer may submit a plan.' });
+    return;
+  }
 
   writing = writing.then(async () => {
     try {

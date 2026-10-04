@@ -7,21 +7,27 @@ save even when the message count stays the same. Three delayed retries follow a
 failed write; returning to the chat triggers another attempt.
 
 A shorter view cannot overwrite a fuller saved transcript. Open the complete
-thread and repeat the capture. Changed transcripts retain content-addressed
-Markdown revisions in the conversation's `_history/` folder.
+thread and repeat the capture. Provider-side deletions and shorter branch views
+also require deliberate reconciliation; they cannot silently replace the fuller
+source. Changed transcripts retain Markdown and exact-role packets together in
+the conversation's content-addressed `_history/` folders. Timestamp-only
+recaptures preserve the existing bundle and do not grow history.
 
 Automatic capture requires a writable connected folder. A `!` badge means the
 save was not acknowledged: open Kura, connect or re-grant the folder, then return
 to the chat. Automatic capture does not fall back to a stream of Downloads.
-Manual capture retains the existing Downloads fallback. A Downloads queue is
-not evidence that a file has finished writing.
+Manual thread capture also requires that folder. Explicit single-file exports
+from the local library use non-overwriting Downloads and can be retried from
+their preserved local source. A Downloads queue is not a completed capture.
 
 The first captured folder is reused through the existing IndexedDB index across
 title changes and later capture days. The writer preserves curated frontmatter
 and refuses to overwrite a different conversation identity. Keep the folder as
-your source of truth. If the extension index is cleared, restore/reconcile it
-with the existing files before continuing; automatic disk-index recovery remains
-open work. Media fetch failures do not prevent the transcript from being saved.
+your source of truth. If the index is cleared, the writer searches the selected
+platform's bounded capture folders by source ID and restores the existing folder.
+Duplicate on-disk identities require deliberate reconciliation. Media fetch
+failures preserve the text and flag the capture for retry. Supported media URLs
+use HTTPS on the extension's existing AI host scope without redirects.
 
 New bundles also carry `capture.json` packet v1.0.0. It records exact message
 roles and spans that the importer verifies against the readable Markdown body.

@@ -126,6 +126,7 @@ export function sanitizeMediaFilename(name: string): string {
       // eslint-disable-next-line no-control-regex -- intentional: strip OS-reserved + control chars
       .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
       .replace(/\s+/g, '_')
+      .replace(/^\.+$|[. ]+$/g, '')
       .slice(0, 100)
   );
 }

@@ -215,9 +215,26 @@ test.describe('Arcanea Kura extension — load + detection', () => {
       document.querySelector('[data-message-author-role="assistant"] .markdown')!.textContent = 'Edited answer retained with its prior revision.';
     });
     await expect.poll(async () => (await read())?.packet.capture.title, { timeout: 20_000 }).toBe('Renamed thread');
-    const updated = (await read())!;
+    let updated = (await read())!;
     expect(updated.folders).toEqual(first.folders);
     expect(updated.history).toBeGreaterThan(0);
+    await panel.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve) => {
+        const request = indexedDB.open('arcanea-vault', 1);
+        request.onsuccess = () => resolve(request.result);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('conversations', 'readwrite');
+        tx.objectStore('conversations').clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    });
+    await chat.evaluate(() => { document.title = 'Recovered thread | ChatGPT'; });
+    await expect.poll(async () => (await read())?.packet.capture.title, { timeout: 20_000 }).toBe('Recovered thread');
+    updated = (await read())!;
+    expect(updated.folders).toEqual(first.folders);
     await chat.evaluate(() => document.querySelector('[data-message-author-role="user"]:last-child')!.remove());
     await expect.poll(() => panel.evaluate(async (chatUrl) => {
       const [tab] = await chrome.tabs.query({ url: chatUrl });

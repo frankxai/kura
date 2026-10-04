@@ -24,6 +24,10 @@ function identity(blocks: Map<string, string>): string {
   return value;
 }
 
+export function captureIdentity(note: string): string {
+  return identity(splitNote(note).blocks);
+}
+
 /** Preserve curated YAML verbatim and refuse to overwrite another conversation. */
 export function mergeRecapture(existing: string, incoming: string): string {
   const old = splitNote(existing);
