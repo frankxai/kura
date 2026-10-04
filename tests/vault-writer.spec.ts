@@ -124,6 +124,7 @@ function fakeDirectory(files = new Map<string, FakeFile>(), prefix = ''): FileSy
       }
       const entry = files.get(key)!;
       return {
+        async getFile() { return new File([entry.content], name); },
         async createWritable() {
           const chunks: (string | Blob)[] = [];
           return {
@@ -147,7 +148,7 @@ test.describe('writePlan', () => {
     globalThis.fetch = (async () => new Response(new Blob(['img-bytes']))) as typeof fetch;
 
     const plan = {
-      textFiles: [{ path: 'chatgpt/slug/conversation.md', content: '# hi' }],
+      textFiles: [{ path: 'chatgpt/slug/conversation.md', content: '---\nid: c1\nstatus: raw\ntags: []\n---\n# hi' }],
       mediaFiles: [{ path: 'chatgpt/slug/assets/a.png', url: 'https://cdn/a.png' }],
       counts: { conversations: 1, media: 1, prompts: 0 },
       folders: ['chatgpt/slug'],
@@ -171,7 +172,7 @@ test.describe('writePlan', () => {
     globalThis.fetch = (async () => new Response('nope', { status: 403 })) as typeof fetch;
 
     const plan = {
-      textFiles: [{ path: 'chatgpt/slug/conversation.md', content: '# hi' }],
+      textFiles: [{ path: 'chatgpt/slug/conversation.md', content: '---\nid: c1\nstatus: raw\ntags: []\n---\n# hi' }],
       mediaFiles: [{ path: 'chatgpt/slug/assets/a.png', url: 'https://locked-cdn/a.png' }],
       counts: { conversations: 1, media: 1, prompts: 0 },
       folders: ['chatgpt/slug'],

@@ -124,13 +124,16 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(popup.locator('footer')).toContainText('Kura v0.3.0');
   });
 
-  test('sidepanel HTML loads with library scaffolding', async () => {
+  test('sidepanel opens cockpit and switches to the library', async () => {
     const workers = context.serviceWorkers();
     const extensionId = workers[0].url().split('/')[2];
 
     const sidepanel = await context.newPage();
     await sidepanel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
 
+    await expect(sidepanel.locator('.title')).toHaveText('Starlight Cockpit');
+    await expect(sidepanel.locator('.info-desc')).toContainText('Open ChatGPT, Claude and Gemini');
+    await sidepanel.locator('#tab-library').click();
     await expect(sidepanel.locator('.title')).toHaveText('Library');
     await expect(sidepanel.locator('#lib-search')).toBeVisible();
     await expect(sidepanel.locator('#lib-filter')).toBeVisible();
