@@ -166,13 +166,14 @@ jobs:
           echo "| Typecheck | ${{ needs.typecheck.result }} | yes |" >> $GITHUB_STEP_SUMMARY
           echo "| Lint | ${{ needs.lint.result }} | yes |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} | yes |" >> $GITHUB_STEP_SUMMARY
-          echo "| Playwright | ${{ needs.playwright.result }} | no (informational) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Playwright | ${{ needs.playwright.result }} | yes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web gallery | ${{ needs.web-gallery.result }} | yes |" >> $GITHUB_STEP_SUMMARY
 
           echo "| Image imports | ${{ needs.image-import.result }} | yes |" >> $GITHUB_STEP_SUMMARY
 
-          # Image persistence and the 3 existing hard gates block. Playwright is informational
-          # until the MV3+xvfb CI infrastructure issue is resolved.
+          # Every listed gate must pass, including Chromium persistence checks.
           ALL_OK=true
+          [ "${{ needs.playwright.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.web-gallery.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.image-import.result }}" != "success" ] && ALL_OK=false
           [ "${{ needs.typecheck.result }}" != "success" ] && ALL_OK=false
@@ -183,4 +184,4 @@ jobs:
             echo "::error::Kura CI had failures in blocking gates — review above"
             exit 1
           fi
-          echo "Kura CI PASSED (blocking gates green; Playwright informational)."
+          echo "Kura CI PASSED (all blocking gates green)."
