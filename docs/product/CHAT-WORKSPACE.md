@@ -15,7 +15,8 @@ This slice implements local text/title/tag lookup across Kura's capture index an
 currently open supported AI tabs. Results merge identical thread URLs, show saved
 versus title-only observations, filter provider/source/capture date and paginate
 40 bounded excerpts. Search, filtering and resume require no model calls. It does
-not yet search the selected Second Brain OS archive or coding-agent sessions.
+not yet search coding-agent sessions. Second-brain search is a separate source: the
+local host searches the selected brain root and returns cited, bounded notes.
 The filesystem remains canonical; no storage migration or capture-format change.
 
 | Before | After | Why |
@@ -37,8 +38,8 @@ provider content scripts cannot query this list or trigger resume.
 
 1. **Find and resume**, this slice: extension index plus open-tab metadata; safe
    provider URLs, bounded responses, preserved drafts and accessible filters.
-2. **Search the second brain**: reuse Starlight Memory's existing lexical/hybrid
-   search, scoped to the user-selected brain root. Return title, short reviewed
+2. **Search the second brain**: lexical search in Second Brain OS, scoped to the
+   selected brain root and returned through the existing native host. Return title, short reviewed
    excerpt, provider/date/status, relative note citation and original source link.
    Pending records are metadata-only; private source bodies stay outside recall.
    Measure recall, latency and repair behavior on a named archive before adopting

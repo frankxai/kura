@@ -1,4 +1,5 @@
 import { platformForUrl, type ChatPage, type ChatResult } from '@/core/chat-library';
+import type { ArchiveHit, ArchivePage } from '@/core/archive-search';
 import { initSuno } from './suno';
 import { initVault } from './vault';
 import { initCockpit } from './cockpit';
@@ -21,6 +22,7 @@ const tabs = names.map(name => document.getElementById(`tab-${name}`) as HTMLBut
 let active: Panel = 'library';
 let generation = 0;
 let nextOffset: number | null = null;
+let archiveCursor: string | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let loadingMore = false;
 const renderedKeys = new Set<string>();
@@ -109,7 +111,95 @@ function render(items: ChatResult[], append: boolean): void {
   }
 }
 
+function renderArchive(items: ArchiveHit[], append: boolean): void {
+  if (!append) { list.replaceChildren(); renderedKeys.clear(); visibleTabIds.clear(); }
+  for (const item of items) {
+    if (renderedKeys.has(item.citation)) continue;
+    renderedKeys.add(item.citation);
+    const row = document.createElement('li');
+    row.className = 'lib-item chat-row';
+    const body = text('div', 'lib-item-body', '');
+    body.append(text('div', 'lib-item-title', item.title));
+    body.append(text('div', 'lib-item-meta', [item.platform, item.status, item.review === 'metadata-only' ? 'Metadata only' : 'Reviewed excerpt', item.date].filter(Boolean).join(' · ')));
+    body.append(text('p', 'chat-tags', item.citation));
+    if (item.excerpt) body.append(text('p', 'chat-excerpt', item.excerpt));
+    if (item.sourceUrl) {
+      const open = text('button', 'btn btn-ghost chat-resume', 'Open source') as HTMLButtonElement;
+      open.type = 'button';
+      open.setAttribute('aria-label', `Open source for ${item.title}`);
+      open.addEventListener('click', async () => {
+        open.disabled = true;
+        try {
+          const result = await chrome.runtime.sendMessage({ type: 'STARLIGHT_RESUME_CHAT', url: item.sourceUrl });
+          status.textContent = result?.ok ? 'Opened the cited conversation. A draft in that tab stays put.' : 'Could not open the cited conversation. The archive note is unchanged.';
+        } finally { open.disabled = false; }
+      });
+      row.append(body, open);
+    } else row.append(body);
+    list.append(row);
+  }
+}
+async function lookupArchive(append = false): Promise<void> {
+  const current = ++generation;
+  loadingMore = append;
+  more.disabled = true;
+  list.setAttribute('aria-busy', 'true');
+  status.textContent = 'Searching the selected second-brain notes…';
+  if (!search.value.trim()) {
+    render([], false);
+    archiveCursor = null;
+    more.hidden = true;
+    empty.classList.remove('hidden');
+    empty.querySelector('.empty-title')!.textContent = 'Search the second brain';
+    empty.querySelector('.empty-desc')!.textContent = 'Enter a decision, idea or project. Pending notes match titles only; private originals stay out of this search.';
+    status.textContent = 'Second brain search waits for a query. Local captures are unchanged.';
+    list.setAttribute('aria-busy', 'false');
+    loadingMore = false;
+    more.disabled = false;
+    return;
+  }
+  try {
+    const result = await chrome.runtime.sendMessage({ type: 'STARLIGHT_ARCHIVE_SEARCH', query: search.value,
+      cursor: append ? archiveCursor : null, platform: platform.value }) as ArchivePage;
+    if (current !== generation) return;
+    if (!result?.available) {
+      render([], false);
+      archiveCursor = null;
+      more.hidden = true;
+      empty.classList.remove('hidden');
+      empty.querySelector('.empty-title')!.textContent = 'Second brain search is unavailable';
+      empty.querySelector('.empty-desc')!.textContent = result?.reason || 'Connect local intake, then refresh.';
+      status.textContent = result?.reason || 'Second brain search is unavailable.';
+      if (active === 'library') stats.textContent = 'Archive not connected';
+      return;
+    }
+    renderArchive(result.items, append);
+    archiveCursor = result.cursor;
+    more.hidden = archiveCursor === null;
+    empty.classList.toggle('hidden', result.total !== 0);
+    if (!result.total) {
+      empty.querySelector('.empty-title')!.textContent = 'No matching brain notes';
+      empty.querySelector('.empty-desc')!.textContent = 'Pending notes match titles only. Private originals are not searched.';
+    }
+    status.textContent = `${list.childElementCount} of ${result.total} cited notes. Searched ${result.notes ?? 'the'} brain notes; pending notes are metadata only. Date filters apply to local captures, not this archive.`;
+    if (active === 'library') stats.textContent = `${result.total} cited note${result.total === 1 ? '' : 's'}`;
+  } catch {
+    if (current !== generation) return;
+    status.textContent = 'Second brain search is unavailable. Refresh to retry. Local captures are unchanged.';
+    if (!append) {
+      render([], false);
+      archiveCursor = null;
+      empty.classList.remove('hidden');
+      empty.querySelector('.empty-title')!.textContent = 'Second brain search is unavailable';
+      empty.querySelector('.empty-desc')!.textContent = 'Connect local intake, then refresh. Local captures are unchanged.';
+    }
+    more.hidden = archiveCursor === null;
+  } finally {
+    if (current === generation) { loadingMore = false; more.disabled = false; list.setAttribute('aria-busy', 'false'); }
+  }
+}
 async function lookup(append = false): Promise<void> {
+  if (scope.value === 'archive') return lookupArchive(append);
   const current = ++generation;
   loadingMore = append;
   more.disabled = true;
