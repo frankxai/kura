@@ -332,7 +332,7 @@ function renderHtml(conv: Conversation, _slug: string, options: ExportOptions): 
       const who = msg.role === 'user' ? 'You' : label;
       const ts =
         options.includeTimestamps && msg.timestamp
-          ? `<span class="timestamp">${msg.timestamp}</span>`
+          ? `<span class="timestamp">${escapeHtml(msg.timestamp)}</span>`
           : '';
       return `<div class="message ${cls}"><div class="role">${who} ${ts}</div><div class="content">${escapeHtml(msg.content)}</div></div>`;
     })
