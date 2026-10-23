@@ -106,7 +106,7 @@ async function init(): Promise<void> {
     return;
   }
 
-  const result = await sendMessage({ type: 'KURA_DETECT_TAB' });
+  const result = await sendMessage<{ error?: string } & import('../../core/types').DetectionResult>({ type: 'KURA_DETECT_TAB' });
 
   if (result?.error) {
     if (result.error === 'Not on a supported AI platform') {
@@ -198,7 +198,7 @@ $scanBtn.addEventListener('click', async () => {
   $status.textContent = 'Scanning…';
   $status.className = 'subtitle status-scanning';
 
-  const result = await sendMessage({ type: 'KURA_DETECT_TAB' });
+  const result = await sendMessage<{ error?: string } & import('../../core/types').DetectionResult>({ type: 'KURA_DETECT_TAB' });
 
   $scanBtn.removeAttribute('disabled');
 
@@ -221,7 +221,7 @@ $quickExportBtn.addEventListener('click', async () => {
 
   const format = $formatSelect.value as ExportFormat;
 
-  const result = await sendMessage({
+  const result = await sendMessage<{ error?: string, captured?: { sink?: 'fsa' | 'downloads', conversations?: number, media?: number, prompts?: number } }>({
     type: 'KURA_CAPTURE',
     options: {
       format,
@@ -308,7 +308,7 @@ $exportPrompts.addEventListener('click', async () => {
 
 $sendArcanea.addEventListener('click', async () => {
   if (!lastDetection) {
-    const result = await sendMessage({ type: 'KURA_DETECT_TAB' });
+    const result = await sendMessage<{ error?: string } & import('../../core/types').DetectionResult>({ type: 'KURA_DETECT_TAB' });
     if (result?.error) {
       showError(result.error as string);
       return;
@@ -321,7 +321,7 @@ $sendArcanea.addEventListener('click', async () => {
   $status.textContent = 'Sending to Arcanea…';
   $status.className = 'subtitle status-scanning';
 
-  const result = await sendMessage({
+  const result = await sendMessage<{ error?: string, message?: string }>({
     type: 'KURA_SEND_TO_ARCANEA',
     detection: lastDetection,
   });
@@ -339,7 +339,7 @@ $sendArcanea.addEventListener('click', async () => {
 
 // -- Utilities --
 
-function sendMessage(msg: Record<string, unknown>): Promise<any> {
+function sendMessage<T = unknown>(msg: Record<string, unknown>): Promise<T> {
   return chrome.runtime.sendMessage(msg);
 }
 

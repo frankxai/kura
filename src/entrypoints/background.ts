@@ -487,22 +487,22 @@ export default defineBackground({
       // ----- Legacy message names (kept until popup + content scripts migrate) ---
       // VAULT_* are from v0.1 (Arcanea Vault).
       // THREADS_* are from v0.2.0 pre-rename (Arcanea Threads). Both alias to KURA_*.
-      VAULT_CONTENT_READY: async (m) => messageHandlers.KURA_CONTENT_READY(m, {} as any),
-      VAULT_DETECT_TAB: async (m) => messageHandlers.KURA_DETECT_TAB(m, {} as any),
-      VAULT_QUICK_EXPORT: async (m) => messageHandlers.KURA_CAPTURE(m, {} as any),
-      VAULT_EXPORT: async (m) => messageHandlers.KURA_EXPORT_ONE(m, {} as any),
-      VAULT_EXPORT_PROMPTS: async (m) => messageHandlers.KURA_EXPORT_PROMPTS(m, {} as any),
-      VAULT_SAVE: async (m) => messageHandlers.KURA_SAVE(m, {} as any),
-      VAULT_STATS: async (m) => messageHandlers.KURA_STATS(m, {} as any),
-      VAULT_SEND_TO_PROMPT_BOOKS: async (m) => messageHandlers.KURA_SEND_TO_ARCANEA(m, {} as any),
-      THREADS_CONTENT_READY: async (m) => messageHandlers.KURA_CONTENT_READY(m, {} as any),
-      THREADS_DETECT_TAB: async (m) => messageHandlers.KURA_DETECT_TAB(m, {} as any),
-      THREADS_CAPTURE: async (m) => messageHandlers.KURA_CAPTURE(m, {} as any),
-      THREADS_EXPORT_ONE: async (m) => messageHandlers.KURA_EXPORT_ONE(m, {} as any),
-      THREADS_EXPORT_PROMPTS: async (m) => messageHandlers.KURA_EXPORT_PROMPTS(m, {} as any),
-      THREADS_SAVE: async (m) => messageHandlers.KURA_SAVE(m, {} as any),
-      THREADS_STATS: async (m) => messageHandlers.KURA_STATS(m, {} as any),
-      THREADS_SEND_TO_ARCANEA: async (m) => messageHandlers.KURA_SEND_TO_ARCANEA(m, {} as any),
+      VAULT_CONTENT_READY: async (m) => messageHandlers.KURA_CONTENT_READY(m, {} as chrome.runtime.MessageSender),
+      VAULT_DETECT_TAB: async (m) => messageHandlers.KURA_DETECT_TAB(m, {} as chrome.runtime.MessageSender),
+      VAULT_QUICK_EXPORT: async (m) => messageHandlers.KURA_CAPTURE(m, {} as chrome.runtime.MessageSender),
+      VAULT_EXPORT: async (m) => messageHandlers.KURA_EXPORT_ONE(m, {} as chrome.runtime.MessageSender),
+      VAULT_EXPORT_PROMPTS: async (m) => messageHandlers.KURA_EXPORT_PROMPTS(m, {} as chrome.runtime.MessageSender),
+      VAULT_SAVE: async (m) => messageHandlers.KURA_SAVE(m, {} as chrome.runtime.MessageSender),
+      VAULT_STATS: async (m) => messageHandlers.KURA_STATS(m, {} as chrome.runtime.MessageSender),
+      VAULT_SEND_TO_PROMPT_BOOKS: async (m) => messageHandlers.KURA_SEND_TO_ARCANEA(m, {} as chrome.runtime.MessageSender),
+      THREADS_CONTENT_READY: async (m) => messageHandlers.KURA_CONTENT_READY(m, {} as chrome.runtime.MessageSender),
+      THREADS_DETECT_TAB: async (m) => messageHandlers.KURA_DETECT_TAB(m, {} as chrome.runtime.MessageSender),
+      THREADS_CAPTURE: async (m) => messageHandlers.KURA_CAPTURE(m, {} as chrome.runtime.MessageSender),
+      THREADS_EXPORT_ONE: async (m) => messageHandlers.KURA_EXPORT_ONE(m, {} as chrome.runtime.MessageSender),
+      THREADS_EXPORT_PROMPTS: async (m) => messageHandlers.KURA_EXPORT_PROMPTS(m, {} as chrome.runtime.MessageSender),
+      THREADS_SAVE: async (m) => messageHandlers.KURA_SAVE(m, {} as chrome.runtime.MessageSender),
+      THREADS_STATS: async (m) => messageHandlers.KURA_STATS(m, {} as chrome.runtime.MessageSender),
+      THREADS_SEND_TO_ARCANEA: async (m) => messageHandlers.KURA_SEND_TO_ARCANEA(m, {} as chrome.runtime.MessageSender),
 
       // Download single media item by url (used by gallery scrapers)
       VAULT_DOWNLOAD_MEDIA: async (message) => {
