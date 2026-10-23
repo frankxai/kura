@@ -38,7 +38,7 @@ export function buildSlug(title: string, capturedAt: string): string {
 }
 
 /** Serialize a single frontmatter value as YAML. */
-function serializeValue(value: unknown): string {
+export function serializeValue(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'boolean' || typeof value === 'number') return String(value);
   if (Array.isArray(value)) {
@@ -49,7 +49,7 @@ function serializeValue(value: unknown): string {
 }
 
 /** Quote a YAML string if it contains special chars or starts with a reserved token. */
-function quoteIfNeeded(s: string): string {
+export function quoteIfNeeded(s: string): string {
   if (s === '') return '""';
   if (/^[a-zA-Z0-9_\-./:+]+$/.test(s) && !/^[+-]?\d/.test(s) && !/^(true|false|null|yes|no|on|off)$/i.test(s)) {
     return s;
@@ -74,7 +74,7 @@ export function renderFrontmatter(fields: Record<string, unknown>): string {
 }
 
 /** Approximate conversation duration as a compact label (e.g. "47m"). */
-function approxDuration(conv: Conversation): string | undefined {
+export function approxDuration(conv: Conversation): string | undefined {
   const stamped = conv.messages
     .map((m) => m.timestamp)
     .filter((t): t is string => !!t)
@@ -92,14 +92,14 @@ function approxDuration(conv: Conversation): string | undefined {
 }
 
 /** True if any message has at least one image/video attachment. */
-function hasMedia(conv: Conversation): boolean {
+export function hasMedia(conv: Conversation): boolean {
   return conv.messages.some((m) =>
     m.attachments?.some((a) => a.type === 'image' || a.type === 'video'),
   );
 }
 
 /** True if any message has a code attachment. */
-function hasCode(conv: Conversation): boolean {
+export function hasCode(conv: Conversation): boolean {
   return conv.messages.some((m) => m.attachments?.some((a) => a.type === 'code'));
 }
 
