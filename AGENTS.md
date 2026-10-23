@@ -16,7 +16,7 @@ Read `CLAUDE.md` first when present. This file is the cross-agent entry point.
 ## Commands
 
 ```bash
-pnpm test
+pnpm test:capture
 pnpm build
 git status
 ```
