@@ -174,7 +174,7 @@ export function exportPrompts(
  * Build/refresh the per-platform index note.
  * Caller passes the rows (newest-first) for the platform.
  */
-function renderPlatformIndex(
+export function renderPlatformIndex(
   platform: Platform,
   rows: Array<{
     slug: string;
@@ -419,17 +419,17 @@ function serializeConversation(conv: Conversation, slug: string) {
 // ============================================================
 
 /** Full vault-relative path for a bundle file. */
-function vaultPath(file: VaultFile): string {
+export function vaultPath(file: VaultFile): string {
   return `${VAULT_ROOT}/${file.path}`;
 }
 
 /** Path for a media asset inside a conversation folder. */
-function assetPath(platform: Platform, slug: string, filename: string): string {
+export function assetPath(platform: Platform, slug: string, filename: string): string {
   return `${VAULT_ROOT}/${platform}/${slug}/assets/${filename}`;
 }
 
 /** Path for a stand-alone prompt collection. */
-function promptCollectionPath(filename: string): string {
+export function promptCollectionPath(filename: string): string {
   return `${VAULT_ROOT}/_index/${filename}`;
 }
 
@@ -489,3 +489,5 @@ function guessExtension(mime: string | undefined, urlOrName: string, fallback: s
   return map[mime.toLowerCase()] ?? fallback;
 }
 
+
+export { sanitizeFilename };
