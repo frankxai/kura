@@ -62,9 +62,9 @@ export function detectPlatform(url: string): PlatformMatch | null {
 }
 
 /** Get platform display info */
-export function getPlatformInfo(platform: Platform): PlatformMatch | undefined {
+function getPlatformInfo(platform: Platform): PlatformMatch | undefined {
   return PLATFORMS.find((p) => p.platform === platform);
 }
 
 /** All supported platforms */
-export const ALL_PLATFORMS = PLATFORMS;
+const ALL_PLATFORMS = PLATFORMS;

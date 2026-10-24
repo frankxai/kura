@@ -15,7 +15,7 @@ import { assetName, buildSlug } from './frontmatter';
 import type { DetectionResult, ExportOptions, MediaItem } from './types';
 
 /** One text file to write, path relative to the vault root. */
-export interface PlanTextFile {
+interface PlanTextFile {
   path: string;
   content: string;
 }

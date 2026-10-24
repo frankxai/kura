@@ -1,5 +1,5 @@
 /** Local receipt transport. No transcripts, URLs, credentials or root paths cross it. */
-export const NATIVE_HOST = 'ai.frankx.kura_intake';
+const NATIVE_HOST = 'ai.frankx.kura_intake';
 export const INTAKE_KEY = 'kura_native_intake_v1';
 export interface CaptureRef { path: string; sha256: string }
 export interface IntakeState {
