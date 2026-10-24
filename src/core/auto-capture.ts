@@ -1,7 +1,7 @@
 import type { DetectionResult } from './types';
 
 /** Capture metadata and scraper-generated IDs are deliberately excluded. */
-export function captureFingerprint(detection: DetectionResult): string {
+function captureFingerprint(detection: DetectionResult): string {
   return JSON.stringify(detection.conversations.map((conversation) => ({
     id: conversation.id,
     url: conversation.url,

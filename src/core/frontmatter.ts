@@ -214,4 +214,3 @@ export function assetName(kind: 'img' | 'snippet' | 'video', index: number, ext:
   return `${kind}-${padded}.${ext.replace(/^\./, '')}`;
 }
 
-export { sanitizeFilename as sanitize };
