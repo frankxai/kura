@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { detectPlatform, getPlatformInfo, ALL_PLATFORMS } from '../src/core/detector';
+import type { Platform } from '../src/core/types';
 
 test.describe('detector', () => {
   test('detectPlatform identifies platforms correctly', () => {
@@ -25,7 +26,7 @@ test.describe('detector', () => {
   });
 
   test('getPlatformInfo returns undefined for invalid platform', () => {
-    expect(getPlatformInfo('unknown' as any)).toBeUndefined();
+    expect(getPlatformInfo('unknown' as unknown as Platform)).toBeUndefined();
   });
 
   test('ALL_PLATFORMS is an array of platforms', () => {

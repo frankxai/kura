@@ -22,24 +22,24 @@ test.describe('frontmatter utils', () => {
     expect(renderFrontmatter({ id: '1', title: 'A', tags: ['t1'], empty: null })).toBe('---\nid: "1"\ntitle: A\ntags:\n  - t1\nempty: \n---');
   });
   test('approxDuration', () => {
-    const conv = { messages: [{ timestamp: '2026-10-23T10:00:00Z' }, { timestamp: '2026-10-23T12:15:00Z' }] } as any;
+    const conv = { messages: [{ timestamp: '2026-10-23T10:00:00Z' }, { timestamp: '2026-10-23T12:15:00Z' }] } as unknown as Conversation;
     expect(approxDuration(conv)).toBe('2h15m');
   });
   test('hasMedia and hasCode', () => {
-    const conv = { messages: [{ attachments: [{ type: 'image' }] }] } as any;
+    const conv = { messages: [{ attachments: [{ type: 'image' }] }] } as unknown as Conversation;
     expect(hasMedia(conv)).toBe(true); expect(hasCode(conv)).toBe(false);
     conv.messages[0].attachments = [{ type: 'code' }];
     expect(hasMedia(conv)).toBe(false); expect(hasCode(conv)).toBe(true);
   });
   test('frontmatter generators', () => {
-    const conv = { id: '1', platform: 'chatgpt', title: 't', url: 'u', capturedAt: 'c', messages: [] } as any;
+    const conv = { id: '1', platform: 'chatgpt', title: 't', url: 'u', capturedAt: 'c', messages: [] } as unknown as Conversation;
     const cFm = conversationFrontmatter(conv, 's');
     expect(cFm.id).toBe('1'); expect(cFm.slug).toBe('s');
     const pFm = promptsFrontmatter(conv, 's', 5);
     expect(pFm.promptCount).toBe(5); expect(pFm.linksTo).toBe('[[conversation]]');
     const iFm = platformIndexFrontmatter('grok', 10, 'u');
     expect(iFm.kind).toBe('index'); expect(iFm.conversationCount).toBe(10);
-    const media = { platform: 'grok', type: 'image', filename: 'f', width: 1, height: 1 } as any;
+    const media = { platform: 'grok', type: 'image', filename: 'f', width: 1, height: 1 } as unknown as MediaItem;
     expect(mediaPromptFrontmatter(media, 's').kind).toBe('media-prompt');
     expect(promptCollectionFrontmatter('all', 20).promptCount).toBe(20);
   });
