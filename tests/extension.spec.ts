@@ -22,6 +22,7 @@ const FIXTURE = `file://${path.join(__dirname, 'fixtures', 'mock-chatgpt.html').
 
 test.describe('Arcanea Kura extension — load + detection', () => {
   let context: BrowserContext;
+  let extensionId: string;
 
   test.beforeAll(async () => {
     if (!fs.existsSync(path.join(DIST, 'manifest.json'))) {
@@ -38,6 +39,8 @@ test.describe('Arcanea Kura extension — load + detection', () => {
         '--no-sandbox',
       ],
     });
+    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker', { timeout: 30_000 });
+    extensionId = new URL(worker.url()).host;
   });
 
   test.afterAll(async () => {
@@ -125,17 +128,19 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(popup.locator('footer')).toContainText('Kura v0.3.1');
   });
 
-  test('sidepanel opens cockpit and switches to the library', async () => {
+  test('sidepanel opens chats and retains the cockpit and vault controls', async () => {
     const workers = context.serviceWorkers();
     const extensionId = workers[0].url().split('/')[2];
 
     const sidepanel = await context.newPage();
     await sidepanel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
 
+    await expect(sidepanel.locator('.title')).toHaveText('Your chats');
+    await sidepanel.locator('#tab-cockpit').click();
     await expect(sidepanel.locator('.title')).toHaveText('Starlight Cockpit');
     await expect(sidepanel.locator('.info-desc')).toContainText('Open ChatGPT, Claude and Gemini');
     await sidepanel.locator('#tab-library').click();
-    await expect(sidepanel.locator('.title')).toHaveText('Library');
+    await expect(sidepanel.locator('.title')).toHaveText('Your chats');
     await expect(sidepanel.locator('#lib-search')).toBeVisible();
     await expect(sidepanel.locator('#lib-filter')).toBeVisible();
     // 蔵 character should render in the platform badge
@@ -167,12 +172,11 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(sidepanel.locator('#suno-fetch-av')).toBeDisabled();
     // Switching back restores the library view.
     await sidepanel.locator('#tab-library').click();
-    await expect(sidepanel.locator('#panel-title')).toHaveText('Library');
+    await expect(sidepanel.locator('#panel-title')).toHaveText('Your chats');
     await expect(sidepanel.locator('#view-suno')).toBeHidden();
   });
 
   test('real host capture writes through offscreen FSA and protects the saved thread', async () => {
-    const extensionId = context.serviceWorkers()[0].url().split('/')[2];
     const panel = await context.newPage();
     await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
     // OPFS supplies a real browser directory handle and disk-backed writes.

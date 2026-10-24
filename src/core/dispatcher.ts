@@ -44,7 +44,7 @@ export async function getActivePlatformTabs(): Promise<ActivePlatformTab[]> {
   const activeTabs: ActivePlatformTab[] = [];
 
   for (const tab of tabs) {
-    if (!tab.id || !tab.url) continue;
+    if (tab.id === undefined || !tab.url || tab.incognito) continue;
     const match = detectPlatform(tab.url);
     if (match) {
       activeTabs.push({
