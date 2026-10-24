@@ -1,0 +1,14 @@
+Class: tests-gap-4
+
+Added `tests/scraper.spec.ts` to test the pure utility methods in the abstract `PlatformScraper` class, which was previously untested.
+
+Verification command: `xvfb-run pnpm test:extension tests/scraper.spec.ts`
+Pass line: `5 passed (1.0s)`
+
+I left the non-pure functionality involving DOM observer untouched in this test file to keep it purely a unit test focused on logic methods.
+
+Risks: Low risk. It just adds tests and no code logic has changed.
+
+Pre-existing failures:
+- `tests/extension.spec.ts:53:3`
+- `tests/image-gallery.spec.ts:47:1`
