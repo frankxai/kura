@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "scripts": {
-    "test:capture": "node --experimental-strip-types --test tests/auto-capture.test.ts tests/native-intake.test.ts",
+    "test:capture": "node --experimental-strip-types --test tests/auto-capture.test.ts tests/native-intake.test.ts tests/chat-library.test.ts",
     "postinstall": "wxt prepare",
     "dev": "wxt",
     "build": "tsc --noEmit && wxt build",
