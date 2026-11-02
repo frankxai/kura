@@ -62,6 +62,10 @@ The next bridge should let the person pair the extension with an existing accoun
 
 The bridge must include origin/tenant/project/operation checks, expiry, replay protection, packet revision, explicit cancellation and unambiguous received/rejected/unknown states. Use OAuth/PKCE or the existing pairing contract; do not store provider cloud keys in the extension, put private text in query parameters, or add wildcard `externally_connectable` access.
 
+A second existing client was verified at `frankxai/starlightintelligence.ai@66cc23a53e2ede253199e527136400bbe47b4f90`: [`apps/extension`](https://github.com/frankxai/starlightintelligence.ai/tree/66cc23a53e2ede253199e527136400bbe47b4f90/apps/extension). Its README describes a built MV3 side panel, shared UI/client contracts, PKCE client flow and `read_active_tab`, `capture_visible`, `open_url`, `send_to_mission` tools. It explicitly describes the live client as awaiting platform routes and staying in recorded preview until those exist. This is source evidence, not a verified paired production service.
+
+Reconcile this client with Kura before another browser shell is built or listed. Kura retains capture and vault portability; reuse the existing app client's auth/tool contracts through a narrow adapter where compatible. A unified installable experience is the target, while the precise package boundary requires source/license/version review. Do not ship two competing identity flows or silently merge their permission sets. The next concrete acceptance is one approved `send_to_mission` packet with a versioned digest/idempotency receipt, tenant/mission validation and tested size limits. Confirm its actual server route and schema before coding the adapter.
+
 The existing local NativeIntake adapter remains the path to private Second Brain processing. Preserve its queue, receipt and recovery semantics. Do not introduce a second local ingestion queue or use the main app as canonical storage for raw captures by default.
 
 ## Browser-use execution

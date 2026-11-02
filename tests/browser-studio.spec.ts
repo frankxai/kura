@@ -101,13 +101,26 @@ test.describe('Browser Studio in the built extension', () => {
     await seed(); await prepare();
     const preview = await page.locator('#studio-preview').inputValue();
     expect(preview).toContain('> </textarea><script>window.sourceExecuted=true</script>');
+    await page.evaluate(() => {
+      const download = chrome.downloads.download.bind(chrome.downloads);
+      const requested: chrome.downloads.DownloadOptions[] = [];
+      Reflect.set(window, 'studioDownloadRequests', requested);
+      Reflect.set(chrome.downloads, 'download', async (options: chrome.downloads.DownloadOptions) => {
+        requested.push({ ...options });
+        return await download(options);
+      });
+    });
     const jsonDownload = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Save JSON', exact: true }).click();
     const json = await jsonDownload;
     const packet = JSON.parse(await fs.readFile((await json.path())!, 'utf8'));
     expect(packet.source.messages).toHaveLength(12);
     expect(packet.boundary.externalEffectsAuthorized).toBe(false);
-    expect(json.suggestedFilename()).toMatch(/^starlight-continue-project-[a-f0-9]{12}\.json$/);
+    // Playwright's managed download event reports the Blob UUID, while Chrome's
+    // extension API receives the requested human-readable destination.
+    const requested = await page.evaluate(() => Reflect.get(window, 'studioDownloadRequests'));
+    expect(requested[0].filename).toMatch(/^Kura\/briefs\/starlight-continue-project-[a-f0-9]{12}\.json$/);
+    expect(requested[0].saveAs).toBe(true);
     const mdDownload = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Save Markdown', exact: true }).click();
     const md = await mdDownload;
@@ -201,6 +214,9 @@ test.describe('Browser Studio in the built extension', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: 'test-results/browser-studio-narrow.png', fullPage: true });
     await page.setViewportSize({ width: 460, height: 1000 });
+    await page.locator('#studio-preview').scrollIntoViewIfNeeded();
+    await page.locator('#studio-preview').evaluate((element) => { element.scrollTop = 0; });
+    await page.evaluate(async () => { await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); });
     await page.screenshot({ path: 'test-results/browser-studio-panel.png', fullPage: true });
   });
 });
