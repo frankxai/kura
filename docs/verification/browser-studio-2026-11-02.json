@@ -1,0 +1,164 @@
+{
+  "schema_version": "1.0.0",
+  "state": "review_requested",
+  "date": "2026-11-02",
+  "owner": "frankxai/kura",
+  "studio": "studio_software",
+  "objective": "Prepare a source-linked local AI-session brief from one explicit capture using four brand workspaces.",
+  "base_revision": "653f4c999fe8012eadbe3ca4b525055327794bcf",
+  "implementation_revision": "c7d387c43712af52e5bde8fa8a2aace62094eab2",
+  "portfolio_input_revision": "316f194c6e0853e86845b5c4948ce9d0b510b03d",
+  "task_envelope": {
+    "task_id": "kura-browser-studio-2026-11-02",
+    "primary_owner": "Kura",
+    "target_channel": "unpacked Chrome MV3 candidate",
+    "value_plan": {
+      "usable_customer_output": "Reviewed text-only JSON or Markdown brief with source message locators and exact-snapshot hashes",
+      "acceptance_event": "A person resumes work from the exported brief and recovers its original source",
+      "baseline_alternative": "Manual copy/paste and provider-native export",
+      "reused_assets": [
+        "Kura capture/index/vault",
+        "existing side-panel and downloads boundary",
+        "Software Studio delivery workflow"
+      ],
+      "community_contribution": "Source-linked portable task-packet contract and bundled recipes",
+      "privacy_or_rights_boundary": "Selected local text only; explicit user-controlled export; no automatic transfer",
+      "evidence_state": "synthetic_validation_only",
+      "all_attempts": null,
+      "accepted_outcomes": null,
+      "cash_cost_actual": null,
+      "human_hours_actual": null,
+      "founder_hours_actual": null
+    },
+    "permitted_effects": [
+      "reversible branch work",
+      "local compile and export",
+      "draft PR"
+    ],
+    "external_model_calls": 0,
+    "acceptance": [
+      "one explicit source and range",
+      "four workspaces and eight local task recipes",
+      "stable source and packet digests",
+      "capture records unchanged",
+      "invalidated preview after edits or refresh",
+      "bounded exact-host source validation",
+      "no new host permissions or off-device execution"
+    ],
+    "rollback": "Revert the Studio files and integration; no capture migration or cloud state to reverse."
+  },
+  "checks": {
+    "typescript": {
+      "state": "passed",
+      "command": "npm run build (includes tsc --noEmit)"
+    },
+    "production_build": {
+      "state": "passed",
+      "command": "npm run build",
+      "version": "0.3.2",
+      "built_bytes": 248110,
+      "bytes_note": "WXT rounded display total; exact ZIP hash below is authoritative"
+    },
+    "eslint": {
+      "state": "passed",
+      "command": "node node_modules/eslint/bin/eslint.js 'src/**/*.{ts,tsx}'"
+    },
+    "capture_and_task_contracts": {
+      "state": "passed",
+      "command": "node --experimental-strip-types --test tests/auto-capture.test.ts tests/native-intake.test.ts tests/browser-task.test.ts",
+      "passed": 22,
+      "failed": 0
+    },
+    "chromium_spec_collection": {
+      "state": "passed",
+      "scenarios": 7
+    },
+    "chromium_execution": {
+      "state": "blocked",
+      "reason": "Browser executable unavailable; publisher download URL returned Site Unavailable HTML. Earlier six-scenario run failed during browser launch; updated seven-scenario spec was collected but not executed."
+    },
+    "visual_and_download_acceptance": {
+      "state": "pending"
+    },
+    "diff_whitespace": {
+      "state": "passed"
+    },
+    "dependencies": {
+      "state": "unchanged",
+      "note": "No new dependency or lockfile change. Install resolved dependencies and prepared WXT, but pnpm 11 exited nonzero for ignored dependency build scripts; the repository declares pnpm 10.32.1."
+    },
+    "permission_diff": {
+      "state": "passed",
+      "new_permissions": [],
+      "new_host_permissions": []
+    },
+    "network_evidence": {
+      "state": "source_review_only",
+      "note": "Studio contains no fetch, prompt injection, or browser dispatch operation. Browser request test is pending and observes page requests, not all service-worker flows."
+    }
+  },
+  "independent_review": {
+    "reviewer": "browser_boundary_review",
+    "state": "source_review_passed",
+    "checks": [
+      "22 Node tests",
+      "TypeScript"
+    ],
+    "fixed_findings": [
+      "out-of-order library response",
+      "compile completion during refresh",
+      "popup version consistency",
+      "normalized impossible calendar dates"
+    ],
+    "reviewed_sha256": {
+      "src/studio/task.ts": "d5295053bdd0660a077a639f3d8b9c17ce3d1af26f86b701731b809f1edb4002",
+      "src/entrypoints/sidepanel/studio.ts": "a902718db07777184175d6b4ca0fd93cc305db96c052183bc4f5ecb3d97c7453",
+      "tests/browser-studio.spec.ts": "75a8130402da38dac9ae1324bb6f6760543a1fddb9dd8fa801dda1e38c53216c"
+    },
+    "limitation": "Source review is not Chromium, visual, installation or store-release signoff."
+  },
+  "artifact": {
+    "filename": "kura-0.3.2-c7d387c4.zip",
+    "bytes": 102638,
+    "sha256": "8c0fb762d66c0c6f55290cf3920e9468746c53d06d6e1aede89a31ca67038515",
+    "state": "built_installable_candidate_not_browser_qualified"
+  },
+  "source_file_sha256": {
+    ".github/workflows/ci.yml": "3168d0ce9b512cde86e1805ca119f4d9d0d8e4241acc16ab902605e976d7eda2",
+    "README.md": "14a99f6a3ecb37c86aa889d5e2a485de3731e9e246debfd9333f2d435985c835",
+    "package.json": "815c78d74e3f636c1aec209ccd7f4021b55ef70c3dc7421fdf25b154e1b063ff",
+    "wxt.config.ts": "f28a6c846917465398aaa8b1fbfe7bf9197a34ea705acc2b49ecdcbdd0cd11d1",
+    "src/entrypoints/popup/index.html": "9fa4e6a989d847bc1ba249c4e7d793d7b70cd0b91392baf846cbbe4c940980f3",
+    "src/entrypoints/sidepanel/index.html": "be82b8e50b86879478c1551626ba9214a56debb11eacc6e450d0396888bf90ae",
+    "src/entrypoints/sidepanel/main.ts": "ce65d7497bf4f857eb4927df14b4796280b03bcd196cc68980869fd386594dd9",
+    "src/entrypoints/sidepanel/studio.ts": "a902718db07777184175d6b4ca0fd93cc305db96c052183bc4f5ecb3d97c7453",
+    "src/studio/task.ts": "d5295053bdd0660a077a639f3d8b9c17ce3d1af26f86b701731b809f1edb4002",
+    "src/styles/studio.css": "c8cee128a38f0108f84fac79fde5afb4d5ecab4ca6da44ef0df8296e19ed5974",
+    "tests/extension.spec.ts": "82e7f0065203bc3b3553f8936720f852ce3217a822fda6326ada4ee7391d0c38",
+    "tests/browser-task.test.ts": "b8e23ad39f7a96d9f20618951ff152bce0bb143677bb3cc9053e5ac76a4bb592",
+    "tests/browser-studio.spec.ts": "75a8130402da38dac9ae1324bb6f6760543a1fddb9dd8fa801dda1e38c53216c",
+    "docs/product/BROWSER-WORKBENCH.md": "98e71d9b31111023bd3c8f9f682e218cb78cfa90f66b9a5b132364ce6f84f327",
+    "CHROMEWEBSTORE.md": "c2acfb13debd41dd7ca99575b5b740f31756430356378420453d27457c7eca11"
+  },
+  "guidance": [
+    {
+      "repository": "frankxai/kura",
+      "revision": "653f4c999fe8012eadbe3ca4b525055327794bcf",
+      "files": {
+        "AGENTS.md": "18517bacafa73d6cfc99469a937f0532be103958107d7b2fd0e61401cf624063",
+        "CLAUDE.md": "60440257783006b33a8038d991c95c8fd57b7ca94c1ff41cde03d9d5b2974456",
+        "FORMAT_SPEC.md": "862c5d44492b6e8eb71c98bdb910593b5df8dcd3563f2108bf87f931a16d3a72",
+        ".claude/commands/kura-process.md": "3d84a9ea44718b601512c56293e6e063d14f9a5628b707fefd3bb3804acd2eb3"
+      }
+    }
+  ],
+  "remote_integrations": {
+    "paired_starlight_app": "not_implemented",
+    "clef_omni": "documented_candidate_not_invoked",
+    "browser_agents": "not_implemented_by_Studio",
+    "existing_cockpit": "not_newly_runtime_qualified",
+    "production": "not_deployed",
+    "chrome_store": "not_submitted"
+  },
+  "next_gate": "Run the real Chromium interaction/download and visual acceptance scenarios, inspect hosted checks, then decide release."
+}
