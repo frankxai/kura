@@ -9,6 +9,7 @@ import { initSuno } from './suno';
 import { initVault } from './vault';
 import { initCockpit } from './cockpit';
 import { initNativeIntake } from './native-intake';
+import { initStudio } from './studio';
 
 const $list = document.getElementById('lib-list') as HTMLUListElement;
 const $stats = document.getElementById('lib-stats')!;
@@ -18,13 +19,15 @@ const $filter = document.getElementById('lib-filter') as HTMLSelectElement;
 const $title = document.getElementById('panel-title')!;
 const $tabCockpit = document.getElementById('tab-cockpit') as HTMLButtonElement;
 const $tabLibrary = document.getElementById('tab-library') as HTMLButtonElement;
+const $tabStudio = document.getElementById('tab-studio') as HTMLButtonElement;
+const $viewStudio = document.getElementById('view-studio')!;
 const $tabSuno = document.getElementById('tab-suno') as HTMLButtonElement;
 const $viewCockpit = document.getElementById('view-cockpit')!;
 const $viewLibrary = document.getElementById('view-library')!;
 const $viewSuno = document.getElementById('view-suno')!;
 
 let all: Conversation[] = [];
-let activeTab: 'cockpit' | 'library' | 'suno' = 'cockpit';
+let activeTab: 'cockpit' | 'library' | 'suno' | 'studio' = 'cockpit';
 
 // ---------------------------------------------------------- tabs
 
@@ -32,15 +35,19 @@ initVault();
 initNativeIntake();
 
 const cockpit = initCockpit();
+const studio = initStudio();
 
 const suno = initSuno((text) => {
   if (activeTab === 'suno') $stats.textContent = text;
 });
 
-function switchTab(tab: 'cockpit' | 'library' | 'suno'): void {
+function switchTab(tab: 'cockpit' | 'library' | 'suno' | 'studio'): void {
   activeTab = tab;
   $tabCockpit.classList.toggle('is-active', tab === 'cockpit');
   $tabLibrary.classList.toggle('is-active', tab === 'library');
+  $tabStudio.classList.toggle('is-active', tab === 'studio');
+  $tabStudio.setAttribute('aria-selected', String(tab === 'studio'));
+  $viewStudio.classList.toggle('hidden', tab !== 'studio');
   $tabSuno.classList.toggle('is-active', tab === 'suno');
 
   $tabCockpit.setAttribute('aria-selected', String(tab === 'cockpit'));
@@ -59,6 +66,10 @@ function switchTab(tab: 'cockpit' | 'library' | 'suno'): void {
     $title.textContent = 'Library';
     $stats.textContent = `${all.length} captures`;
     applyFilters();
+  } else if (tab === 'studio') {
+    $title.textContent = 'Browser Studio';
+    $stats.textContent = 'Source-linked briefs · prepared locally';
+    void studio.onShow();
   } else {
     $title.textContent = 'Suno Harvester';
     suno.onShow();
@@ -67,6 +78,7 @@ function switchTab(tab: 'cockpit' | 'library' | 'suno'): void {
 
 $tabCockpit.addEventListener('click', () => switchTab('cockpit'));
 $tabLibrary.addEventListener('click', () => switchTab('library'));
+$tabStudio.addEventListener('click', () => switchTab('studio'));
 $tabSuno.addEventListener('click', () => switchTab('suno'));
 
 // Initialize in Cockpit view
@@ -180,3 +192,4 @@ $filter.addEventListener('change', applyFilters);
     console.error('[Kura sidepanel]', err);
   }
 })();
+

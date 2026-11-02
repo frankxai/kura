@@ -10,9 +10,9 @@ export default defineConfig({
   manifest: {
     name: 'Kura — Export your most precious writing from ChatGPT, Claude, Grok, Gemini',
     short_name: 'Kura',
-    version: '0.3.1',
+    version: '0.3.2',
     description:
-      'Export conversations, prompts and AI-generated media from ChatGPT, Claude, Grok, Gemini, DeepSeek and Perplexity into a local Obsidian-compatible vault. Local-first. No cloud. No tracking.',
+      'Export AI conversations to a local vault and prepare source-linked briefs for your next session. No tracking.',
     icons: {
       16: 'icons/icon-16.png',
       48: 'icons/icon-48.png',
@@ -67,3 +67,4 @@ export default defineConfig({
     },
   },
 });
+

@@ -6,6 +6,7 @@
   <title>Kura — Library</title>
   <link rel="stylesheet" href="../../styles/popup.css">
   <link rel="stylesheet" href="../../styles/sidepanel.css">
+  <link rel="stylesheet" href="../../styles/studio.css">
 </head>
 <body class="sidepanel-body">
   <header class="header">
@@ -51,6 +52,7 @@
 
   <nav class="tabs" role="tablist" aria-label="Starlight panels">
     <button class="tab is-active" id="tab-cockpit" role="tab" aria-selected="true" aria-controls="view-cockpit">Cockpit</button>
+    <button class="tab" id="tab-studio" role="tab" aria-selected="false" aria-controls="view-studio">Studio</button>
     <button class="tab" id="tab-library" role="tab" aria-selected="false" aria-controls="view-library">Library</button>
     <button class="tab" id="tab-suno" role="tab" aria-selected="false" aria-controls="view-suno">Suno</button>
   </nav>
@@ -156,6 +158,35 @@
     <ul id="lib-list" class="lib-list"></ul>
   </section>
 
+  <section id="view-studio" role="tabpanel" aria-labelledby="tab-studio" class="hidden">
+    <div class="studio-intro">
+      <p class="studio-eyebrow">From conversation to next move</p>
+      <h2>Keep the source.<br>Move the work forward.</h2>
+      <p>Prepare a brief for your next AI session. Choose the workspace, task and source. Review every included message before copying or saving.</p>
+    </div>
+    <form id="studio-form" class="studio-form">
+      <div class="studio-pair">
+        <label>Workspace<select id="studio-brand" class="lib-filter"></select></label>
+        <label>Task<select id="studio-recipe" class="lib-filter"></select></label>
+      </div>
+      <p id="studio-job" class="studio-note"></p>
+      <div class="studio-source-label"><label for="studio-source">Local capture</label><button id="studio-refresh" type="button" class="btn btn-ghost">Refresh</button></div>
+      <select id="studio-source" class="lib-filter" required><option value="">Open Studio to load captures</option></select>
+      <label>Include<select id="studio-scope" class="lib-filter"><option value="recent">Latest 12 messages</option><option value="all">Entire conversation</option></select></label>
+      <label>Your objective<textarea id="studio-objective" rows="4" maxlength="4000" required placeholder="What should the next session produce?"></textarea></label>
+      <p class="studio-note">Text only. Attachments are excluded. The source stays reference material; it cannot authorize actions.</p>
+      <button id="studio-prepare" type="submit" class="btn btn-primary">Prepare brief</button>
+    </form>
+    <p id="studio-status" class="studio-status" role="status" aria-live="polite"></p>
+    <div id="studio-result" class="studio-result" hidden>
+      <label for="studio-preview">Review your brief</label>
+      <textarea id="studio-preview" rows="12" readonly spellcheck="false"></textarea>
+      <div class="studio-export"><button id="studio-copy" type="button" class="btn btn-secondary">Copy brief</button><button id="studio-markdown" type="button" class="btn btn-ghost">Save Markdown</button><button id="studio-json" type="button" class="btn btn-ghost">Save JSON</button></div>
+    </div>
+    <a id="studio-home" class="studio-home" target="_blank" rel="noopener noreferrer"></a>
+    <p class="studio-note studio-footnote">Opens the app without transferring your brief. Paste or import it there when you choose.</p>
+  </section>
+
   <!-- ======================= Suno view ======================= -->
   <section id="view-suno" role="tabpanel" aria-labelledby="tab-suno" class="hidden">
     <div class="suno-setup">
@@ -197,7 +228,7 @@
   </section>
 
   <footer class="footer">
-    <span>Kura v0.3.1</span>
+    <span>Kura v0.3.2</span>
     <span class="footer-dot">·</span>
     <a href="https://github.com/frankxai/kura" class="footer-link" target="_blank" rel="noopener">github</a>
   </footer>
@@ -205,3 +236,4 @@
   <script type="module" src="./main.ts"></script>
 </body>
 </html>
+
