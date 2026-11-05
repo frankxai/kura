@@ -19,6 +19,10 @@ Read in order:
    optional AI/vision costs, installed-build identification and update channels.
 6. [Music producer integration](MUSIC-PRODUCER.md): existing producer tooling,
    album and multilingual workflows, music-library UX and bounded away mode.
+7. [Chat continuity and Second Brain integration](CHAT-CONTINUITY.md): source
+   identity, project mapping, reviewed decisions, continuation, browser actions
+   and capture/import/recovery acceptance. Proposal only; tracked by Kura #12
+   and Second Brain OS #10.
 
 This contract extends the capture purpose in the repository; it does not change
 `FORMAT_SPEC.md` v0.2.0, existing vault paths, the MIT license or account permissions.
