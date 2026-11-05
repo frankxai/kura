@@ -6,6 +6,9 @@
 
 import { defineBackground } from 'wxt/utils/define-background';
 import { detectPlatform } from '@/core/detector';
+import { searchChats, resumeChat } from '@/core/chat-library';
+import { readArchiveReply } from '@/core/archive-search';
+import type { ChatQuery } from '@/core/chat-library';
 import { vault } from '@/core/storage';
 import { exportConversation, exportPrompts } from '@/core/exporter';
 import { VAULT_ROOT, buildSlug } from '@/core/frontmatter';
@@ -413,6 +416,31 @@ export default defineBackground({
       // ============================================================
 
       STARLIGHT_GET_ACTIVE_TABS: async () => getActivePlatformTabs(),
+
+      STARLIGHT_LIBRARY_SEARCH: async (message) => {
+        const [captures, tabs] = await Promise.all([vault.listConversations(), getActivePlatformTabs()]);
+        return searchChats(captures, tabs, message.query as ChatQuery);
+      },
+
+      STARLIGHT_ARCHIVE_SEARCH: async (message) => {
+        const query = typeof message.query === 'string' ? message.query : '';
+        const request: Record<string, unknown> = { v: 1, id: crypto.randomUUID(), op: 'search', query };
+        if (typeof message.cursor === 'string') request.cursor = message.cursor;
+        if (typeof message.platform === 'string' && message.platform) request.platform = message.platform;
+        try {
+          return readArchiveReply(await requestNative(request));
+        } catch {
+          return readArchiveReply({ ok: false, code: 'unavailable' });
+        }
+      },
+
+      STARLIGHT_RESUME_CHAT: async (message) => {
+        try {
+          await resumeChat({ tabId: message.tabId as number | undefined,
+            url: message.url as string, tabUrl: message.tabUrl as string | undefined });
+          return { ok: true };
+        } catch { return { ok: false, error: 'This tab changed or closed. Refresh the list and try again.' }; }
+      },
 
       STARLIGHT_DISPATCH_PROMPT: async (message) => {
         const prompt = (message.prompt as string) || '';
