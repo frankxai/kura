@@ -1,0 +1,176 @@
+{
+  "schema_version": "1.0.0",
+  "state": "review_requested",
+  "date": "2026-11-02",
+  "owner": "frankxai/kura",
+  "studio": "studio_software",
+  "objective": "Prepare a source-linked local AI-session brief from one explicit capture using four brand workspaces.",
+  "base_revision": "653f4c999fe8012eadbe3ca4b525055327794bcf",
+  "implementation_revision": "9dafc7c812937b1b383264413d5ee8a1976ca7e0",
+  "portfolio_input_revision": "316f194c6e0853e86845b5c4948ce9d0b510b03d",
+  "task_envelope": {
+    "task_id": "kura-browser-studio-2026-11-02",
+    "primary_owner": "Kura",
+    "target_channel": "unpacked Chrome MV3 candidate",
+    "value_plan": {
+      "usable_customer_output": "Reviewed text-only JSON or Markdown brief with source message locators and exact-snapshot hashes",
+      "acceptance_event": "A person resumes work from the exported brief and recovers its original source",
+      "baseline_alternative": "Manual copy/paste and provider-native export",
+      "reused_assets": [
+        "Kura capture/index/vault",
+        "existing side-panel and downloads boundary",
+        "Software Studio delivery workflow"
+      ],
+      "community_contribution": "Source-linked portable task-packet contract and bundled recipes",
+      "privacy_or_rights_boundary": "Selected local text only; explicit user-controlled export; no automatic transfer",
+      "evidence_state": "synthetic_validation_only",
+      "all_attempts": null,
+      "accepted_outcomes": null,
+      "cash_cost_actual": null,
+      "human_hours_actual": null,
+      "founder_hours_actual": null
+    },
+    "permitted_effects": [
+      "reversible branch work",
+      "local compile and export",
+      "draft PR"
+    ],
+    "external_model_calls": 0,
+    "acceptance": [
+      "one explicit source and range",
+      "four workspaces and eight local task recipes",
+      "stable source and packet digests",
+      "capture records unchanged",
+      "invalidated preview after edits or refresh",
+      "bounded exact-host source validation",
+      "no new host permissions or off-device execution"
+    ],
+    "rollback": "Revert the Studio files and integration; no capture migration or cloud state to reverse."
+  },
+  "checks": {
+    "typescript": {
+      "state": "passed",
+      "command": "npm run build (includes tsc --noEmit)"
+    },
+    "production_build": {
+      "state": "passed",
+      "command": "npm run clean && npm run build",
+      "version": "0.3.2",
+      "built_bytes": 248185,
+      "bytes_note": "Exact sum of files in the locally built dist directory."
+    },
+    "eslint": {
+      "state": "passed",
+      "command": "node node_modules/eslint/bin/eslint.js 'src/**/*.{ts,tsx}'"
+    },
+    "capture_and_task_contracts": {
+      "state": "passed",
+      "command": "node --experimental-strip-types --test tests/auto-capture.test.ts tests/native-intake.test.ts tests/browser-task.test.ts",
+      "passed": 22,
+      "failed": 0
+    },
+    "chromium_spec_collection": {
+      "state": "passed",
+      "scenarios": 7
+    },
+    "chromium_execution": {
+      "state": "reverification_pending",
+      "local_environment": "Executable unavailable; publisher download returned Site Unavailable HTML.",
+      "initial_hosted_run": {
+        "url": "https://github.com/frankxai/kura/actions/runs/41394168804",
+        "revision": "b7c855dd3efd464ff4685ec24ed8e5c1195d20a6",
+        "passed": 66,
+        "failed": 1,
+        "reason": "Test expected the named export in Playwright's Blob-based suggestedFilename. Real JSON content was correct. Updated assertion observes the forwarded Chrome destination options and retains real JSON/Markdown download inspection."
+      }
+    },
+    "visual_and_download_acceptance": {
+      "state": "partial",
+      "narrow_panel": "CI screenshot inspected; readable at 320px with visible keyboard focus and no horizontal overflow.",
+      "wide_panel": "Recapture requested with preview scrolled into view; prior screenshot had a painting artifact.",
+      "downloads": "JSON bytes inspected by hosted test; named-destination assertion corrected. Full JSON/Markdown path awaits repeated hosted run."
+    },
+    "diff_whitespace": {
+      "state": "passed"
+    },
+    "dependencies": {
+      "state": "unchanged",
+      "note": "No new dependency or lockfile change. Install resolved dependencies and prepared WXT, but pnpm 11 exited nonzero for ignored dependency build scripts; the repository declares pnpm 10.32.1. Hosted CI subsequently installed successfully using the declared project package manager."
+    },
+    "permission_diff": {
+      "state": "passed",
+      "new_permissions": [],
+      "new_host_permissions": []
+    },
+    "network_evidence": {
+      "state": "source_review_only",
+      "note": "Studio contains no fetch, prompt injection, or browser dispatch operation. Browser request test is pending and observes page requests, not all service-worker flows."
+    }
+  },
+  "independent_review": {
+    "reviewer": "browser_boundary_review",
+    "state": "source_review_passed",
+    "checks": [
+      "22 Node tests",
+      "TypeScript"
+    ],
+    "fixed_findings": [
+      "out-of-order library response",
+      "compile completion during refresh",
+      "popup version consistency",
+      "normalized impossible calendar dates"
+    ],
+    "reviewed_sha256": {
+      "src/studio/task.ts": "d5295053bdd0660a077a639f3d8b9c17ce3d1af26f86b701731b809f1edb4002",
+      "src/entrypoints/sidepanel/studio.ts": "a902718db07777184175d6b4ca0fd93cc305db96c052183bc4f5ecb3d97c7453",
+      "tests/browser-studio.spec.ts": "909298984d4a1e24e99fa82c6806d72cfe52da42ff657c4d28736471fd304b5a"
+    },
+    "limitation": "Source review is not Chromium, visual, installation or store-release signoff.",
+    "download_test_review": "Independent reviewer confirmed that the observer forwards the real Chrome API call and preserves actual downloaded-content checks; it proves requested destination, not the browser's final saved filename.",
+    "screenshot_followup": "After the test review, screenshot preparation additionally scrolls the preview into view; runtime source permissions and compiler behavior are unchanged."
+  },
+  "artifact": {
+    "filename": "kura-0.3.2-9dafc7c8.zip",
+    "bytes": 102649,
+    "sha256": "31cc3c4b99436f3ea874bdc35246760f93cf0627c06eb31ce52fb2ebb2567d4a",
+    "state": "built_installable_candidate_hosted_reverification_pending"
+  },
+  "source_file_sha256": {
+    ".github/workflows/ci.yml": "3168d0ce9b512cde86e1805ca119f4d9d0d8e4241acc16ab902605e976d7eda2",
+    "README.md": "14a99f6a3ecb37c86aa889d5e2a485de3731e9e246debfd9333f2d435985c835",
+    "package.json": "815c78d74e3f636c1aec209ccd7f4021b55ef70c3dc7421fdf25b154e1b063ff",
+    "wxt.config.ts": "f28a6c846917465398aaa8b1fbfe7bf9197a34ea705acc2b49ecdcbdd0cd11d1",
+    "src/entrypoints/popup/index.html": "9fa4e6a989d847bc1ba249c4e7d793d7b70cd0b91392baf846cbbe4c940980f3",
+    "src/entrypoints/sidepanel/index.html": "be82b8e50b86879478c1551626ba9214a56debb11eacc6e450d0396888bf90ae",
+    "src/entrypoints/sidepanel/main.ts": "ce65d7497bf4f857eb4927df14b4796280b03bcd196cc68980869fd386594dd9",
+    "src/entrypoints/sidepanel/studio.ts": "a902718db07777184175d6b4ca0fd93cc305db96c052183bc4f5ecb3d97c7453",
+    "src/studio/task.ts": "d5295053bdd0660a077a639f3d8b9c17ce3d1af26f86b701731b809f1edb4002",
+    "src/styles/studio.css": "22ab289570b597d97a08463b727a8e870b5ce1ceb3cc59dc28ba35202c96d317",
+    "tests/extension.spec.ts": "82e7f0065203bc3b3553f8936720f852ce3217a822fda6326ada4ee7391d0c38",
+    "tests/browser-task.test.ts": "b8e23ad39f7a96d9f20618951ff152bce0bb143677bb3cc9053e5ac76a4bb592",
+    "tests/browser-studio.spec.ts": "25b5fa85bf9f62689d430e5d0d042704b82c9e30b54ec491d9f76f5915243719",
+    "docs/product/BROWSER-WORKBENCH.md": "0c2575e2f4682603bd64f9cf15e3c2ca2bcfb484df2295cfb78422496ac28f06",
+    "CHROMEWEBSTORE.md": "c2acfb13debd41dd7ca99575b5b740f31756430356378420453d27457c7eca11"
+  },
+  "guidance": [
+    {
+      "repository": "frankxai/kura",
+      "revision": "653f4c999fe8012eadbe3ca4b525055327794bcf",
+      "files": {
+        "AGENTS.md": "624f82dcfadfd4cec3a3b621328588087e2351f501e192cd29882fbeefdf094f",
+        "CLAUDE.md": "1953af075c4c233fe16177bbfa72c6efe7dd3b69b74bad44ce3ecc924d3b3590",
+        "FORMAT_SPEC.md": "716588e5eea63aedd23618810da5a1b00bbda80a1e1d925eddfc5fa062fd3833",
+        ".claude/commands/kura-process.md": "a43ec6000c4b6630f971ec6552b4bfbe8363b9d948d835a1c6c7958aba04deaf"
+      }
+    }
+  ],
+  "remote_integrations": {
+    "paired_starlight_app": "not_implemented",
+    "clef_omni": "documented_candidate_not_invoked",
+    "browser_agents": "not_implemented_by_Studio",
+    "existing_cockpit": "not_newly_runtime_qualified",
+    "production": "not_deployed",
+    "chrome_store": "not_submitted"
+  },
+  "next_gate": "Inspect repeated hosted Chromium/download checks and wide-panel capture; then decide release. The PR body links the latest exact-head CI evidence."
+}

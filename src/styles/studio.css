@@ -1,0 +1,23 @@
+#view-studio { padding: 22px 20px 26px; }
+.studio-intro { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; }
+.studio-eyebrow { color: var(--teal); font-size: 12px; margin-bottom: 10px; }
+.studio-intro h2 { font-family: 'Instrument Serif', Georgia, serif; font-size: 32px; line-height: 1.12; font-weight: 400; color: var(--fg); margin: 0 0 12px; }
+.studio-intro > p:last-child { color: var(--fg-faint); font-size: 13px; line-height: 1.65; margin: 0; }
+.studio-form { display: grid; gap: 15px; }
+.studio-form label, .studio-result > label { display: grid; gap: 7px; color: var(--fg-faint); font-size: 12px; line-height: 1.5; }
+.studio-pair { display: grid; grid-template-columns: 1fr 1.1fr; gap: 12px; }
+.studio-form .lib-filter { min-width: 0; width: 100%; padding: 10px; font-size: 13px; }
+.studio-note { color: var(--fg-faint); font-size: 12px; line-height: 1.6; margin: 0; }
+.studio-source-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: -12px; }
+.studio-source-label label { display: block; white-space: nowrap; }
+.studio-source-label .btn { width: auto; flex: none; padding: 5px 8px; min-height: 32px; font-size: 12px; }
+.studio-form textarea, #studio-preview { display: block; resize: vertical; width: 100%; box-sizing: border-box; border: 1px solid var(--border); background: var(--bg); color: var(--fg); border-radius: 10px; padding: 12px; font: inherit; font-size: 13px; line-height: 1.6; }
+.studio-form :focus-visible, #studio-preview:focus-visible, .studio-export :focus-visible, .studio-home:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.studio-status { font-size: 12px; color: var(--teal); line-height: 1.6; margin: 16px 0; overflow-wrap: anywhere; }
+.studio-result { padding-top: 16px; border-top: 1px solid var(--border); }
+#studio-preview { margin: 9px 0 14px; min-height: 200px; }
+.studio-export { display: flex; gap: 8px; flex-wrap: wrap; }
+.studio-export .btn { width: auto; font-size: 12px; min-height: 38px; }
+.studio-home { display: inline-block; color: var(--teal); font-size: 13px; padding: 16px 0 5px; }
+.studio-footnote { margin-bottom: 5px; }
+@media (max-width: 360px) { #view-studio { padding: 18px 14px; } .studio-pair { grid-template-columns: 1fr; } .studio-intro h2 { font-size: 29px; } }

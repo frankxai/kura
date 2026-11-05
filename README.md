@@ -3,6 +3,9 @@
 **Next extension release:** [product requirements, UI/UX, engineering and provider-policy proposal](docs/product/README.md).
 This proposal distinguishes implemented behavior from verified provider support and does not announce new integrations.
 
+**Browser Studio candidate:** [architecture, implemented task packs and integration boundaries](docs/product/BROWSER-WORKBENCH.md). Kura 0.3.2 adds local source-linked briefs; main-app pairing, browser agents and hosted model execution remain separate qualification work.
+
+
 > **Kura — export your most precious writing.**
 
 A 蔵 (*kura*) is the fireproof storehouse a family used to keep their
@@ -332,3 +335,4 @@ MIT — see [LICENSE](LICENSE).
 *Kura is built by [Arcanea](https://arcanea.ai) and given to everyone.
 Use it for fiction, for code, for therapy notes, for anything you write
 with an AI that you want to keep.*
+

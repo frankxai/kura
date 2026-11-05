@@ -122,7 +122,7 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     await expect(popup.locator('.title')).toHaveText('Kura');
     await expect(popup.locator('.logo')).toHaveText('K');
     await expect(popup.locator('#btn-quick-export')).toContainText('Export to Kura');
-    await expect(popup.locator('footer')).toContainText('Kura v0.3.1');
+    await expect(popup.locator('footer')).toContainText('Kura v0.3.2');
   });
 
   test('sidepanel opens cockpit and switches to the library', async () => {
@@ -286,3 +286,4 @@ test.describe('Arcanea Kura extension — load + detection', () => {
     expect(await panel.evaluate(() => chrome.downloads.search({}))).toEqual([]);
   });
 });
+

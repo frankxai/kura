@@ -1,6 +1,6 @@
 {
   "name": "kura",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "Kura \u2014 export your most precious writing. Local-first Chrome extension that captures conversations, prompts and AI-generated media from every major AI platform into an Obsidian-compatible vault on disk. No cloud. No tracking. Built by Arcanea, free for everyone.",
   "type": "module",
@@ -16,7 +16,9 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "test:extension": "pnpm build && pnpm exec playwright test",
     "test:images": "playwright test tests/image-import.spec.ts",
-    "build:web": "npm run build && node scripts/build-web.mjs"
+    "build:web": "npm run build && node scripts/build-web.mjs",
+    "test:studio": "node --experimental-strip-types --test tests/browser-task.test.ts",
+    "test:studio:browser": "npm run build && playwright test tests/browser-studio.spec.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

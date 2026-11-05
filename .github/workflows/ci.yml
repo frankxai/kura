@@ -96,6 +96,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Test image persistence and provider intake
         run: pnpm test:images
+      - name: Test local browser-task compilation
+        run: pnpm test:studio
       - name: Test capture acknowledgement and recovery
         run: pnpm test:capture
 
@@ -186,3 +188,4 @@ jobs:
             exit 1
           fi
           echo "Kura CI PASSED (all blocking gates green)."
+
