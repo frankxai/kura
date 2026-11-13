@@ -1,5 +1,5 @@
 import type { FounderState } from '@/founder/contracts';
-import { allowedTarget } from '@/founder/contracts';
+import { allowedTarget, memoryCommand } from '@/founder/contracts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let state: FounderState = { schema: 1, collection: [], tasks: [], receipts: [] };
@@ -28,6 +28,7 @@ function show(view: string) {
 function render() {
   $<HTMLSelectElement>('lens').value = state.lens || 'founder';
   const dossier = state.current;
+  (document.querySelector('.intro') as HTMLElement).hidden = !!dossier;
   $('empty').hidden = !!dossier;
   $('research').hidden = !dossier;
   $('collection-count').textContent = String(state.collection.length);
@@ -65,7 +66,16 @@ function render() {
 }
 
 $('save').addEventListener('click', () => { void request('SAVE'); });
-$('export').addEventListener('click', () => { void request('EXPORT'); });
+$('export').addEventListener('click', async () => {
+  if (!state.current || busy) return;
+  const dossier = state.current;
+  const url = URL.createObjectURL(new Blob([JSON.stringify({ dossier, memoryCommand: memoryCommand(dossier) }, null, 2)], { type: 'application/json' }));
+  try {
+    await chrome.downloads.download({ url, filename: `Kura/research/${dossier.id}.json`, saveAs: true });
+    $('status').textContent = 'Save dialog opened. Confirm the destination in Chrome.';
+  } catch { $('status').textContent = 'Could not open the save dialog. Your local dossier is intact.'; }
+  finally { URL.revokeObjectURL(url); }
+});
 $('clear').addEventListener('click', () => { void request('CLEAR'); });
 document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(button => button.addEventListener('click', () => show(button.dataset.view!)));
 $('plan').addEventListener('click', async () => {

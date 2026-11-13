@@ -67,7 +67,7 @@ test.describe('Starlight Founder journey in real Chromium', () => {
     await expect(panel.locator('#approval-url')).toHaveText('https://company.example/about');
     await fs.mkdir('docs/verification/starbrowser', { recursive: true });
     await panel.setViewportSize({ width: 420, height: 960 });
-    await panel.screenshot({ path: 'docs/verification/starbrowser/approval.png', fullPage: true });
+    await panel.locator('#approval').screenshot({ path: 'docs/verification/starbrowser/approval.png' });
     expect(company.url()).toBe('https://company.example/');
     await panel.getByRole('button', { name: 'Approve & open' }).click();
     await expect(company).toHaveURL('https://company.example/about');
@@ -94,6 +94,22 @@ test.describe('Starlight Founder journey in real Chromium', () => {
     await panel.getByRole('button', { name: 'Approve & open' }).click();
     await expect(panel.locator('#status')).toContainText('source tab changed');
     expect(company.url()).toBe('https://company.example/');
+  });
+  test('Investor lens, exact selection and keyboard command palette work', async () => {
+    await panel.locator('#lens').selectOption('investor');
+    await expect.poll(() => worker.evaluate(async () => (await chrome.storage.local.get('kura_founder_v1')).kura_founder_v1?.lens)).toBe('investor');
+    await company.evaluate(() => {
+      const range = document.createRange(); range.selectNodeContents(document.querySelector('main p')!);
+      const selection = getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+    });
+    await capture();
+    await expect(panel.locator('#claims .claim')).toHaveCount(1);
+    await panel.getByRole('button', { name: 'Open questions', exact: true }).click();
+    await expect(panel.locator('#unknowns')).toContainText('Revenue, runway and cap table');
+    await panel.keyboard.press('Control+k');
+    await expect(panel.locator('#palette')).toBeVisible();
+    await panel.keyboard.press('Escape');
+    await expect(panel.locator('#palette')).toBeHidden();
   });
   test('cancel and page-authored messages never execute an action', async () => {
     await capture(); await panel.getByRole('button', { name: 'Save dossier', exact: true }).click();

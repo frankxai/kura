@@ -1,4 +1,4 @@
-import { FOUNDER_KEY, assertApproval, compileDossier, digest, memoryCommand, planFollowup, safeSourceUrl } from './contracts';
+import { FOUNDER_KEY, assertApproval, compileDossier, digest, planFollowup, safeSourceUrl } from './contracts';
 import type { Dossier, FounderState, PageEvidence, Receipt } from './contracts';
 
 // Bundled read capability. No model-generated JavaScript, form values, browser
@@ -99,8 +99,6 @@ export function installFounderRuntime(storageReady: Promise<void>) {
     } else if (message.type === 'KURA_FOUNDER_PLAN') {
       const task = planFollowup(dossier, message.target || '', `local:${chrome.runtime.id}`);
       state.tasks = [task, ...state.tasks].slice(0, 50);
-    } else if (message.type === 'KURA_FOUNDER_EXPORT') {
-      await chrome.downloads.download({ url: `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify({ dossier, memoryCommand: memoryCommand(dossier) }, null, 2))}`, filename: `Kura/research/${dossier.id}.json`, saveAs: true });
     } else if (message.type === 'KURA_FOUNDER_CANCEL') {
       const task = state.tasks.find(x => x.missionId === message.id && x.dossierId === dossier.id);
       if (!task || task.status !== 'awaiting-approval') throw new Error('This task is no longer awaiting approval.');
