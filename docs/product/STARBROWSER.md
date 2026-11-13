@@ -80,21 +80,23 @@ Shared browser-profile users are not separate tenants. Cloud sync is off.
 
 ## Founder and Investor task packs
 
-Each bundled recipe uses the same evidence/dossier/task boundary. The local
-compiler prepares portable instructions and source snapshots for these jobs.
+Ten bundled recipes use the same evidence/dossier/task boundary. The local
+compiler prepares portable instructions and source snapshots for the supported jobs.
 The named outputs below are requests for the recipient agent, not model outputs
-already produced by this extension.
+already produced by this extension. Deal-room intake remains a specification;
+private document parsing and access controls are not implemented here.
 
 | Pack | Required input | Useful output and next gate |
 |---|---|---|
 | Company and market research | Company site, independently approved market sources | Cited dossier with contradictions and unknowns |
+| Competitor comparison | Individually captured competitor/product sources | Source-linked comparison, unknowns and differentiation thesis |
 | Competitor monitoring | Approved URLs and cadence | Change digest; admit schedule through existing mission owner |
 | Ecosystem discovery | Region, criteria, event/company sources | Deduplicated organizations with evidence dates |
 | Technical due diligence | Repositories, docs, disclosed architecture | Version/license/security findings, measured vs asserted separated |
 | Thesis capture | Owner thesis plus cited evidence | Versioned thesis, falsifiers and open questions |
 | Portfolio research | Explicit portfolio scope | Company evidence and concentration hypotheses; no trades |
 | Funding and grants | Official eligibility, deadlines and geography | Dated eligibility table and application preparation |
-| Deal room | Explicit documents and rights | Private cited memo, ACL, retention and zero implicit cloud transfer |
+| Deal room (specification only) | Explicit documents and rights | Private cited memo, ACL, retention and zero implicit cloud transfer |
 | Outreach preparation | Public research and owner objective | Draft brief/message; sending requires separate authorization |
 | Research to PRD/product | Accepted evidence and project | Portable product brief into existing main-app mission intake |
 
@@ -223,7 +225,10 @@ The existing CI already runs all browser specs and uploads Playwright results.
 Prototype target: Chromium 123+ MV3, Chrome desktop. BrowserOS, Edge, macOS and
 Windows binary compatibility remain unexecuted. This is not an Android extension.
 No production promotion, store submission or installation in the owner's browser.
-Use the release receipt for actual checks, screenshots and remaining gates.
+Use the [multi-source release receipt](../verification/starbrowser-research-2026-11-13.json)
+and [rendered evidence](../verification/starbrowser/README.md) for actual checks,
+screenshots and remaining gates. The original single-source receipt remains an
+immutable historical record, not the current capability map.
 
 Rollback: revert this additive feature and restore the prior unpacked build.
 No migration is needed. Clear research removes only `kura_founder_v1`; exported

@@ -1,0 +1,200 @@
+{
+  "schema": "starlight.browser.prototype-evidence.v1",
+  "date": "2026-11-13",
+  "status": "DRAFT_PR_VERIFIED",
+  "repository": "frankxai/kura",
+  "pullRequest": "https://github.com/frankxai/kura/pull/31",
+  "baseCommit": "0d66cae590146577d8bc58905f7ce01fb49dcc74",
+  "implementationCommit": "504c6ebbfe50e1385d85938f0065add36b2ae93a",
+  "historicalReceipt": "docs/verification/starbrowser-2026-11-13.json",
+  "scope": "multi-source local research continuation; historical single-source evidence remains unchanged",
+  "authority": {
+    "portfolioInspectionCommit": "c699b8bb3b63d8dc77495d766bad93cf3a49e3f8",
+    "registryKuraRow": "absent; existing owner product work, no Registry admission asserted",
+    "authOwner": "existing Starlight apps/extension PKCE and platform tool contracts; not reimplemented",
+    "knowledgeOwner": "existing Starlight memory API; export adapter only",
+    "receiptOwner": "Kernel; local activity is not independently attested"
+  },
+  "implemented": [
+    "two to six separately invited and saved sources compiled without tab reads",
+    "attributed comparison with primary-source follow-up scope",
+    "ten portable agent-task recipes; JSON, Markdown and copy controls",
+    "source-content and exported-text digests, packet integrity and v1 compatibility",
+    "durable local dossier collection and original approved-navigation journey"
+  ],
+  "sourceManifest": [
+    {
+      "path": "src/founder/contracts.ts",
+      "sha256": "b6266ec69a54b146f7b92cb071832741f504adb8105c8c017ffc110acf6a827f"
+    },
+    {
+      "path": "src/founder/runtime.ts",
+      "sha256": "3d2063722e616699c5b40404254c963cd5e36b3ffce2c6a398d99ef9ebe95b49"
+    },
+    {
+      "path": "src/founder/research.ts",
+      "sha256": "f22d10d0b7071914606e6c05348628393137a668d5df456841b5b6e9f06e27c7"
+    },
+    {
+      "path": "src/entrypoints/founder/main.ts",
+      "sha256": "14cedb908e72ebac9a53229a5df96226d72e7354b710bd206640a80146c67182"
+    },
+    {
+      "path": "src/entrypoints/founder/index.html",
+      "sha256": "a7dacf26b9d1e29c43285c1c1052e51c22d33fb886f6ba345798914b135b6f21"
+    },
+    {
+      "path": "src/styles/founder.css",
+      "sha256": "7261bd3afb390ee533250eadda91b95815a334e587f547a15819a9f0a86c8ba1"
+    },
+    {
+      "path": "src/studio/task.ts",
+      "sha256": "5d4bb5e4025edb8dc81ff7aef8ec8dd0965a11fc28ee2e9ffa93e51a2cbe3d3f"
+    },
+    {
+      "path": "tests/founder-contracts.test.ts",
+      "sha256": "c70f92881f24d0628e28797b7c91590ab974f17b519a05c3c765ae6e97e823be"
+    },
+    {
+      "path": "tests/founder-research.test.mjs",
+      "sha256": "49075da20f8294e024463562857b65f44d2ad05e31488fd6599598a970d2f898"
+    },
+    {
+      "path": "tests/founder-runtime.test.mjs",
+      "sha256": "ac71f71de887ac50536f1ca08c00292d51c3e87db4db2d370167ff9c1a801e4c"
+    },
+    {
+      "path": "tests/founder-browser.spec.ts",
+      "sha256": "e5782350d218cdf6bf407f215ec056818db576714df4f2ac30d44532993973ff"
+    }
+  ],
+  "localChecks": {
+    "typecheck": "pass",
+    "eslint": "pass",
+    "productionBuild": "pass",
+    "captureNativeStudioFounderContracts": 45,
+    "failed": 0,
+    "diffCheck": "pass",
+    "localChromiumVerdict": "no new local launch; prior launch blocked by socket() EPERM; hosted Chromium supplies execution evidence"
+  },
+  "hostedCI": {
+    "run": "https://github.com/frankxai/kura/actions/runs/43454073893",
+    "state": "success",
+    "head": "504c6ebbfe50e1385d85938f0065add36b2ae93a",
+    "browserTests": 75,
+    "browserDurationSeconds": 20.6,
+    "webGalleryTests": 3,
+    "imageImportJobTests": 12,
+    "contractJobTests": {
+      "studio": 8,
+      "founder": 23,
+      "captureAndNative": 14
+    },
+    "gates": [
+      "TypeScript",
+      "ESLint",
+      "Build",
+      "Image import contracts",
+      "Production web gallery",
+      "Playwright (real Chromium)",
+      "CI Status"
+    ]
+  },
+  "browserAssertions": [
+    "native Chrome shortcut grants each source tab independently",
+    "uninvited private tab content excluded and tab left untouched",
+    "real JSON and Markdown downloads; source text and packet digests independently recomputed",
+    "Investor lens and research-to-PRD task retained",
+    "compiled dossier persists through panel reload",
+    "tampered source rejects compilation without changing current dossier",
+    "320px document reflow with focusable comparison scroll region",
+    "existing stale-document, cancellation, approval, navigation, export/delete and interrupted-effect checks continue passing"
+  ],
+  "independentReview": {
+    "source": "pass after repairs; no remaining material source finding",
+    "runtimeSha256": "3d2063722e616699c5b40404254c963cd5e36b3ffce2c6a398d99ef9ebe95b49",
+    "rendered": "pass for both exact screenshot hashes",
+    "regressionProbes": [
+      "foreign saved IDs rejected without browser access or mutation",
+      "compilation reads only saved local snapshots",
+      "Unicode memory request exceeds no field or UTF-8 wire bound",
+      "changed stored content cannot relax follow-up approval",
+      "legacy serialization is validated and normalized for action binding and deduplication",
+      "export refuses changed/busy state after async compilation"
+    ],
+    "scope": "bounded prototype source and rendered evidence; not production authorization"
+  },
+  "screenshots": [
+    {
+      "path": "docs/verification/starbrowser/research-board-1024.png",
+      "sourceCommit": "504c6ebbfe50e1385d85938f0065add36b2ae93a",
+      "sha256": "d30b4d9631b1818e7d4d27fd782b1971548fb526afbe7b74b8c9723c22cbfa2c",
+      "bytes": 218553,
+      "mime": "image/png",
+      "dimensions": [
+        1009,
+        2418
+      ],
+      "viewportCss": [
+        1024,
+        900
+      ],
+      "dpr": 1,
+      "scope": "synthetic company fixtures; full page; Chromium scrollbar excluded from raster"
+    },
+    {
+      "path": "docs/verification/starbrowser/research-sidebar-320.png",
+      "sourceCommit": "504c6ebbfe50e1385d85938f0065add36b2ae93a",
+      "sha256": "d211a47f19c94133119271c1199e8b6051c07ad95c7e14675f6a9eb5c83075ab",
+      "bytes": 174090,
+      "mime": "image/png",
+      "dimensions": [
+        305,
+        2987
+      ],
+      "viewportCss": [
+        320,
+        900
+      ],
+      "dpr": 1,
+      "scope": "synthetic company fixtures; full page; Chromium scrollbar excluded from raster"
+    }
+  ],
+  "package": {
+    "artifact": "https://github.com/frankxai/kura/actions/runs/43454073893/artifacts/14051888535",
+    "name": "starbrowser-research-504c6ebb.zip",
+    "sha256": "fa98c56f2cbb5c9343d1780317cb8cb2aeaf79d50f93387349623e4428e1f942",
+    "bytes": 120811,
+    "files": 35,
+    "localBuildMatches": 35,
+    "mismatchedFiles": 0,
+    "artifactRetentionDays": 7
+  },
+  "newDependencies": 0,
+  "newHostOrCredentialPermissions": 0,
+  "modelCalls": 0,
+  "providerCostUsd": 0,
+  "engineeringCostUsd": null,
+  "customerAcceptance": null,
+  "limits": [
+    "comparison is attributed extraction, not generated research or independent corroboration",
+    "cloud pairing and authenticated knowledge import remain inactive",
+    "BYOK model inference and MCP execution remain inactive",
+    "portable task recipes have not executed recipient-agent workflows",
+    "deal-room parsing and private-document ACL remain a specification",
+    "BrowserOS installation and Neo adapter conformance unexecuted",
+    "local browser profile storage is plaintext and bounded",
+    "initial approved navigation may redirect; unknown effects are never auto-read or replayed"
+  ],
+  "deployment": "not performed",
+  "merge": "not performed",
+  "storeSubmission": "not performed",
+  "ownerBrowserInstallation": "not performed",
+  "rollback": "Revert the additive continuation to 0d66cae5. Original v1 captures and locked conversation vault are unchanged. Export v2 research before using an older build; full packets remain user-owned.",
+  "notes": [
+    "Implementation and screenshots are pinned to the tested source commit; subsequent documentation/evidence commit cannot attest itself. Final-head CI must be checked on the PR.",
+    "Source consistency hashes are not factual verification or tamper-proof independent attestations.",
+    "Memory draft is an explicit bounded projection with truncation metadata; full local dossier and task packet preserve source data.",
+    "The shared Browser Studio reference boundary remains untrusted text, no model executed and no external effects authorized."
+  ]
+}
