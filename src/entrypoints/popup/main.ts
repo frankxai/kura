@@ -13,7 +13,7 @@ void (async () => {
     await chrome.sidePanel.setOptions({ tabId: tab.id, path: 'founder.html', enabled: true });
     founderTab = { id: tab.id, url: tab.url };
     founderButton.disabled = false;
-  } catch { document.getElementById('founder-status')!.textContent = 'Use Alt Shift R on the company page to capture it.'; }
+  } catch { document.getElementById('founder-status')!.textContent = 'Use Alt Shift Y on the company page to capture it.'; }
 })();
 founderButton.addEventListener('click', async () => {
   const status = document.getElementById('founder-status')!;

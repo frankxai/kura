@@ -47,7 +47,7 @@ edits are thin registration and consent entry points. No capture migration.
 
 ## The working customer path
 
-Open an HTTPS company site → invoke **Alt+Shift+R**, or Kura's popup and
+Open an HTTPS company site → invoke **Alt+Shift+Y**, or Kura's popup and
 **Research this company** → inspect the company-stated excerpts and exact
 source → **Save dossier** → select a captured company link → **Review follow-up**
 → **Approve & open** → inspect the navigation result and activity log.

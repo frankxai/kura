@@ -27,10 +27,12 @@ test.describe('Starlight Founder journey in real Chromium', () => {
 
   async function capture() {
     await company.bringToFront();
+    const commands = await worker.evaluate(() => chrome.commands.getAll());
+    expect(commands.find(x => x.name === 'starlight-research')?.shortcut, 'Chrome must accept the installed research shortcut').toBe('Alt+Shift+Y');
     // Browser-level accelerators need a native key event; CDP keyboard events
     // only exercise page input and do not establish activeTab authorization.
-    if (process.platform === 'linux' && process.env.DISPLAY) execFileSync('xdotool', ['key', '--clearmodifiers', 'alt+shift+r']);
-    else await company.keyboard.press('Alt+Shift+R');
+    if (process.platform === 'linux' && process.env.DISPLAY) execFileSync('xdotool', ['search', '--onlyvisible', '--name', 'Northstar Energy', 'windowfocus', '--sync', 'key', '--clearmodifiers', 'alt+shift+y'], { timeout: 5000 });
+    else await company.keyboard.press('Alt+Shift+Y');
     await expect.poll(async () => worker.evaluate(async () => ({
       captured: !!(await chrome.storage.local.get('kura_founder_v1')).kura_founder_v1?.current,
       commands: await chrome.commands.getAll(),
