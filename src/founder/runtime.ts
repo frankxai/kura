@@ -144,8 +144,9 @@ export function installFounderRuntime(storageReady: Promise<void>) {
   chrome.commands.onCommand.addListener((command, tab) => {
     if (command !== 'starlight-research' || !tab?.id) return;
     // Start panel opening in the direct command gesture before asynchronous work.
-    void chrome.sidePanel.setOptions({ tabId: tab.id, path: 'founder.html', enabled: true });
-    void chrome.sidePanel.open({ tabId: tab.id });
+    const reportPanelError = () => { void chrome.action.setBadgeText({ text: '!', tabId: tab.id }); };
+    void chrome.sidePanel.setOptions({ tabId: tab.id, path: 'founder.html', enabled: true }).catch(reportPanelError);
+    void chrome.sidePanel.open({ tabId: tab.id }).catch(reportPanelError);
     queue = queue.catch(() => {}).then(async () => {
       try { await captureInvited(tab.id!, tab.url || ''); }
       catch (error) { await chrome.action.setTitle({ tabId: tab.id, title: error instanceof Error ? error.message : 'Capture failed' }); }

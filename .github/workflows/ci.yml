@@ -120,7 +120,7 @@ jobs:
       - name: Install Chromium + xvfb deps
         run: |
           pnpm exec playwright install chromium --with-deps
-          sudo apt-get update && sudo apt-get install -y xvfb
+          sudo apt-get update && sudo apt-get install -y xvfb xdotool
       - name: Build extension
         run: pnpm run build
       - name: Run Playwright extension tests (xvfb for headed MV3)
