@@ -4,6 +4,19 @@
 
 import type { DetectionResult, ExportFormat } from '@/core/types';
 
+document.getElementById('btn-founder')!.addEventListener('click', async () => {
+  const status = document.getElementById('founder-status')!;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) throw new Error('Open a company page first.');
+    await chrome.sidePanel.setOptions({ tabId: tab.id, path: 'founder.html', enabled: true });
+    await chrome.sidePanel.open({ tabId: tab.id });
+    const result = await chrome.runtime.sendMessage({ type: 'KURA_FOUNDER_CAPTURE', tabId: tab.id, url: tab.url });
+    if (result?.error) throw new Error(result.error);
+    status.textContent = 'Dossier ready in Starlight Assistant.';
+  } catch (error) { status.textContent = error instanceof Error ? error.message : 'Capture failed.'; }
+});
+
 const $status = document.getElementById('status')!;
 const $platform = document.getElementById('platform-name')!;
 const $platformIcon = document.getElementById('platform-icon')!;

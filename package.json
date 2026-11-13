@@ -18,6 +18,8 @@
     "test:images": "playwright test tests/image-import.spec.ts",
     "build:web": "npm run build && node scripts/build-web.mjs",
     "test:studio": "node --experimental-strip-types --test tests/browser-task.test.ts",
+    "test:founder": "node --experimental-strip-types --test tests/founder-contracts.test.ts",
+    "test:founder:browser": "npm run build && playwright test tests/founder-browser.spec.ts",
     "test:studio:browser": "npm run build && playwright test tests/browser-studio.spec.ts"
   },
   "devDependencies": {

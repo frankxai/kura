@@ -20,6 +20,7 @@ import type { WritePlan } from '@/core/capture-plan';
 import { NativeIntake, requestNative, INTAKE_KEY } from '@/core/native-intake';
 import type { CaptureRef } from '@/core/native-intake';
 import type { ExportOptions, DetectionResult, Platform } from '@/core/types';
+import { installFounderRuntime } from '@/founder/runtime';
 
 /** Where a capture actually landed — surfaced to the popup. */
 type CaptureSink = 'fsa' | 'downloads';
@@ -28,6 +29,7 @@ export default defineBackground({
   type: 'module',
   main() {
     const storageReady = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+    installFounderRuntime(storageReady);
     void storageReady.catch(() => {});
     const intake = new NativeIntake({
       read: async () => { await storageReady; return (await chrome.storage.local.get(INTAKE_KEY))[INTAKE_KEY]; },

@@ -1,5 +1,7 @@
 # Kura
 
+**StarBrowser research prototype:** [release decision, workflow, security boundaries and compatibility](docs/product/STARBROWSER.md). Authorize one company tab, inspect local evidence, save a dossier and approve one follow-up navigation. Cloud inference and pairing remain inactive.
+
 **Next extension release:** [product requirements, UI/UX, engineering and provider-policy proposal](docs/product/README.md).
 This proposal distinguishes implemented behavior from verified provider support and does not announce new integrations.
 

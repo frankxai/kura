@@ -98,6 +98,8 @@ jobs:
         run: pnpm test:images
       - name: Test local browser-task compilation
         run: pnpm test:studio
+      - name: Test Founder evidence and approval contracts
+        run: pnpm test:founder
       - name: Test capture acknowledgement and recovery
         run: pnpm test:capture
 

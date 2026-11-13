@@ -37,6 +37,10 @@ export default defineConfig({
         },
         description: 'Open Starlight Multi-Model Cockpit',
       },
+      'starlight-research': {
+        suggested_key: { default: 'Alt+Shift+R' },
+        description: 'Authorize this tab for Starlight company research',
+      },
     },
     permissions: ['activeTab', 'tabs', 'downloads', 'storage', 'scripting', 'sidePanel', 'offscreen'],
     optional_permissions: ['nativeMessaging'],
