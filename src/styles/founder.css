@@ -495,6 +495,26 @@ h1 {
 .identity-dot,.local i {
   background:CanvasText
 }
-
 }
+
+.research-tabs { flex-wrap: wrap; }
+.collection-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); gap: 8px; }
+.collection-row .collection-item { border: 0; min-width: 0; overflow-wrap: anywhere; }
+.collection-pick { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; cursor: pointer; }
+.collection-pick input { accent-color: var(--gold); width: 17px; height: 17px; }
+.research-board { border-top: 1px solid var(--line); padding: 24px 0; }
+.research-board > p { color: var(--muted); font-size: 13px; }
+.research-board label, .portable-task label { display: block; color: var(--muted); font-size: 11px; margin: 14px 0 6px; }
+#board-objective, #research-recipe { width: 100%; color: var(--ivory); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: inherit; font-size: 12px; }
+#board-objective { resize: vertical; min-height: 90px; }
+#compile-research { width: 100%; margin-top: 12px; }
+.savebar { flex-wrap: wrap; }
+.portable-task { border-top: 1px solid var(--line); padding-top: 4px; }
+.comparison-scroll { overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: 10px; }
+#comparison-table { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 12px; }
+#comparison-table caption { text-align: left; padding: 12px; color: var(--muted); }
+#comparison-table th, #comparison-table td { padding: 12px; border-top: 1px solid var(--line); vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+#comparison-table th { color: var(--gold); font-weight: 500; }
+#comparison-table td:last-child { min-width: 240px; white-space: pre-wrap; }
+textarea:focus-visible, .comparison-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 

@@ -13,7 +13,7 @@ function transpile(relativePath) {
 function loadModule(code, globals = {}) {
   const module = { exports: {} };
   vm.runInNewContext(code, {
-    module, exports: module.exports, crypto, TextEncoder, URL, setTimeout,
+    module, exports: module.exports, crypto, TextEncoder, URL, setTimeout, structuredClone,
     ...globals,
   });
   return module.exports;
@@ -23,9 +23,19 @@ function loadModule(code, globals = {}) {
 // boundary behavior; they do not reimplement admission or task state changes.
 const contractsCode = transpile('../src/founder/contracts.ts');
 const runtimeCode = transpile('../src/founder/runtime.ts');
+const researchCode = transpile('../src/founder/research.ts');
+const studioCode = transpile('../src/studio/task.ts');
 
 async function fixture(mode) {
   const contracts = loadModule(contractsCode);
+  const studio = loadModule(studioCode);
+  const research = loadModule(researchCode, {
+    require(name) {
+      if (name === './contracts') return contracts;
+      assert.equal(name, '../studio/task');
+      return studio;
+    },
+  });
   const listeners = [];
   const tab = { id: 9, url: 'https://company.example/', status: 'complete' };
   let documentId = 'original-document';
@@ -42,6 +52,12 @@ async function fixture(mode) {
   };
   const dossier = { ...contracts.compileDossier(source), savedAt: new Date().toISOString() };
   const task = contracts.planFollowup(dossier, snapshot.links[0].url, 'local:fixture');
+  if (mode === 'research') {
+    const secondSnapshot = { ...snapshot, url: 'https://second.example/', title: 'Second fixture', links: [] };
+    const secondSource = { ...source, ...secondSnapshot, sha256: await contracts.digest(JSON.stringify(secondSnapshot)), tabId: 10, documentId: 'second-document' };
+    const secondDossier = { ...contracts.compileDossier(secondSource), savedAt: new Date().toISOString() };
+    stored[contracts.FOUNDER_KEY] = { schema: 1, current: dossier, collection: [dossier, secondDossier], tasks: [], receipts: [] };
+  }
   if (mode === 'replace-before-effect') {
     stored[contracts.FOUNDER_KEY] = {
       schema: 1, current: dossier, collection: [dossier], tasks: [task], receipts: [],
@@ -100,6 +116,7 @@ async function fixture(mode) {
   const runtime = loadModule(runtimeCode, {
     chrome,
     require(name) {
+      if (name === './research') return research;
       assert.equal(name, './contracts');
       return contracts;
     },
@@ -162,4 +179,32 @@ test('the exact owned extension page remains usable when Chrome supplies sender.
   assert.equal(result.error, undefined);
   assert.equal(result.state.schema, 1);
   assert.equal(app.events.reads, 1);
+});
+
+test('research rejects IDs outside the saved local collection before mutation or browser access', async () => {
+  const app = await fixture('research');
+  const saved = app.stored()[app.contracts.FOUNDER_KEY];
+  const result = await app.send({ type: 'KURA_FOUNDER_RESEARCH', ids: [saved.collection[0].id, 'foreign-dossier'], objective: 'Compare the evidence.' });
+  assert.match(result.error, /no longer in the local collection/);
+  assert.equal(app.events.writes, 0);
+  assert.deepEqual(app.events.injections, []);
+  assert.deepEqual(app.events.navigations, []);
+  assert.equal(app.stored()[app.contracts.FOUNDER_KEY].current.id, saved.current.id);
+});
+
+test('research compiles only the saved snapshots without reading browser tabs or granting actions', async () => {
+  const app = await fixture('research');
+  const saved = app.stored()[app.contracts.FOUNDER_KEY];
+  const result = await app.send({ type: 'KURA_FOUNDER_RESEARCH', ids: saved.collection.map(item => item.id), objective: 'Compare the evidence.' });
+  assert.equal(result.error, undefined);
+  assert.equal(result.state.current.schema, 'starlight.research-dossier.v2');
+  assert.equal(result.state.current.sources.length, 2);
+  assert.equal(result.state.current.savedAt, undefined);
+  assert.equal(result.state.current.claims.every(claim => claim.status === 'source-stated'), true);
+  assert.equal(result.state.tasks.length, 0);
+  assert.equal(result.state.collection.length, 2);
+  assert.equal(result.state.receipts[0].action, 'compile');
+  assert.equal(app.events.writes, 1);
+  assert.deepEqual(app.events.injections, []);
+  assert.deepEqual(app.events.navigations, []);
 });

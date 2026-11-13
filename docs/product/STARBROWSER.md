@@ -72,15 +72,18 @@ Shared browser-profile users are not separate tenants. Cloud sync is off.
 | Governed task and approved browser workflow | Implemented one `open-source` action | Exact document, stale-source, expiry, cancel, single-use and redirect tests |
 | Durable task state and recovery | Implemented bounded local state | Reopen; interrupted `executing` becomes `uncertain`, never replayed |
 | Starlight knowledge integration | Compatible import command only | Existing account/project pairing and destination receipt |
-| Multiple tabs and comparative synthesis | Planned | Explicit per-tab invitations, source-level citations and contradictions |
+| Multiple tabs and source comparison | Implemented over separately invited and saved snapshots | Two-to-six-source comparison, v1 compatibility, hash validation and uninvited-tab exclusion tests |
+| Portable research task briefs | Ten bundled recipes; local JSON/Markdown/copy compilation | Recipient execution and acceptance remain separate; synthesis is not generated here |
 | BYOK or local model inference | Planned | User-owned keys in session/native host, explicit provider/cost grant, no default cloud call |
 | MCP skills / portable agents | Existing platform-client contracts inspected; runtime not connected here | Paired adapter, typed grants and qualified execution receipts |
 | Continuous monitoring and remote execution | Planned in existing runtime owner | Budget admission, scheduler ownership, cancellation and accepted results |
 
 ## Founder and Investor task packs
 
-Each future pack uses the same evidence/dossier/task boundary, never another
-browser shell. These rows are specifications, not implemented model workflows.
+Each bundled recipe uses the same evidence/dossier/task boundary. The local
+compiler prepares portable instructions and source snapshots for these jobs.
+The named outputs below are requests for the recipient agent, not model outputs
+already produced by this extension.
 
 | Pack | Required input | Useful output and next gate |
 |---|---|---|
@@ -102,6 +105,31 @@ capture schema. Page evidence records sanitized HTTPS URL, title, description,
 eligible visible text, selection, eligible links, time, tab, document and SHA-256.
 Hash input is the exact serialized sanitized snapshot. Hashes establish
 consistency, not authenticity or factual correctness.
+
+`starlight.research-dossier.v2` adds two to six selected source snapshots,
+source-specific claim hashes, an owner objective and a dossier digest. Original
+v1 captures are preserved. A compiled comparison is a new unsaved dossier until
+explicitly saved. Exact duplicate snapshots are deduplicated; different versions
+of the same URL remain distinct. Compilation does not enumerate or read tabs.
+
+The research board uses the existing local collection as its input boundary.
+Select saved dossiers in the intended order, enter an objective, then compile.
+The first selected source remains primary for the existing navigation capability.
+The comparison table presents attributable excerpts and observation times without
+inventing market facts, rankings, pricing or independent corroboration.
+
+`kura.browser-research-task/v1` exports one of ten bundled recipes with full
+source references, exact exported-text hashes and an immutable packet digest.
+It reuses Browser Studio's `REFERENCE_BOUNDARY`: text only, untrusted references,
+no model executed, no external effects authorized. It is a source-format adapter,
+not a second hosted orchestrator or authenticated transport. Markdown quotes
+source text and escapes embedded HTML. JSON keeps the original captured data.
+
+The memory draft remains a bounded projection. Both v1 and v2 drafts respect
+the existing 8,000-character field bounds and 32,768-byte UTF-8 request ceiling.
+Truncation and omitted claims are explicit; the full local dossier/packet remains
+the portable artifact. An overlong URI is left empty instead of inventing a
+truncated source address. No API request is sent by this compiler.
 
 Local follow-ups retain the proposed mission contract fields `missionId`,
 `tenantId`, `actorId`, `policyVersion`, `allowedOrigins`, `maxCostUsd`, `expiresAt`.

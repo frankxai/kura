@@ -14,12 +14,15 @@ export interface PageEvidence {
   documentId: string;
 }
 export interface Dossier {
-  schema: 'starlight.company-dossier.v1';
+  schema: 'starlight.company-dossier.v1' | 'starlight.research-dossier.v2';
   id: string;
   company: string;
   lens: 'founder' | 'investor';
   source: PageEvidence;
-  claims: { text: string; source: string; status: 'company-stated' }[];
+  sources?: PageEvidence[];
+  objective?: string;
+  dossierSha256?: string;
+  claims: { text: string; source: string; sourceSha256?: string; status: 'company-stated' | 'source-stated' }[];
   unknowns: string[];
   savedAt?: string;
 }
@@ -43,7 +46,7 @@ export interface Followup {
 export interface Receipt {
   id: string;
   at: string;
-  action: 'capture' | 'save' | 'approve' | 'open-source' | 'cancel' | 'failure';
+  action: 'capture' | 'save' | 'compile' | 'approve' | 'open-source' | 'cancel' | 'failure';
   dossierId: string;
   sourceSha256: string;
   detail: string;
@@ -116,11 +119,47 @@ export function assertApproval(task: Followup, source: PageEvidence): void {
 
 // Matches the existing platform memory-capture create contract. This is a
 // portable draft for import; it is never posted using browser session cookies.
+type MemoryCreate = { action: string; operationId: string; payload: { project: string; subject: string; originalWords: string; interpretation: string; source: { uri: string; revision: string } } };
+function boundMemoryCommand(command: MemoryCreate): MemoryCreate {
+  const metadata = JSON.parse(command.payload.interpretation);
+  while (JSON.stringify(metadata).length > 8000 && metadata.claims?.length) { metadata.claims.pop(); metadata.omittedClaims = (metadata.omittedClaims || 0) + 1; }
+  if (JSON.stringify(metadata).length > 8000) throw new Error('The memory draft exceeds its supported field size.');
+  command.payload.interpretation = JSON.stringify(metadata);
+  while (new TextEncoder().encode(JSON.stringify(command)).byteLength > 32768) {
+    if (command.payload.originalWords.length) {
+      const characters = Array.from(command.payload.originalWords);
+      command.payload.originalWords = characters.slice(0, Math.floor(characters.length * 0.75)).join('');
+      metadata.originalWordsTruncated = true;
+    } else if (metadata.claims?.length) {
+      metadata.claims.pop(); metadata.omittedClaims = (metadata.omittedClaims || 0) + 1;
+    } else throw new Error('The memory draft exceeds the supported wire size. Export the full research packet instead.');
+    command.payload.interpretation = JSON.stringify(metadata);
+  }
+  return command;
+}
 export function memoryCommand(dossier: Dossier) {
-  return { action: 'create', operationId: dossier.id, payload: {
+  if (dossier.schema === 'starlight.research-dossier.v2') {
+    const sources = dossier.sources || [dossier.source];
+    const original = sources.map((source, i) => `[S${i + 1}] ${source.title}\n${source.selection || source.text}`).join('\n\n');
+    const metadata = {
+      status: 'unverified-source-statements', objective: dossier.objective,
+      sources: sources.map((source, i) => ({ ref: `S${i + 1}`, uri: source.url.slice(0, 512), uriTruncated: source.url.length > 512, sha256: source.sha256 })),
+      claims: dossier.claims.map(claim => ({ ...claim, text: claim.text.slice(0, 300), source: claim.source.slice(0, 512) })),
+      unknowns: dossier.unknowns, omittedClaims: 0, originalWordsTruncated: original.length > 8000,
+    };
+    while (JSON.stringify(metadata).length > 8000 && metadata.claims.length) { metadata.claims.pop(); metadata.omittedClaims++; }
+    if (JSON.stringify(metadata).length > 8000) throw new Error('The memory draft exceeds its supported size. Export the full research packet instead.');
+    return boundMemoryCommand({ action: 'create', operationId: dossier.id, payload: {
+      project: 'Founder research', subject: dossier.company.slice(0, 300),
+      originalWords: original.slice(0, 8000),
+      interpretation: JSON.stringify(metadata),
+      source: { uri: dossier.source.url.length <= 1000 ? dossier.source.url : '', revision: dossier.dossierSha256 || dossier.source.sha256 },
+    } });
+  }
+  return boundMemoryCommand({ action: 'create', operationId: dossier.id, payload: {
     project: 'Founder research', subject: dossier.company.slice(0, 300),
     originalWords: (dossier.source.selection || dossier.source.text).slice(0, 8000),
-    interpretation: JSON.stringify({ claims: dossier.claims, unknowns: dossier.unknowns, status: 'unverified-company-statements' }).slice(0, 8000),
-    source: { uri: dossier.source.url.slice(0, 1000), revision: dossier.source.sha256 },
-  } };
+    interpretation: JSON.stringify({ claims: dossier.claims, unknowns: dossier.unknowns, status: 'unverified-company-statements', originalWordsTruncated: (dossier.source.selection || dossier.source.text).length > 8000 }),
+    source: { uri: dossier.source.url.length <= 1000 ? dossier.source.url : '', revision: dossier.source.sha256 },
+  } });
 }

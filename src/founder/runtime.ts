@@ -1,5 +1,6 @@
 import { FOUNDER_KEY, assertApproval, compileDossier, digest, planFollowup, safeSourceUrl } from './contracts';
 import type { Dossier, FounderState, PageEvidence, Receipt } from './contracts';
+import { compileResearch } from './research';
 
 // Bundled read capability. No model-generated JavaScript, form values, browser
 // cookies, localStorage, iframes, or page-authored instructions are executed.
@@ -77,7 +78,7 @@ export function installFounderRuntime(storageReady: Promise<void>) {
     await save(state);
     return state;
   }
-  async function handle(message: { type: string; id?: string; target?: string; lens?: Dossier['lens']; tabId?: number; url?: string }) {
+  async function handle(message: { type: string; id?: string; target?: string; lens?: Dossier['lens']; tabId?: number; url?: string; ids?: string[]; objective?: string }) {
     if (message.type === 'KURA_FOUNDER_CAPTURE') {
       if (!Number.isSafeInteger(message.tabId) || typeof message.url !== 'string') throw new Error('Authorize one company tab first.');
       return captureInvited(message.tabId!, message.url);
@@ -88,6 +89,14 @@ export function installFounderRuntime(storageReady: Promise<void>) {
     if (message.type === 'KURA_FOUNDER_CLEAR') { await chrome.storage.local.remove(FOUNDER_KEY); return blank(); }
     if (message.type === 'KURA_FOUNDER_RESTORE') {
       state.current = state.collection.find(x => x.id === message.id);
+      await save(state); return state;
+    }
+    if (message.type === 'KURA_FOUNDER_RESEARCH') {
+      if (!Array.isArray(message.ids) || message.ids.length < 2 || message.ids.length > 6 || new Set(message.ids).size !== message.ids.length) throw new Error('Choose two to six distinct saved dossiers.');
+      const selected = message.ids.map(id => state.collection.find(x => x.id === id));
+      if (selected.some(x => !x)) throw new Error('One selected dossier is no longer in the local collection. Refresh your selection.');
+      state.current = await compileResearch(selected as Dossier[], message.objective || '', state.lens || 'founder');
+      receipt(state, 'compile', state.current, `Compiled ${state.current.sources!.length} explicitly selected local snapshots. No tab read, model call or remote transfer.`);
       await save(state); return state;
     }
     const dossier = state.current;
