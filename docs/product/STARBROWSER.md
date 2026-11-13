@@ -160,6 +160,9 @@ bundled. No remote fonts or telemetry on the new research panel. No new motion
 is shipped; reduced-motion behavior is static. Kura's existing panels retain
 their previous styles and remote font behavior.
 
+Once evidence is captured, the introduction collapses so the company and source
+lead the working sidebar. The introduction remains available in the empty state.
+
 ## Commercial packaging recommendation
 
 Keep the local evidence/capture extension free and open source. Sell the useful
