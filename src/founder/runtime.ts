@@ -135,7 +135,7 @@ export function installFounderRuntime(storageReady: Promise<void>) {
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
     if (typeof message?.type !== 'string' || !message.type.startsWith('KURA_FOUNDER_')) return;
     const paths = ['founder.html', 'popup.html'].map(path => chrome.runtime.getURL(path));
-    if (sender.id !== chrome.runtime.id || sender.tab || !paths.includes(sender.url || '')) { respond({ error: 'Use the trusted Starlight panel.' }); return; }
+    if (sender.id !== chrome.runtime.id || !paths.includes(sender.url || '')) { respond({ error: 'Use the trusted Starlight panel.' }); return; }
     if (message.type === 'KURA_FOUNDER_CAPTURE' && sender.url !== chrome.runtime.getURL('popup.html')) { respond({ error: 'Use the capture shortcut or Kura popup to authorize a tab.' }); return; }
     queue = queue.catch(() => {}).then(() => handle(message));
     void queue.then(state => respond({ state }), error => respond({ error: error instanceof Error ? error.message : 'Operation failed.' }));

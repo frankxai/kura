@@ -105,7 +105,7 @@ jobs:
 
   playwright:
     name: Playwright (real Chromium)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     needs: [build]
     steps:
@@ -132,10 +132,17 @@ jobs:
           name: playwright-results
           path: test-results/
           retention-days: 7
+      - name: Upload Founder screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: starbrowser-screenshots
+          path: docs/verification/starbrowser/*.png
+          retention-days: 7
 
   web-gallery:
     name: Production web gallery
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

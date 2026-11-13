@@ -77,7 +77,7 @@ export function allowedTarget(source: string, target: string): boolean {
     for (let i = 0; i < 3 && path.includes('%'); i++) path = decodeURIComponent(path);
     if (path.includes('%')) return false;
     return safeSourceUrl(target) === target && url.origin === new URL(source).origin &&
-      !/(?:^|\/)(?:login|logout|signin|signout|auth|oauth|account|settings|admin|api|checkout|cart|delete|unsubscribe)(?:[./_\-]|$)/i.test(path);
+      !/(?:^|\/)(?:login|logout|signin|signout|auth|oauth|account|settings|admin|api|checkout|cart|delete|unsubscribe)(?:[./_-]|$)/i.test(path);
   } catch { return false; }
 }
 
