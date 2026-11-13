@@ -1,6 +1,6 @@
 import { FOUNDER_KEY, assertApproval, compileDossier, digest, planFollowup, safeSourceUrl, snapshotJson } from './contracts';
 import type { Dossier, FounderState, PageEvidence, Receipt } from './contracts';
-import { compileResearch } from './research';
+import { compileResearch, validateEvidence } from './research';
 
 // Bundled read capability. No model-generated JavaScript, form values, browser
 // cookies, localStorage, iframes, or page-authored instructions are executed.
@@ -107,6 +107,8 @@ export function installFounderRuntime(storageReady: Promise<void>) {
       receipt(state, 'save', dossier, 'Saved to the local research collection. Cloud sync is off.');
     } else if (message.type === 'KURA_FOUNDER_PLAN') {
       const task = planFollowup(dossier, message.target || '', `local:${chrome.runtime.id}`);
+      task.sourceSha256 = await validateEvidence(dossier.source);
+      task.sourceArtifactSha256 = dossier.source.sha256;
       state.tasks = [task, ...state.tasks].slice(0, 50);
     } else if (message.type === 'KURA_FOUNDER_CANCEL') {
       const task = state.tasks.find(x => x.missionId === message.id && x.dossierId === dossier.id);
@@ -115,7 +117,7 @@ export function installFounderRuntime(storageReady: Promise<void>) {
     } else if (message.type === 'KURA_FOUNDER_APPROVE') {
       const task = state.tasks.find(x => x.missionId === message.id && x.dossierId === dossier.id);
       if (!task) throw new Error('Task no longer exists.');
-      assertApproval(task, await captureTab(task.sourceTabId), dossier.source);
+      assertApproval(task, await captureTab(task.sourceTabId));
       task.status = 'executing';
       receipt(state, 'approve', dossier, `Approved one navigation to ${task.targetUrl}. Maximum cost $0.`);
       await save(state);

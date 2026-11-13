@@ -70,8 +70,10 @@ test('accepts old Chromium dictionary hashes without counting an encoding change
   const legacyFields = JSON.parse(c.snapshotJson(linked.source));
   const legacySource = { ...linked.source, sha256: await c.digest(JSON.stringify(Object.fromEntries(Object.keys(legacyFields).sort().map(key => [key, legacyFields[key]])))) };
   const task = c.planFollowup({ ...linked, source: legacySource }, linked.source.links[0].url, 'local:test');
-  assert.doesNotThrow(() => c.assertApproval(task, linked.source, legacySource));
-  assert.throws(() => c.assertApproval(task, { ...linked.source, sha256: 'f'.repeat(64), text: 'Changed source' }, legacySource));
+  task.sourceSha256 = await r.validateEvidence(legacySource);
+  task.sourceArtifactSha256 = legacySource.sha256;
+  assert.doesNotThrow(() => c.assertApproval(task, linked.source));
+  assert.throws(() => c.assertApproval(task, { ...linked.source, sha256: 'f'.repeat(64), text: 'Changed source' }));
 });
 test('source overflow is rejected instead of silently dropping sources', async () => {
   const inputs = await Promise.all(Array.from({ length: 6 }, (_, i) => dossier(i + 1)));

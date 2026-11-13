@@ -516,6 +516,8 @@ h1 {
 #comparison-table caption { text-align: left; padding: 12px; color: var(--muted); }
 #comparison-table th, #comparison-table td { padding: 12px; border-top: 1px solid var(--line); vertical-align: top; text-align: left; overflow-wrap: anywhere; }
 #comparison-table th { color: var(--gold); font-weight: 500; }
+#comparison-table th:first-child { min-width: 84px; white-space: nowrap; }
+#comparison-table td:nth-child(2) { min-width: 160px; }
 #comparison-table td:last-child { min-width: 240px; white-space: pre-wrap; }
 textarea:focus-visible, .comparison-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 

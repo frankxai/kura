@@ -36,6 +36,7 @@ export interface Followup {
   expiresAt: string;
   dossierId: string;
   sourceSha256: string;
+  sourceArtifactSha256?: string;
   sourceDocumentId: string;
   sourceTabId: number;
   sourceUrl: string;
@@ -116,10 +117,10 @@ export function planFollowup(dossier: Dossier, target: string, tenantId: string)
   };
 }
 
-export function assertApproval(task: Followup, source: PageEvidence, storedSource?: PageEvidence): void {
-  if (task.status !== 'awaiting-approval' || Date.parse(task.expiresAt) <= Date.now()) throw new Error('This approval expired or was already used. Prepare a new follow-up.');
-  const sameContent = source.sha256 === task.sourceSha256 || (storedSource?.sha256 === task.sourceSha256 && snapshotJson(source) === snapshotJson(storedSource));
-  if (!sameContent || source.documentId !== task.sourceDocumentId || source.tabId !== task.sourceTabId || source.url !== task.sourceUrl) throw new Error('The source tab changed. Capture it again before approving.');
+export function assertApproval(task: Followup, source: PageEvidence): void {
+  const expiry = Date.parse(task.expiresAt);
+  if (task.status !== 'awaiting-approval' || !Number.isFinite(expiry) || expiry <= Date.now()) throw new Error('This approval expired or was already used. Prepare a new follow-up.');
+  if (source.sha256 !== task.sourceSha256 || source.documentId !== task.sourceDocumentId || source.tabId !== task.sourceTabId || source.url !== task.sourceUrl) throw new Error('The source tab changed. Capture it again before approving.');
   if (!allowedTarget(source.url, task.targetUrl) || !source.links.some(x => x.url === task.targetUrl) || !task.allowedOrigins.includes(new URL(task.targetUrl).origin)) throw new Error('The target is outside this approval.');
 }
 

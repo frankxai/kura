@@ -32,6 +32,7 @@ test('approval is single use, bounded by document, hash, origin and expiry', () 
   for (const altered of [{ ...source, tabId: 10 }, { ...source, documentId: 'new-document' }, { ...source, sha256: 'b'.repeat(64) }, { ...source, url: 'https://evil.example/' }]) assert.throws(() => assertApproval(task, altered));
   assert.throws(() => assertApproval({ ...task, status: 'opened' }, source));
   assert.throws(() => assertApproval({ ...task, expiresAt: '2020-01-01' }, source));
+  assert.throws(() => assertApproval({ ...task, expiresAt: 'invalid-expiry' }, source));
 });
 test('memory export follows existing create payload bounds without browser session fields', () => {
   const command = memoryCommand(compileDossier({ ...source, text: 'Long company statement. '.repeat(1000) }));

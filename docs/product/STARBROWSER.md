@@ -115,6 +115,10 @@ New snapshot hashes use a fixed serialization shared by capture and validation.
 The exact historical Chromium dictionary order is also accepted for v1 records;
 normalization never rewrites the stored source. Deduplication uses normalized
 content, so a serialization change does not count as corroborating evidence.
+Follow-up preparation validates the preserved source, binds a canonical content
+digest to the new action and retains the original artifact digest separately.
+Approval compares only that action digest to a fresh capture. An older pending
+task with a different encoding fails closed; prepare a new task from its source.
 
 The research board uses the existing local collection as its input boundary.
 Select saved dossiers in the intended order, enter an objective, then compile.
