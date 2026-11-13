@@ -4,6 +4,29 @@
 
 import type { DetectionResult, ExportFormat } from '@/core/types';
 
+let founderTab: { id: number; url: string } | undefined;
+const founderButton = document.getElementById('btn-founder') as HTMLButtonElement;
+void (async () => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url?.startsWith('https://')) return;
+    await chrome.sidePanel.setOptions({ tabId: tab.id, path: 'founder.html', enabled: true });
+    founderTab = { id: tab.id, url: tab.url };
+    founderButton.disabled = false;
+  } catch { document.getElementById('founder-status')!.textContent = 'Use Alt Shift Y on the company page to capture it.'; }
+})();
+founderButton.addEventListener('click', async () => {
+  const status = document.getElementById('founder-status')!;
+  try {
+    if (!founderTab) throw new Error('Open a company page first.');
+    // Must be the first API call in the click, preserving Chrome's gesture.
+    await chrome.sidePanel.open({ tabId: founderTab.id });
+    const result = await chrome.runtime.sendMessage({ type: 'KURA_FOUNDER_CAPTURE', tabId: founderTab.id, url: founderTab.url });
+    if (result?.error) throw new Error(result.error);
+    status.textContent = 'Dossier ready in Starlight Assistant.';
+  } catch (error) { status.textContent = error instanceof Error ? error.message : 'Capture failed.'; }
+});
+
 const $status = document.getElementById('status')!;
 const $platform = document.getElementById('platform-name')!;
 const $platformIcon = document.getElementById('platform-icon')!;

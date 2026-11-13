@@ -1,6 +1,13 @@
 import type { Conversation, Platform } from '../core/types';
 
 export const TASK_SCHEMA = 'kura.browser-task/v1' as const;
+export const REFERENCE_BOUNDARY = Object.freeze({
+  sourceTrust: 'untrusted-reference' as const,
+  content: 'text-only' as const,
+  attachmentsIncluded: false,
+  externalEffectsAuthorized: false,
+  modelExecuted: false,
+});
 export type BrandId = 'starlight' | 'arcanea' | 'gencreator' | 'agentic-income';
 export type SourceScope = 'recent' | 'all';
 
@@ -105,13 +112,7 @@ export async function compileTask(input: {
     pack: { brand: input.brand, recipeId: recipe.id, version: '1.0.0', instruction: recipe.instruction, outputs: [...recipe.outputs] },
     objective,
     source,
-    boundary: {
-      sourceTrust: 'untrusted-reference' as const,
-      content: 'text-only' as const,
-      attachmentsIncluded: false,
-      externalEffectsAuthorized: false,
-      modelExecuted: false,
-    },
+    boundary: { ...REFERENCE_BOUNDARY },
   };
   return { ...body, packetSha256: await digest(body) };
 }

@@ -1,0 +1,176 @@
+{
+  "schema": "starlight.browser.prototype-evidence.v1",
+  "date": "2026-11-13",
+  "status": "PR_READY",
+  "repository": "frankxai/kura",
+  "baseCommit": "fed3fc5f138aa945ef439ae69a1de5c73cc9cf22",
+  "implementationCommit": "7d988414e6f8251c569b055aefcddfa914206e88",
+  "pullRequest": "https://github.com/frankxai/kura/pull/31",
+  "authority": {
+    "portfolioRepository": "frankxai/agentic-ops",
+    "portfolioCommit": "349ef7c55a87076989d9b14c88f355d6977464fb",
+    "designRepository": "Starlight-Intelligence/starlight-design-intelligence",
+    "designCommit": "4426ddc83c4a14238e15b262fb1dfc8d3c018624",
+    "registryKuraRow": "absent; existing owner product work, not canonical Registry admission"
+  },
+  "instructionEvidence": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "624f82dcfadfd4cec3a3b621328588087e2351f501e192cd29882fbeefdf094f"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "1953af075c4c233fe16177bbfa72c6efe7dd3b69b74bad44ce3ecc924d3b3590"
+    },
+    {
+      "path": "FORMAT_SPEC.md",
+      "sha256": "716588e5eea63aedd23618810da5a1b00bbda80a1e1d925eddfc5fa062fd3833"
+    }
+  ],
+  "localChecks": {
+    "typecheck": "pass",
+    "eslint": "pass",
+    "wxtProductionBuild": "pass",
+    "captureNativeStudioAndFounderContracts": 32,
+    "sunoIntakeContracts": 3,
+    "diffCheck": "pass",
+    "chromiumLaunch": "blocked: socket() EPERM; no local browser verdict"
+  },
+  "independentReview": {
+    "state": "source reviewed; high findings repaired",
+    "runtimeSha256": "4f6ff39bb943a4c34a154e1524388f9b17ce60ef08fde0e225b6a0f77ae94fbe",
+    "regressionTestSha256": "5cb62e749159899712d165de4f512091dea8ffc3c820b3bbe4f347be094f10a3",
+    "probes": [
+      "invited URL changed during storage await rejected with no persistence",
+      "source document replaced before effect rejected; status uncertain",
+      "untrusted sender denied without storage access",
+      "owned extension tab remains usable"
+    ],
+    "browserVerdict": "independent source and rendered screenshot review; hosted browser run supplies execution evidence"
+  },
+  "hostedCI": {
+    "run": "https://github.com/frankxai/kura/actions/runs/43361948369",
+    "state": "success",
+    "browserTests": 73,
+    "browserDurationSeconds": 20.4,
+    "gates": [
+      "TypeScript",
+      "ESLint",
+      "Build",
+      "Image import contracts",
+      "Production web gallery",
+      "Playwright (real Chromium)",
+      "CI Status"
+    ]
+  },
+  "screenshots": [
+    {
+      "path": "docs/verification/starbrowser/approval.png",
+      "sourceCommit": "7d988414e6f8251c569b055aefcddfa914206e88",
+      "sha256": "86f3039976d16afc9813b6da6e9f86244d1d30a33d7b87d74b18343da761cd8b",
+      "bytes": 35049,
+      "mime": "image/png",
+      "dimensions": [
+        393,
+        480
+      ],
+      "viewportCss": [
+        420,
+        960
+      ],
+      "dpr": 1,
+      "scope": "synthetic company fixture; full page except dialog element crop"
+    },
+    {
+      "path": "docs/verification/starbrowser/sidebar-320.png",
+      "sourceCommit": "7d988414e6f8251c569b055aefcddfa914206e88",
+      "sha256": "8fafee19418c7c7bd466c695b53b74b68f87e8c0e83fbdb4d90491dbf1498fcf",
+      "bytes": 110062,
+      "mime": "image/png",
+      "dimensions": [
+        305,
+        1944
+      ],
+      "viewportCss": [
+        320,
+        900
+      ],
+      "dpr": 1,
+      "scope": "synthetic company fixture; full page except dialog element crop"
+    },
+    {
+      "path": "docs/verification/starbrowser/sidebar-420.png",
+      "sourceCommit": "7d988414e6f8251c569b055aefcddfa914206e88",
+      "sha256": "e52e5d457af78f28c82a4225360a27718affaf4abdd51adbdf580ffa26026f96",
+      "bytes": 109565,
+      "mime": "image/png",
+      "dimensions": [
+        405,
+        1790
+      ],
+      "viewportCss": [
+        420,
+        960
+      ],
+      "dpr": 1,
+      "scope": "synthetic company fixture; full page except dialog element crop"
+    },
+    {
+      "path": "docs/verification/starbrowser/timeline.png",
+      "sourceCommit": "7d988414e6f8251c569b055aefcddfa914206e88",
+      "sha256": "53160d3a32382f7cf0c7758af04ba636add62c8477345ca8e2b1b1fa8eaa4fcf",
+      "bytes": 117079,
+      "mime": "image/png",
+      "dimensions": [
+        1009,
+        1571
+      ],
+      "viewportCss": [
+        1024,
+        900
+      ],
+      "dpr": 1,
+      "scope": "synthetic company fixture; full page except dialog element crop"
+    },
+    {
+      "path": "docs/verification/starbrowser/workspace-1024.png",
+      "sourceCommit": "7d988414e6f8251c569b055aefcddfa914206e88",
+      "sha256": "69f6f456ddc7b4ab54d49af7782ae18fd54f7a7b4dd8a0018c95e3d0e6c8caa5",
+      "bytes": 122834,
+      "mime": "image/png",
+      "dimensions": [
+        1009,
+        1700
+      ],
+      "viewportCss": [
+        1024,
+        900
+      ],
+      "dpr": 1,
+      "scope": "synthetic company fixture; full page except dialog element crop"
+    }
+  ],
+  "newModelCalls": 0,
+  "providerCostUsd": 0,
+  "engineeringCostUsd": null,
+  "customerAcceptance": null,
+  "deployment": "not performed",
+  "browserOSCompatibility": "not executed",
+  "ownerBrowserInstallation": "not performed",
+  "storeSubmission": "not performed",
+  "integrationLimits": [
+    "deterministic extraction, no LLM inference",
+    "one authorized source, no multi-tab comparison",
+    "memory-compatible export only; no cloud upload",
+    "no BYOK or MCP runtime connection",
+    "local activity is not a Kernel attestation",
+    "approved initial navigation may redirect; unknown final effects are not retried"
+  ],
+  "rollback": "Revert the additive Founder mode and load the prior unpacked build. No capture migration. Optional deletion affects only kura_founder_v1; exported files remain.",
+  "notes": [
+    "Final documentation-only changes include clarified cloud-import copy; current head CI must be checked separately.",
+    "No owner-browser installation, published store listing, BrowserOS pairing or production promotion.",
+    "Shortcut Alt+Shift+Y is checked against the real installed Chrome commands table.",
+    "GitHub browser jobs pinned to ubuntu-24.04 after ubuntu-latest moved to an unsupported Playwright OS."
+  ]
+}

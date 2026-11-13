@@ -98,12 +98,14 @@ jobs:
         run: pnpm test:images
       - name: Test local browser-task compilation
         run: pnpm test:studio
+      - name: Test Founder evidence and approval contracts
+        run: pnpm test:founder
       - name: Test capture acknowledgement and recovery
         run: pnpm test:capture
 
   playwright:
     name: Playwright (real Chromium)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     needs: [build]
     steps:
@@ -118,7 +120,7 @@ jobs:
       - name: Install Chromium + xvfb deps
         run: |
           pnpm exec playwright install chromium --with-deps
-          sudo apt-get update && sudo apt-get install -y xvfb
+          sudo apt-get update && sudo apt-get install -y xvfb xdotool
       - name: Build extension
         run: pnpm run build
       - name: Run Playwright extension tests (xvfb for headed MV3)
@@ -130,10 +132,17 @@ jobs:
           name: playwright-results
           path: test-results/
           retention-days: 7
+      - name: Upload Founder screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: starbrowser-screenshots
+          path: docs/verification/starbrowser/*.png
+          retention-days: 7
 
   web-gallery:
     name: Production web gallery
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
