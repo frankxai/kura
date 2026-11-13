@@ -53,6 +53,26 @@ test('deduplicates overlapping dossiers and preserves different revisions', asyn
   assert.equal(versions.sources.length, 2); assert.equal(versions.sources[0].url, versions.sources[1].url);
   assert.notEqual(versions.sources[0].sha256, versions.sources[1].sha256);
 });
+test('accepts old Chromium dictionary hashes without counting an encoding change as a second source', async () => {
+  const a = await dossier(1), b = await dossier(2);
+  const snapshot = JSON.parse(c.snapshotJson(a.source));
+  const lexical = JSON.stringify(Object.fromEntries(Object.keys(snapshot).sort().map(key => [key, snapshot[key]])));
+  const old = { ...a, source: { ...a.source, sha256: await c.digest(lexical) } };
+  assert.notEqual(old.source.sha256, a.source.sha256);
+  const before = JSON.stringify(old);
+  const research = await r.compileResearch([old, a, b], 'Compare legacy and current snapshots');
+  assert.equal(research.sources.length, 2); assert.equal(research.sources[0].sha256, old.source.sha256);
+  assert.equal(JSON.stringify(old), before);
+  await assert.rejects(r.compileResearch([old, a], 'The same content twice'), /two to six distinct/);
+  const linked = await dossier(3);
+  linked.source.links = [{ title: 'About', url: 'https://company3.example/about' }];
+  linked.source.sha256 = await c.digest(c.snapshotJson(linked.source));
+  const legacyFields = JSON.parse(c.snapshotJson(linked.source));
+  const legacySource = { ...linked.source, sha256: await c.digest(JSON.stringify(Object.fromEntries(Object.keys(legacyFields).sort().map(key => [key, legacyFields[key]])))) };
+  const task = c.planFollowup({ ...linked, source: legacySource }, linked.source.links[0].url, 'local:test');
+  assert.doesNotThrow(() => c.assertApproval(task, linked.source, legacySource));
+  assert.throws(() => c.assertApproval(task, { ...linked.source, sha256: 'f'.repeat(64), text: 'Changed source' }, legacySource));
+});
 test('source overflow is rejected instead of silently dropping sources', async () => {
   const inputs = await Promise.all(Array.from({ length: 6 }, (_, i) => dossier(i + 1)));
   const existing = { ...await r.compileResearch(inputs, 'Six sources'), savedAt: '2026-11-13T09:02:00Z' };

@@ -66,6 +66,11 @@ export async function digest(value: string): Promise<string> {
   return Array.from(new Uint8Array(bytes), x => x.toString(16).padStart(2, '0')).join('');
 }
 
+export function snapshotJson(source: Pick<PageEvidence, 'url' | 'title' | 'description' | 'text' | 'selection' | 'links'>): string {
+  return JSON.stringify({ url: source.url, title: source.title, description: source.description,
+    text: source.text, selection: source.selection, links: source.links.map(link => ({ title: link.title, url: link.url })) });
+}
+
 export function safeSourceUrl(value: string): string {
   const url = new URL(value);
   if (url.protocol !== 'https:' || url.username || url.password || url.port) throw new Error('Choose an HTTPS company page.');
@@ -111,9 +116,10 @@ export function planFollowup(dossier: Dossier, target: string, tenantId: string)
   };
 }
 
-export function assertApproval(task: Followup, source: PageEvidence): void {
+export function assertApproval(task: Followup, source: PageEvidence, storedSource?: PageEvidence): void {
   if (task.status !== 'awaiting-approval' || Date.parse(task.expiresAt) <= Date.now()) throw new Error('This approval expired or was already used. Prepare a new follow-up.');
-  if (source.sha256 !== task.sourceSha256 || source.documentId !== task.sourceDocumentId || source.tabId !== task.sourceTabId || source.url !== task.sourceUrl) throw new Error('The source tab changed. Capture it again before approving.');
+  const sameContent = source.sha256 === task.sourceSha256 || (storedSource?.sha256 === task.sourceSha256 && snapshotJson(source) === snapshotJson(storedSource));
+  if (!sameContent || source.documentId !== task.sourceDocumentId || source.tabId !== task.sourceTabId || source.url !== task.sourceUrl) throw new Error('The source tab changed. Capture it again before approving.');
   if (!allowedTarget(source.url, task.targetUrl) || !source.links.some(x => x.url === task.targetUrl) || !task.allowedOrigins.includes(new URL(task.targetUrl).origin)) throw new Error('The target is outside this approval.');
 }
 

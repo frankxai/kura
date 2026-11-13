@@ -111,6 +111,10 @@ source-specific claim hashes, an owner objective and a dossier digest. Original
 v1 captures are preserved. A compiled comparison is a new unsaved dossier until
 explicitly saved. Exact duplicate snapshots are deduplicated; different versions
 of the same URL remain distinct. Compilation does not enumerate or read tabs.
+New snapshot hashes use a fixed serialization shared by capture and validation.
+The exact historical Chromium dictionary order is also accepted for v1 records;
+normalization never rewrites the stored source. Deduplication uses normalized
+content, so a serialization change does not count as corroborating evidence.
 
 The research board uses the existing local collection as its input boundary.
 Select saved dossiers in the intended order, enter an objective, then compile.

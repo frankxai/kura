@@ -498,6 +498,7 @@ h1 {
 }
 
 .research-tabs { flex-wrap: wrap; }
+.company h2, .claim p, #company-description { overflow-wrap: anywhere; }
 .collection-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); gap: 8px; }
 .collection-row .collection-item { border: 0; min-width: 0; overflow-wrap: anywhere; }
 .collection-pick { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; cursor: pointer; }

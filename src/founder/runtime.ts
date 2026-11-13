@@ -1,4 +1,4 @@
-import { FOUNDER_KEY, assertApproval, compileDossier, digest, planFollowup, safeSourceUrl } from './contracts';
+import { FOUNDER_KEY, assertApproval, compileDossier, digest, planFollowup, safeSourceUrl, snapshotJson } from './contracts';
 import type { Dossier, FounderState, PageEvidence, Receipt } from './contracts';
 import { compileResearch } from './research';
 
@@ -52,7 +52,7 @@ export async function captureTab(tabId: number, invitedUrl?: string): Promise<Pa
   const [check] = await chrome.scripting.executeScript({ target: { tabId }, func: () => location.href });
   if (check.documentId !== result.documentId || check.result !== before.url) throw new Error('The document changed during capture. Try again.');
   const evidence = raw.snapshot;
-  return { ...evidence, sha256: await digest(JSON.stringify(evidence)), capturedAt: new Date().toISOString(), tabId, documentId: result.documentId };
+  return { ...evidence, sha256: await digest(snapshotJson(evidence)), capturedAt: new Date().toISOString(), tabId, documentId: result.documentId };
 }
 
 export function installFounderRuntime(storageReady: Promise<void>) {
@@ -115,7 +115,7 @@ export function installFounderRuntime(storageReady: Promise<void>) {
     } else if (message.type === 'KURA_FOUNDER_APPROVE') {
       const task = state.tasks.find(x => x.missionId === message.id && x.dossierId === dossier.id);
       if (!task) throw new Error('Task no longer exists.');
-      assertApproval(task, await captureTab(task.sourceTabId));
+      assertApproval(task, await captureTab(task.sourceTabId), dossier.source);
       task.status = 'executing';
       receipt(state, 'approve', dossier, `Approved one navigation to ${task.targetUrl}. Maximum cost $0.`);
       await save(state);

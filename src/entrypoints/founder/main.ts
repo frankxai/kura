@@ -103,7 +103,7 @@ async function exportResearch(format: 'json' | 'md' | 'copy') {
   const recipeId = $<HTMLSelectElement>('research-recipe').value;
   try {
     const packet = await compileResearchPacket(dossier, recipeId);
-    if (state.current?.id !== dossier.id || $<HTMLSelectElement>('research-recipe').value !== recipeId) throw new Error('The source or task changed. Review the current dossier and export again.');
+    if (busy || state.current?.id !== dossier.id || $<HTMLSelectElement>('research-recipe').value !== recipeId) throw new Error('The source or task changed. Review the current dossier and export again.');
     if (format === 'copy') { await navigator.clipboard.writeText(researchMarkdown(packet)); $('status').textContent = 'Brief copied. Paste it into your chosen agent when you decide.'; return; }
     const content = format === 'json' ? JSON.stringify({ dossier, memoryCommand: memoryCommand(dossier), researchTask: packet }, null, 2) : researchMarkdown(packet);
     const url = URL.createObjectURL(new Blob([content], { type: format === 'json' ? 'application/json' : 'text/markdown' }));
@@ -150,8 +150,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-command]').forEach(button =>
   else show(button.dataset.command!);
 }));
 $('lens').addEventListener('change', async () => {
-  await request('LENS', { lens: $<HTMLSelectElement>('lens').value });
-  $('status').textContent = 'This lens applies to your next capture. Saved dossiers retain their original research questions.';
+  if (await request('LENS', { lens: $<HTMLSelectElement>('lens').value })) $('status').textContent = 'This lens applies to your next capture. Saved dossiers retain their original research questions.';
 });
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.kura_founder_v1 && !busy) { state = changes.kura_founder_v1.newValue || { schema: 1, collection: [], tasks: [], receipts: [] }; render(); }

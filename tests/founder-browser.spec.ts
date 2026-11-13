@@ -148,6 +148,7 @@ test.describe('Starlight Founder journey in real Chromium', () => {
       await expect(panel.getByRole('button', { name: 'Compile selected sources' })).toBeDisabled();
       await panel.getByRole('checkbox', { name: 'Select Northstar Energy', exact: true }).check();
       await panel.getByRole('checkbox', { name: 'Select Aurora Storage', exact: true }).check();
+      await panel.locator('#lens').selectOption('investor');
       await panel.locator('#board-objective').fill('Compare storage evidence for our next product decision');
       await panel.getByRole('button', { name: 'Compile selected sources' }).click();
       await expect(panel.locator('#comparison')).toBeVisible();
@@ -168,6 +169,7 @@ test.describe('Starlight Founder journey in real Chromium', () => {
       expect(exported.dossier.schema).toBe('starlight.research-dossier.v2');
       expect(exported.researchTask.sources).toHaveLength(2);
       expect(exported.researchTask.pack.recipeId).toBe('research-to-prd');
+      expect(exported.researchTask.lens).toBe('investor');
       expect(exported.researchTask.boundary.externalEffectsAuthorized).toBe(false);
       expect(exported.researchTask.boundary.modelExecuted).toBe(false);
       expect(JSON.stringify(exported)).not.toContain('UNINVITED PRIVATE');
