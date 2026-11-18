@@ -98,9 +98,14 @@ export function hasMedia(conv: Conversation): boolean {
   );
 }
 
-/** True if any message has a code attachment. */
+// A backtick fence, at the margin or nested in quotes and list items.
+const FENCE_LINE = /^[ \t>]*(?:(?:[-*+]|\d+[.)])[ \t]+)*[ \t>]*`{3,}/m;
+
+/** True if any message carries a fenced code block or a code attachment. */
 export function hasCode(conv: Conversation): boolean {
-  return conv.messages.some((m) => m.attachments?.some((a) => a.type === 'code'));
+  return conv.messages.some((m) =>
+    FENCE_LINE.test(m.content) || m.attachments?.some((a) => a.type === 'code'),
+  );
 }
 
 /** Build the frontmatter for a conversation.md note. */

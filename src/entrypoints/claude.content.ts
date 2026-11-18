@@ -5,6 +5,7 @@
 
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { PlatformScraper } from '@/core/scraper';
+import { codeOutsideMarkdown } from '@/core/dom-markdown';
 import { installAutoCapture } from '@/core/auto-capture';
 import type {
   Platform,
@@ -79,10 +80,9 @@ class ClaudeScraper extends PlatformScraper {
 
       let isUser = true;
       for (const block of allBlocks) {
-        const content = this.extractText(block);
+        const content = this.extractMarkdown(block);
         if (content) {
-          // Detect artifacts
-          const attachments = this.extractArtifacts(block);
+          const attachments = this.extractArtifacts(block, block);
 
           messages.push({
             role: isUser ? 'user' : 'assistant',
@@ -104,11 +104,11 @@ class ClaudeScraper extends PlatformScraper {
       );
 
       if (contentEl) {
-        const attachments = this.extractArtifacts(turn);
+        const attachments = this.extractArtifacts(turn, contentEl);
 
         messages.push({
           role: isHuman ? 'user' : 'assistant',
-          content: this.extractText(contentEl),
+          content: this.extractMarkdown(contentEl),
           attachments: attachments.length > 0 ? attachments : undefined,
         });
       }
@@ -117,22 +117,15 @@ class ClaudeScraper extends PlatformScraper {
     return messages;
   }
 
-  /** Extract Claude artifacts (code, documents, etc.) */
-  private extractArtifacts(container: Element): Attachment[] {
-    const artifacts: Attachment[] = [];
-
-    // Code blocks
-    const codeBlocks = container.querySelectorAll('pre code, [class*="artifact"] pre');
-    for (const code of codeBlocks) {
-      artifacts.push({
-        type: 'code',
-        url: this.extractText(code),
-        filename: `artifact_${Date.now()}.txt`,
-      });
-    }
-
-    return artifacts;
+  /** Code the Markdown body does not carry, saved as attachments. */
+  private extractArtifacts(turn: Element, body: Element): Attachment[] {
+    return codeOutsideMarkdown(turn, body).map((code) => ({
+      type: 'code',
+      url: code,
+      filename: `artifact_${Date.now()}.txt`,
+    }));
   }
+
 
   async extractMedia(): Promise<MediaItem[]> {
     // Claude doesn't generate images (yet)

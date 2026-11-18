@@ -83,7 +83,7 @@ class ChatGPTScraper extends PlatformScraper {
       if (contentEl) {
         messages.push({
           role: isUser ? 'user' : 'assistant',
-          content: this.extractText(contentEl),
+          content: this.extractMarkdown(contentEl),
         });
       }
     }

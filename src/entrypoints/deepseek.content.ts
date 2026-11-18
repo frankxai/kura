@@ -49,7 +49,7 @@ class DeepSeekScraper extends PlatformScraper {
     const title = titleEl?.textContent?.replace(' - DeepSeek', '').trim() || 'DeepSeek Conversation';
 
     return [{
-      id: this.generateId(),
+      id: this.conversationIdFromUrl(),
       platform: 'deepseek',
       title,
       url: window.location.href,
@@ -74,7 +74,7 @@ class DeepSeekScraper extends PlatformScraper {
         '.markdown-body, [class*="markdown"], [class*="content"]'
       ) || turn;
 
-      const content = this.extractText(contentEl);
+      const content = this.extractMarkdown(contentEl);
       if (content) {
         messages.push({
           role: isUser ? 'user' : 'assistant',

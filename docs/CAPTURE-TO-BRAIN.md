@@ -50,5 +50,28 @@ official account exports for historical coverage. API credentials do not grant
 access to unseen consumer-app conversations. Gemini Takeout is a backfill source;
 its archive parser still needs verified fixtures before production support.
 
+Message bodies are saved as Markdown, as `FORMAT_SPEC.md` §3.3 requires. Headings,
+lists, tables, links, fenced code with its language and the TeX behind rendered
+math are kept; buttons, icons and hidden elements are left out
+(`src/core/dom-markdown.ts`). Text the page shows with preserved line breaks, such
+as a typed prompt, is copied verbatim. A message is empty exactly when its flat
+text was empty, so message counts do not shift under threads already on disk.
+A heading whose text equals a role line is written in closed form (`## You ##`),
+so nothing in a message body can be read as the start of the next message. If
+the serializer cannot walk a page, that message is saved as flat text instead.
+Prompts in `prompts.md` and media sidecars stay plain text.
+
+Gemini, Perplexity and DeepSeek captures take their identity from the thread in
+the page URL (`src/core/thread-id.ts`). A reload updates the same folder, moving
+to another chat never reuses the previous identity, and SBO can match the capture
+to its source thread. A capture made before this change keeps its earlier random
+identity, so the first re-capture of such a thread creates one new folder. A page
+whose URL names no thread yet gets a provisional identity for that path, retired
+as soon as a real thread is reached so the next new chat starts with a fresh one.
+
+The serializer is tested in Chromium on synthetic markup. That does not certify
+any provider's current page structure: selectors remain unverified against live
+pages, and no host permission, enumeration or background navigation was added.
+
 Kura stays local by default. No new remote collection service, scheduler or
 cross-provider account crawler is installed.

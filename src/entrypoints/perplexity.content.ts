@@ -49,7 +49,7 @@ class PerplexityScraper extends PlatformScraper {
     const title = titleEl?.textContent?.replace(' - Perplexity', '').trim() || 'Perplexity Thread';
 
     return [{
-      id: this.generateId(),
+      id: this.conversationIdFromUrl(),
       platform: 'perplexity',
       title,
       url: window.location.href,
@@ -74,7 +74,7 @@ class PerplexityScraper extends PlatformScraper {
         '.prose, [class*="markdown"], [class*="answer-text"], [class*="query-text"]'
       ) || turn;
 
-      const content = this.extractText(contentEl);
+      const content = this.extractMarkdown(contentEl);
       if (content) {
         messages.push({
           role: isQuery ? 'user' : 'assistant',
