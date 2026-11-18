@@ -79,16 +79,9 @@ class ClaudeScraper extends PlatformScraper {
 
       let isUser = true;
       for (const block of allBlocks) {
-        const content = this.extractText(block);
+        const content = this.extractMarkdown(block);
         if (content) {
-          // Detect artifacts
-          const attachments = this.extractArtifacts(block);
-
-          messages.push({
-            role: isUser ? 'user' : 'assistant',
-            content,
-            attachments: attachments.length > 0 ? attachments : undefined,
-          });
+          messages.push({ role: isUser ? 'user' : 'assistant', content });
           isUser = !isUser;
         }
       }
@@ -104,11 +97,11 @@ class ClaudeScraper extends PlatformScraper {
       );
 
       if (contentEl) {
-        const attachments = this.extractArtifacts(turn);
+        const attachments = this.extractArtifacts(turn, contentEl);
 
         messages.push({
           role: isHuman ? 'user' : 'assistant',
-          content: this.extractText(contentEl),
+          content: this.extractMarkdown(contentEl),
           attachments: attachments.length > 0 ? attachments : undefined,
         });
       }
@@ -117,13 +110,25 @@ class ClaudeScraper extends PlatformScraper {
     return messages;
   }
 
-  /** Extract Claude artifacts (code, documents, etc.) */
-  private extractArtifacts(container: Element): Attachment[] {
+  /**
+   * Code in the turn that the message body does not already carry, such as
+   * an artifact panel. Code inside `body` is fenced in the Markdown itself.
+   */
+  private extractArtifacts(turn: Element, body: Element): Attachment[] {
     const artifacts: Attachment[] = [];
 
-    // Code blocks
-    const codeBlocks = container.querySelectorAll('pre code, [class*="artifact"] pre');
+    // The Markdown body leaves out what the page hides, so hidden code inside
+    // the body (a collapsed block, say) still needs its attachment.
+    const rendered = (code: Element): boolean => {
+      for (let el: Element | null = code; el && el !== body; el = el.parentElement) {
+        if (window.getComputedStyle(el).display === 'none') return false;
+      }
+      return true;
+    };
+
+    const codeBlocks = turn.querySelectorAll('pre code, [class*="artifact"] pre');
     for (const code of codeBlocks) {
+      if (body.contains(code) && rendered(code)) continue;
       artifacts.push({
         type: 'code',
         url: this.extractText(code),
@@ -133,6 +138,7 @@ class ClaudeScraper extends PlatformScraper {
 
     return artifacts;
   }
+
 
   async extractMedia(): Promise<MediaItem[]> {
     // Claude doesn't generate images (yet)

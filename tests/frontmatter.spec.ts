@@ -31,6 +31,17 @@ test.describe('frontmatter utils', () => {
     conv.messages[0].attachments = [{ type: 'code' }];
     expect(hasMedia(conv)).toBe(false); expect(hasCode(conv)).toBe(true);
   });
+  test('hasCode reads fenced blocks in the message body', () => {
+    const fenced = { messages: [{ content: 'Run this:\n\n```sh\nls\n```' }] } as unknown as Conversation;
+    const inline = { messages: [{ content: 'Use `ls` or a ``` in prose' }] } as unknown as Conversation;
+    expect(hasCode(fenced)).toBe(true); expect(hasCode(inline)).toBe(false);
+    const quoted = { messages: [{ content: '> ```\n> x\n> ```' }] } as unknown as Conversation;
+    const listed = { messages: [{ content: '10. step\n\n    ```ts\n    x\n    ```' }] } as unknown as Conversation;
+    const nested = { messages: [{ content: '- a\n  - ```sh\n    ls\n    ```' }] } as unknown as Conversation;
+    const escaped = { messages: [{ content: '\\~~~ note ~~~' }] } as unknown as Conversation;
+    expect(hasCode(quoted)).toBe(true); expect(hasCode(listed)).toBe(true); expect(hasCode(nested)).toBe(true);
+    expect(hasCode(escaped)).toBe(false);
+  });
   test('frontmatter generators', () => {
     const conv = { id: '1', platform: 'chatgpt', title: 't', url: 'u', capturedAt: 'c', messages: [] } as unknown as Conversation;
     const cFm = conversationFrontmatter(conv, 's');

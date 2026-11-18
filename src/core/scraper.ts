@@ -11,6 +11,8 @@ import type {
   PromptItem,
   DownloadProgress,
 } from './types';
+import { elementToMarkdown } from './dom-markdown';
+import { threadIdFromUrl } from './thread-id';
 
 /** Base class for all platform-specific scrapers */
 export abstract class PlatformScraper {
@@ -140,6 +142,29 @@ export abstract class PlatformScraper {
     }
   }
 
+  private provisional = new Map<string, string>();
+
+  /**
+   * Conversation identity for the open page: `<platform>-<thread>` from the
+   * URL. A page whose URL names no thread yet gets a provisional ID, stable
+   * for that path. Reaching a real thread retires every provisional ID, so the
+   * next new chat on the same thread-less path starts with a fresh one.
+   */
+  protected conversationIdFromUrl(): string {
+    const thread = threadIdFromUrl(this.platform, window.location.href);
+    if (thread) {
+      this.provisional.clear();
+      return `${this.platform}-${thread}`;
+    }
+    const path = window.location.pathname;
+    let id = this.provisional.get(path);
+    if (!id) {
+      id = this.generateId();
+      this.provisional.set(path, id);
+    }
+    return id;
+  }
+
   /** Utility: generate a unique ID */
   protected generateId(): string {
     return `${this.platform}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -162,5 +187,17 @@ export abstract class PlatformScraper {
   /** Utility: extract text content, stripping HTML */
   protected extractText(element: Element): string {
     return (element.textContent || '').trim();
+  }
+
+  /**
+   * A rendered message as Markdown. A page shape the serializer cannot walk
+   * falls back to flat text: capture never fails because of formatting.
+   */
+  protected extractMarkdown(element: Element): string {
+    try {
+      return elementToMarkdown(element);
+    } catch {
+      return this.extractText(element);
+    }
   }
 }

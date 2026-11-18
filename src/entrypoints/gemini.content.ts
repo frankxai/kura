@@ -17,6 +17,7 @@
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { PlatformScraper } from '@/core/scraper';
 import { installAutoCapture } from '@/core/auto-capture';
+import { elementToMarkdown } from '@/core/dom-markdown';
 import type {
   Platform,
   DetectionResult,
@@ -26,26 +27,24 @@ import type {
   Message,
 } from '@/core/types';
 
+/** Rating/copy buttons, screen-reader-only labels, source chips and status cards. */
+const GEMINI_NOISE =
+  '.screen-reader-only, [class*="screen-reader-only"], button, [role="button"], ' +
+  '[class*="generated-image-controls"], [class*="export-sheets-button-container"], ' +
+  'processing-state, sources-list, user-notice, action-card';
+
 class GeminiScraper extends PlatformScraper {
   readonly platform: Platform = 'gemini';
   readonly hostPatterns = ['gemini.google.com', 'aistudio.google.com'];
 
   /**
-   * Memoized per page-load so `extractMedia()` can link generated images
-   * back to the conversation captured by `extractConversations()` via
-   * `MediaItem.metadata.conversationId` (see background.ts
-   * `inferParentSlug`). Stable across repeat VAULT_* calls in the same
-   * session; still degrades fine if only `extractMedia()` is ever called
-   * (message handler path) — background.ts falls back to "first
-   * conversation on the page" when no id matches.
+   * One identity for the conversation and its generated images, so
+   * `extractMedia()` links back through `MediaItem.metadata.conversationId`
+   * (see `inferParentSlug` in capture-plan.ts). It comes from the URL, so a
+   * reload keeps the folder and navigating to another chat never reuses it.
    */
-  private capturedConversationId: string | null = null;
-
   private conversationId(): string {
-    if (!this.capturedConversationId) {
-      this.capturedConversationId = this.generateId();
-    }
-    return this.capturedConversationId;
+    return this.conversationIdFromUrl();
   }
 
   async detect(): Promise<DetectionResult> {
@@ -127,7 +126,7 @@ class GeminiScraper extends PlatformScraper {
         '.markdown, [class*="markdown"], [class*="response-content"], [class*="query-text"]'
       ) || turn;
 
-      const content = this.extractText(contentEl);
+      const content = this.extractMarkdown(contentEl);
       if (content) {
         messages.push({
           role: isUser ? 'user' : 'assistant',
@@ -154,7 +153,7 @@ class GeminiScraper extends PlatformScraper {
         'user-query div.query-text, user-query-content, user-query [class*="query-text"], user-query'
       );
       if (userEl) {
-        const text = this.extractCleanText(userEl);
+        const text = this.extractCleanMarkdown(userEl);
         if (text) messages.push({ role: 'user', content: text });
       }
 
@@ -164,7 +163,7 @@ class GeminiScraper extends PlatformScraper {
           'message-content.model-response-text div.markdown.markdown-main-panel, ' +
           '.response-content .markdown, .model-response-text, [class*="markdown-main-panel"]'
         ) || modelEl;
-        const text = this.extractCleanText(markdownEl);
+        const text = this.extractCleanMarkdown(markdownEl);
         if (text) messages.push({ role: 'assistant', content: text });
       }
     }
@@ -182,7 +181,7 @@ class GeminiScraper extends PlatformScraper {
 
     let isUserTurn = true;
     for (const block of genericBlocks) {
-      const text = this.extractCleanText(block);
+      const text = this.extractCleanMarkdown(block);
       if (text) {
         messages.push({ role: isUserTurn ? 'user' : 'assistant', content: text });
         isUserTurn = !isUserTurn;
@@ -214,7 +213,7 @@ class GeminiScraper extends PlatformScraper {
     const bodyEl = panel.querySelector(
       '.immersive-artifact-content, [class*="immersive-artifact-content"], [class*="canvas-content"]'
     ) || panel;
-    const text = this.extractCleanText(bodyEl);
+    const text = this.extractCleanMarkdown(bodyEl);
     if (!text) return null;
 
     return `## Canvas: ${title}\n\n${text}`;
@@ -371,16 +370,25 @@ class GeminiScraper extends PlatformScraper {
    * buttons, screen-reader-only labels, source chips) so captured
    * markdown doesn't carry stray icon-label text. Operates on a clone —
    * never mutates the live page DOM (capture-only, per repo policy).
+   * Prompts use this: a prompt is plain text, never Markdown-escaped.
    */
   private extractCleanText(el: Element): string {
     const clone = el.cloneNode(true) as Element;
-    const noise = clone.querySelectorAll(
-      '.screen-reader-only, [class*="screen-reader-only"], button, [role="button"], ' +
-      '[class*="generated-image-controls"], [class*="export-sheets-button-container"], ' +
-      'processing-state, sources-list, user-notice, action-card'
-    );
-    noise.forEach((n) => n.remove());
+    clone.querySelectorAll(GEMINI_NOISE).forEach((n) => n.remove());
     return this.extractText(clone);
+  }
+
+  /**
+   * A message body as Markdown, without the same UI noise. Reads the live
+   * element, because a detached clone has no layout to tell blocks from
+   * phrases. Falls back to the plain cleaner if the page cannot be walked.
+   */
+  private extractCleanMarkdown(el: Element): string {
+    try {
+      return elementToMarkdown(el, GEMINI_NOISE);
+    } catch {
+      return this.extractCleanText(el);
+    }
   }
 }
 

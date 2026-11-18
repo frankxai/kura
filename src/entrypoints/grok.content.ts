@@ -88,7 +88,7 @@ class GrokScraper extends PlatformScraper {
       for (const el of allMessages) {
         messages.push({
           role: 'assistant',
-          content: this.extractText(el),
+          content: this.extractMarkdown(el),
         });
       }
       return messages;
@@ -105,7 +105,7 @@ class GrokScraper extends PlatformScraper {
       if (contentEl) {
         messages.push({
           role: isUser ? 'user' : 'assistant',
-          content: this.extractText(contentEl),
+          content: this.extractMarkdown(contentEl),
         });
       }
     }

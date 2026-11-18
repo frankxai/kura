@@ -29,6 +29,16 @@ class MockScraper extends PlatformScraper {
   public testExtractText(element: any) {
     return this.extractText(element);
   }
+  public testConversationId() {
+    return this.conversationIdFromUrl();
+  }
+  public testExtractMarkdown(element: any) {
+    return this.extractMarkdown(element);
+  }
+}
+
+class MockGeminiScraper extends MockScraper {
+  readonly platform: Platform = 'gemini';
 }
 
 test.describe('PlatformScraper base class utilities', () => {
@@ -71,6 +81,52 @@ test.describe('PlatformScraper base class utilities', () => {
   test('sanitizeFilename strips invalid chars', () => {
     expect(scraper.testSanitizeFilename('a/b<c>d:e"f\\g|h?i*j\x00k')).toBe('abcdefghijk');
     expect(scraper.testSanitizeFilename('hello  world')).toBe('hello_world'); // Replaces space with underscore? Yes \s+ to _
+  });
+
+  test.describe('conversationIdFromUrl', () => {
+    const visit = (url: string) => {
+      const parsed = new URL(url);
+      (globalThis as any).window = { location: { href: url, pathname: parsed.pathname } };
+    };
+    test.afterEach(() => { delete (globalThis as any).window; });
+
+    test('a thread URL gives the same identity on every visit', () => {
+      const gemini = new MockGeminiScraper();
+      visit('https://gemini.google.com/app/aaaa1111');
+      expect(gemini.testConversationId()).toBe('gemini-aaaa1111');
+      visit('https://gemini.google.com/app/bbbb2222');
+      expect(gemini.testConversationId()).toBe('gemini-bbbb2222');
+      visit('https://gemini.google.com/app/aaaa1111');
+      expect(gemini.testConversationId()).toBe('gemini-aaaa1111');
+    });
+
+    test('each new chat on a thread-less path gets its own provisional identity', () => {
+      const gemini = new MockGeminiScraper();
+      visit('https://gemini.google.com/app');
+      const first = gemini.testConversationId();
+      expect(first).toMatch(/^gemini-\d+-[a-z0-9]+$/);
+      expect(gemini.testConversationId()).toBe(first); // stable while the chat stays unsaved
+      visit('https://gemini.google.com/app/aaaa1111'); // the chat got its thread
+      gemini.testConversationId();
+      visit('https://gemini.google.com/app'); // a second new chat
+      expect(gemini.testConversationId()).not.toBe(first);
+    });
+
+    test('two thread-less paths keep separate provisional identities', () => {
+      const gemini = new MockGeminiScraper();
+      visit('https://gemini.google.com/gem/g1/t1');
+      const one = gemini.testConversationId();
+      visit('https://gemini.google.com/gem/g1/t2');
+      const two = gemini.testConversationId();
+      visit('https://gemini.google.com/gem/g1/t1');
+      expect(two).not.toBe(one);
+      expect(gemini.testConversationId()).toBe(one);
+    });
+  });
+
+  test('extractMarkdown falls back to flat text when the element cannot be walked', () => {
+    // No DOM here: a plain object makes the serializer throw, as a broken page would.
+    expect(scraper.testExtractMarkdown({ textContent: '  still captured  ' })).toBe('still captured');
   });
 
   test('extractText extracts and trims content', () => {
