@@ -5,6 +5,7 @@
 
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { PlatformScraper } from '@/core/scraper';
+import { codeOutsideMarkdown } from '@/core/dom-markdown';
 import { installAutoCapture } from '@/core/auto-capture';
 import type {
   Platform,
@@ -81,7 +82,13 @@ class ClaudeScraper extends PlatformScraper {
       for (const block of allBlocks) {
         const content = this.extractMarkdown(block);
         if (content) {
-          messages.push({ role: isUser ? 'user' : 'assistant', content });
+          const attachments = this.extractArtifacts(block, block);
+
+          messages.push({
+            role: isUser ? 'user' : 'assistant',
+            content,
+            attachments: attachments.length > 0 ? attachments : undefined,
+          });
           isUser = !isUser;
         }
       }
@@ -110,33 +117,13 @@ class ClaudeScraper extends PlatformScraper {
     return messages;
   }
 
-  /**
-   * Code in the turn that the message body does not already carry, such as
-   * an artifact panel. Code inside `body` is fenced in the Markdown itself.
-   */
+  /** Code the Markdown body does not carry, saved as attachments. */
   private extractArtifacts(turn: Element, body: Element): Attachment[] {
-    const artifacts: Attachment[] = [];
-
-    // The Markdown body leaves out what the page hides, so hidden code inside
-    // the body (a collapsed block, say) still needs its attachment.
-    const rendered = (code: Element): boolean => {
-      for (let el: Element | null = code; el && el !== body; el = el.parentElement) {
-        if (window.getComputedStyle(el).display === 'none') return false;
-      }
-      return true;
-    };
-
-    const codeBlocks = turn.querySelectorAll('pre code, [class*="artifact"] pre');
-    for (const code of codeBlocks) {
-      if (body.contains(code) && rendered(code)) continue;
-      artifacts.push({
-        type: 'code',
-        url: this.extractText(code),
-        filename: `artifact_${Date.now()}.txt`,
-      });
-    }
-
-    return artifacts;
+    return codeOutsideMarkdown(turn, body).map((code) => ({
+      type: 'code',
+      url: code,
+      filename: `artifact_${Date.now()}.txt`,
+    }));
   }
 
 

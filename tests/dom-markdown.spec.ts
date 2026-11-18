@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { elementToMarkdown } from '../src/core/dom-markdown';
+import { codeOutsideMarkdown, elementToMarkdown } from '../src/core/dom-markdown';
 
 // Synthetic markup only. These tests prove the serializer in real Chromium;
 // they do not certify any provider's current page structure.
@@ -172,5 +172,33 @@ test.describe('elementToMarkdown', () => {
   test('a caller-named selector also decides emptiness, as removing those nodes did', async ({ page }) => {
     expect(await render(page, '<span class="chip">source</span>', '.chip')).toBe('');
     expect(await render(page, '<span class="chip">source</span><button>Retry</button>', '.chip')).toBe('Retry');
+  });
+});
+
+test.describe('codeOutsideMarkdown', () => {
+  const HTML = `<!doctype html><body><div id="turn">
+    <div id="body">
+      <p>Here is the function.</p>
+      <pre><code>shown();</code></pre>
+      <div style="display:none"><pre><code>return 42;</code></pre></div>
+    </div>
+    <div class="artifact-panel"><pre><code>panel();</code></pre></div>
+  </div></body>`;
+
+  test('returns code outside the body and code the body hides', async ({ page }) => {
+    await page.setContent(HTML);
+    const found = await page.$eval('#turn', codeOutsideMarkdown, await page.$('#body'));
+    expect(found).toContain('return 42;');
+    expect(found).toContain('panel();');
+    expect(found).not.toContain('shown();');
+  });
+
+  test('with the body as its own scope, hidden code is still returned', async ({ page }) => {
+    await page.setContent(HTML);
+    const md = await page.$eval('#body', elementToMarkdown);
+    const found = await page.$eval('#body', codeOutsideMarkdown, await page.$('#body'));
+    expect(md).toContain('shown();');
+    expect(md).not.toContain('return 42;');
+    expect(found).toEqual(['return 42;']);
   });
 });

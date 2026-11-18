@@ -295,3 +295,24 @@ export function elementToMarkdown(root: Element, skipSelector?: string): string 
   if (!flat) return '';
   return block(root, false).join('\n\n').trim() || flat;
 }
+
+/**
+ * Code under `scope` that `elementToMarkdown(body)` does not carry: code
+ * outside `body`, such as an artifact panel, and code inside it that the page
+ * hides, such as a collapsed block. A scraper saves these as attachments so
+ * hidden code is not lost. Self-contained, like `elementToMarkdown`.
+ */
+export function codeOutsideMarkdown(scope: Element, body: Element): string[] {
+  const rendered = (code: Element): boolean => {
+    for (let el: Element | null = code; el && el !== body; el = el.parentElement) {
+      if (window.getComputedStyle(el).display === 'none') return false;
+    }
+    return true;
+  };
+  const found: string[] = [];
+  for (const code of scope.querySelectorAll('pre code, [class*="artifact"] pre')) {
+    if (body.contains(code) && rendered(code)) continue;
+    found.push((code.textContent ?? '').trim());
+  }
+  return found;
+}
